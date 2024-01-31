@@ -135,7 +135,7 @@ class Flex_beam(object):
             """
             if len(a.shape) > 2:
                 raise ValueError('bmatrix can at most display two dimensions')
-            a = np.round(a,0)
+            a = np.round(a,3)
             lines = str(a).replace('\n  ', ' ').replace('[', '').replace(']', '').splitlines()
             rv = [r'\begin{bmatrix}']
             rv += ['  ' + ' & '.join(l.split()) + r'\\' for l in lines]
@@ -246,7 +246,7 @@ class Flex_beam(object):
             print("iter = {}\ncost={}".format(self.iteration_num,np.sum(cost)))
             return cost
 
-        def static(self,F_perp_ext,dl_F_perp_ext,a0=[1,2]):
+        def static(self,F_perp_ext=1,dl_F_perp_ext=1e-2,a0=[1,2]):
             try:
                 self.Ne
                 self.dl
@@ -259,7 +259,7 @@ class Flex_beam(object):
                 self.N
             except:
                 raise ValueError("Call Ldivide first!") from None
-            self.c1 = self.E*self.I/(self.rho*self.dl*self.A)
+            self.c1 = self.E*self.I/(self.rho*self.A)
             self.EI = self.E*self.I
 
             # preparing for fast computation next
@@ -275,78 +275,83 @@ class Flex_beam(object):
                 self.dddpsi[i] =self.__get_dddpsi(l)
                 self.ddddpsi[i] =self.__get_ddddpsi(l)
 
+            self.F = np.zeros((6*self.Ne,6*self.Ne))
+            for j in range(6*self.Ne):
+                for i in range(6*self.Ne):
+                    self.F[j][i]= np.sum( np.multiply( self.ddpsi[:,i],self.ddpsi[:,j] )*self.step )
+
+            display(Math("\\bm{F}="+self.__bmatrix(self.F)))
+
+            # # self.psi_sum = np.sum(self.psi,axis=1)
+            # # self.dpsi_sum = np.sum(self.dpsi,axis=1)
+            # # self.dF_ext_const = F_perp_ext/dl_F_perp_ext/2
+            # # self.dF_ext = np.zeros((1,self.N))[0]
+            # # for i in range(self.N):
+            # #     self.dF_ext[i] = self.dF_ext_const*self.__delta1(self.l_all_true[i]-((self.L-dl_F_perp_ext)/2))-\
+            # #         (self.dF_ext_const*2)*self.__delta1(self.l_all_true[i]-((self.L)/2))+\
+            # #         (self.dF_ext_const)*self.__delta1(self.l_all_true[i]-((self.L+dl_F_perp_ext)/2))
+                
+            # # plt.plot(self.l_all_true,self.dF_ext)
+            # # plt.xlim((self.L-dl_F_perp_ext)/2,(self.L+dl_F_perp_ext)/2)
+            # # plt.show()
+            # self.int_psi_dF_ext = np.sum(np.multiply(self.psi_sum,self.dF_ext))
+            # # display(Math("\\bm{F}_1="+self.__bmatrix(F1)))
+
+            # self.iteration_num = 0
+            # if np.shape(a0)[0]<3:
+            #     a0 = np.ones((1,6+3*(self.Ne-1)-1-2))[0]
+            #     # a0 = np.array([1.39805362,0.52238212,0.98447721,-0.24425985,0.25443791,1.00086218,-0.24874274,0.25506558,0.99999917,
+            #     #                -0.24857425,0.25505484,0.99999997,-0.24857546,0.25505483,1.00000002,-0.24857545,0.25505484,1.00000026,
+            #     #                -0.24857441,0.25505484,0.99994755,-0.24858544,0.25505376,0.99399755,-0.24949161,0.25491721,1.20695856,
+            #     #                -0.1501284,0.26941578,2.049172,1.17788224,0.71017331])
+            # """
+            # bound_min = np.zeros((1,len(a0)))[0]
+            # bound_max = np.zeros((1,len(a0)))[0]
+            # bound_min[0]=-5
+            # bound_max[0]=5
+            # bound_min[1]=-10
+            # bound_max[1]=10
+            # for i in range(len(a0)-2-1):
+            #     if i%3 == 0:
+            #         bound_min[i+2]=-np.pi
+            #         bound_max[i+2]=np.pi
+            #     if i%3 == 1:
+            #         bound_min[i+2]=-5
+            #         bound_max[i+2]=5
+            #     if i%3 == 2:
+            #         bound_min[i+2]=-10
+            #         bound_max[i+2]=10
+            # bound_min[-1]=-np.pi
+            # bound_max[-1]=np.pi
+            # """
             
+            # start_time = time.time()
+            # # res = sp.optimize.minimize(self.__fun_static_optim, a0,args=(F_perp_ext,dl_F_perp_ext),method='Nelder-Mead')
+            # res = sp.optimize.least_squares(self.__fun_static_optim,a0,args=(F_perp_ext,dl_F_perp_ext),
+            #                                 ftol=1e-8,gtol=1e-8,xtol=1e-20,max_nfev=1e6,method='trf')
+            # end_time = time.time()-start_time
+            # print("status: %s"%(res.message))
+            # print("status: %s"%(res.status))
+            # print("evaluation time:%s s" % (round(end_time,0)))
+            # print("time on 1 iter:%s ms" % (round(1e3*end_time/self.iteration_num,0)))  
+            # print("iteration number:%s" % (self.iteration_num))
 
-            self.psi_sum = np.sum(self.psi,axis=1)
-            self.dpsi_sum = np.sum(self.dpsi,axis=1)
-            self.dF_ext_const = F_perp_ext/dl_F_perp_ext/2
-            self.dF_ext = np.zeros((1,self.N))[0]
-            for i in range(self.N):
-                self.dF_ext[i] = self.dF_ext_const*self.__delta1(self.l_all_true[i]-((self.L-dl_F_perp_ext)/2))-\
-                    (self.dF_ext_const*2)*self.__delta1(self.l_all_true[i]-((self.L)/2))+\
-                    (self.dF_ext_const)*self.__delta1(self.l_all_true[i]-((self.L+dl_F_perp_ext)/2))
-            # plt.plot(self.l_all_true,self.dF_ext)
-            # plt.xlim((self.L-dl_F_perp_ext)/2,(self.L+dl_F_perp_ext)/2)
-            # plt.show()
-            self.int_psi_dF_ext = np.sum(np.multiply(self.psi_sum,self.dF_ext))
-            # display(Math("\\bm{F}_1="+self.__bmatrix(F1)))
-            # display(Math("\\bm{F}_1\\text{ intergation error}="+self.__bmatrix(F1_int_error)))
+            # self.a_diff = np.ones((1,6+3*(self.Ne-1)-1-2))[0]
+            # for i in range(6+3*(self.Ne-1)-1-2):
+            #     self.a_diff[i] = res.x[i]
 
-            self.iteration_num = 0
-            if np.shape(a0)[0]<3:
-                a0 = np.ones((1,6+3*(self.Ne-1)-1-2))[0]
-                # a0 = np.array([1.39805362,0.52238212,0.98447721,-0.24425985,0.25443791,1.00086218,-0.24874274,0.25506558,0.99999917,
-                #                -0.24857425,0.25505484,0.99999997,-0.24857546,0.25505483,1.00000002,-0.24857545,0.25505484,1.00000026,
-                #                -0.24857441,0.25505484,0.99994755,-0.24858544,0.25505376,0.99399755,-0.24949161,0.25491721,1.20695856,
-                #                -0.1501284,0.26941578,2.049172,1.17788224,0.71017331])
-            """
-            bound_min = np.zeros((1,len(a0)))[0]
-            bound_max = np.zeros((1,len(a0)))[0]
-            bound_min[0]=-5
-            bound_max[0]=5
-            bound_min[1]=-10
-            bound_max[1]=10
-            for i in range(len(a0)-2-1):
-                if i%3 == 0:
-                    bound_min[i+2]=-np.pi
-                    bound_max[i+2]=np.pi
-                if i%3 == 1:
-                    bound_min[i+2]=-5
-                    bound_max[i+2]=5
-                if i%3 == 2:
-                    bound_min[i+2]=-10
-                    bound_max[i+2]=10
-            bound_min[-1]=-np.pi
-            bound_max[-1]=np.pi
-            """
-            
-            start_time = time.time()
-            # res = sp.optimize.minimize(self.__fun_static_optim, a0,args=(F_perp_ext,dl_F_perp_ext),method='Nelder-Mead')
-            res = sp.optimize.least_squares(self.__fun_static_optim,a0,args=(F_perp_ext,dl_F_perp_ext),
-                                            ftol=1e-8,gtol=1e-8,xtol=1e-20,max_nfev=1e6,method='trf')
-            end_time = time.time()-start_time
-            print("status: %s"%(res.message))
-            print("status: %s"%(res.status))
-            print("evaluation time:%s s" % (round(end_time,0)))
-            print("time on 1 iter:%s ms" % (round(1e3*end_time/self.iteration_num,0)))  
-            print("iteration number:%s" % (self.iteration_num))
+            # self.a_approx = np.zeros((1,6*self.Ne))[0]
+            # self.a_approx[0] = 0
+            # self.a_approx[1:6] = self.a_diff[:5]
+            # for i in range(self.Ne-1):
+            #     if i==self.Ne-2:
+            #         self.a_approx[6*(i+1):6*(i+1)+3] = self.a_approx[6*(i+1)-3:6*(i+1)]
+            #         self.a_approx[6*(i+1)+3:6*(i+2)] = np.concatenate([ self.a_diff[5+3*i:],np.array([0,0])])
+            #     else:
+            #         self.a_approx[6*(i+1):6*(i+1)+3] = self.a_approx[6*(i+1)-3:6*(i+1)]
+            #         self.a_approx[6*(i+1)+3:6*(i+2)] = self.a_diff[5+3*i:8+3*i]
 
-            self.a_diff = np.ones((1,6+3*(self.Ne-1)-1-2))[0]
-            for i in range(6+3*(self.Ne-1)-1-2):
-                self.a_diff[i] = res.x[i]
-
-            self.a_approx = np.zeros((1,6*self.Ne))[0]
-            self.a_approx[0] = 0
-            self.a_approx[1:6] = self.a_diff[:5]
-            for i in range(self.Ne-1):
-                if i==self.Ne-2:
-                    self.a_approx[6*(i+1):6*(i+1)+3] = self.a_approx[6*(i+1)-3:6*(i+1)]
-                    self.a_approx[6*(i+1)+3:6*(i+2)] = np.concatenate([ self.a_diff[5+3*i:],np.array([0,0])])
-                else:
-                    self.a_approx[6*(i+1):6*(i+1)+3] = self.a_approx[6*(i+1)-3:6*(i+1)]
-                    self.a_approx[6*(i+1)+3:6*(i+2)] = self.a_diff[5+3*i:8+3*i]
-
-            print("cost = {}".format(res.cost))  
+            # print("cost = {}".format(res.cost))  
               
             """
             'L-BFGS-B' work long
