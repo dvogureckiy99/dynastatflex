@@ -1,0 +1,14 @@
+
+name: fleGODynamic
+
+dependencies:
+- ipykernel
+- ipython
+- pip
+- python=3.11
+- sympy
+- numpy=1.26
+- scipy
+- matplotlib
+- numba=0.58.1
+

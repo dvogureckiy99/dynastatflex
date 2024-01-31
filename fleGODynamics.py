@@ -6,8 +6,16 @@ import scipy as sp
 import matplotlib.pyplot as plt
 import time
 import bisect
+import os 
 
 # https://www.geeksforgeeks.org/inheritance-in-python-inner-class/
+
+"""
+Idea:
+1. add saving files with different FEM approximation and Ldivide settings in files.
+For using it next time.
+2. Add checking matching between Ldivide and FEM approx parameters in preparation algorithm for static calc.
+"""
 
 class Flex_beam(object):
     def __init__(self,L=0.06,E=2.95*1e9,h=0.01,w=0.001):
@@ -54,7 +62,7 @@ class Flex_beam(object):
         except:
             raise ValueError("First call Create_Simulation method!") from None
         if disp:
-            display(Math("\\mathcal{N}_{0,\dots,Ne}=\\text{"+np.str_(self.Ldl)+" [mm]}"))   
+            display(Math("\mathcal{N}_{0,\dots,Ne}=\text{"+np.str_(self.Ldl)+" [mm]}"))   
             
     class Simulating(object):
         def __init__(self,L,E,h,w,rho,mult,disp): # inheritance of parameters by a child class
@@ -245,8 +253,9 @@ class Flex_beam(object):
             # cost=np.sum((M1*self.c1+self.int_psi_sum_F_ext)**2+()**2)
             print("iter = {}\ncost={}".format(self.iteration_num,np.sum(cost)))
             return cost
+            
 
-        def static(self,F_perp_ext=1,dl_F_perp_ext=1e-2,a0=[1,2]):
+        def static_preparing(self,disp=True):
             try:
                 self.Ne
                 self.dl
@@ -259,29 +268,89 @@ class Flex_beam(object):
                 self.N
             except:
                 raise ValueError("Call Ldivide first!") from None
-            self.c1 = self.E*self.I/(self.rho*self.A)
-            self.EI = self.E*self.I
+            
+            flag_preparing_already_done = 0
+            if os.path.isfile('psi_matrix_and_vectors.npz'):
+                flag_preparing_already_done = 1
 
-            # preparing for fast computation next
-            self.psi = np.zeros((self.N,6*self.Ne))
-            self.dpsi = np.zeros((self.N,6*self.Ne))
-            self.ddpsi = np.zeros((self.N,6*self.Ne))
-            self.dddpsi = np.zeros((self.N,6*self.Ne))
-            self.ddddpsi = np.zeros((self.N,6*self.Ne))
-            for (l,i) in zip(self.l_all_true,range(self.N)):  
-                self.psi[i] = self.__get_psi(l)
-                self.dpsi[i] = self.__get_dpsi(l)
-                self.ddpsi[i] =self.__get_ddpsi(l)
-                self.dddpsi[i] =self.__get_dddpsi(l)
-                self.ddddpsi[i] =self.__get_ddddpsi(l)
+            if flag_preparing_already_done:
+                print("Found numpy zip archive with preparing data: psi vectors, F matrix. Checking if we can use it!")
+                with np.load('psi_matrix_and_vectors.npz') as npzfile: # for closign after using it
+                    self.c1 = npzfile['c1']
+                    self.EI = npzfile['EI']
+                    self.psi = npzfile['psi']
+                    self.dpsi = npzfile['dpsi']
+                    self.ddpsi = npzfile['ddpsi']
+                    self.dddpsi = npzfile['dddpsi']
+                    self.ddddpsi = npzfile['ddddpsi']
+                    self.F = npzfile['F']
+                    N = npzfile['N']
+                    Ne = npzfile['Ne']
+                    dl = npzfile['dl']
+                    step = npzfile['step']
+                del npzfile
+            
+            if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl) or (not step==self.step):
+                if flag_preparing_already_done:
+                    print("Checking finished. We cannot use this data as FEM or/and Ldivide parameters mismatch. Creating new one:")
+                self.c1 = self.E*self.I/(self.rho*self.A)
+                self.EI = self.E*self.I
+                start_time = time.time_ns()
+                time.sleep(0.000001) # sleep 1 us
+                # preparing for fast computation next
+                self.psi = np.zeros((self.N,6*self.Ne))
+                self.dpsi = np.zeros((self.N,6*self.Ne))
+                self.ddpsi = np.zeros((self.N,6*self.Ne))
+                self.dddpsi = np.zeros((self.N,6*self.Ne))
+                self.ddddpsi = np.zeros((self.N,6*self.Ne))
+                for (l,i) in zip(self.l_all_true,range(self.N)):  
+                    self.psi[i] = self.__get_psi(l)
+                    self.dpsi[i] = self.__get_dpsi(l)
+                    self.ddpsi[i] =self.__get_ddpsi(l)
+                    self.dddpsi[i] =self.__get_dddpsi(l)
+                    self.ddddpsi[i] =self.__get_ddddpsi(l)
+                
+                time_psi_calc = time.time_ns()-start_time-1*1e3
+                print("Psi calculation time: %s s" % (round(time_psi_calc*1e-9,3)))
 
-            self.F = np.zeros((6*self.Ne,6*self.Ne))
-            for j in range(6*self.Ne):
-                for i in range(6*self.Ne):
-                    self.F[j][i]= np.sum( np.multiply( self.ddpsi[:,i],self.ddpsi[:,j] )*self.step )
+                self.F = np.zeros((6*self.Ne,6*self.Ne))
+                for j in range(6*self.Ne):
+                    for i in range(6*self.Ne):
+                        self.F[j][i]= np.sum( np.multiply( self.ddpsi[:,i],self.ddpsi[:,j] )*self.step ) +\
+                            self.dddpsi[-1,i]*self.psi[-1,j]-self.dddpsi[0,i]*self.psi[0,j]-\
+                            self.ddpsi[-1,i]*self.dpsi[-1,j]+self.ddpsi[0,i]*self.dpsi[0,j]
+                        
+                time_end = time.time_ns()-start_time-1*1e3
+                if (time_end-time_psi_calc)==0:
+                    print("Psi matrix and vectors calculation time is less then 1 ns")
+                else:
+                    print("Psi matrix and vectors calculation time: %s s" % (round((time_end-time_psi_calc)*1e-9,3)))
+                print("Preparing time: %s s" % (round(time_end*1e-9,3)))
+            
+                np.savez('psi_matrix_and_vectors.npz',psi=self.psi,dpsi=self.dpsi,\
+                     ddpsi=self.ddpsi,dddpsi=self.dddpsi,ddddpsi=self.ddddpsi,F=self.F,\
+                        c1=self.c1,EI=self.EI,\
+                        N=self.N,Ne=self.Ne,step=self.step,dl=self.dl)
+            else:
+                if flag_preparing_already_done:
+                    print("Checking finished. Using loading data")
+            
+            # flag_preparing_already_done = 0
+            # if os.path.isfile('F3.npz'):
+            #     flag_preparing_already_done = 1
 
-            display(Math("\\bm{F}="+self.__bmatrix(self.F)))
+            # if flag_preparing_already_done:
+            #     print("Found numpy zip archive with preparing data: F3. Loading it.")
+            #     with np.load('psi_matrix_and_vectors.npz') as npzfile: # for closign after using it
+            #         self.F3 = npzfile['F3']
+            #     del npzfile
+            # else:
 
+
+            if disp:
+                display(Math("\\bm{F}="+self.__bmatrix(self.F)))
+
+        def static(self,F_perp_ext=1,dl_F_perp_ext=1e-2,a0=[1,2]):
             # # self.psi_sum = np.sum(self.psi,axis=1)
             # # self.dpsi_sum = np.sum(self.dpsi,axis=1)
             # # self.dF_ext_const = F_perp_ext/dl_F_perp_ext/2
@@ -631,7 +700,8 @@ class Flex_beam(object):
                 plt.grid(True)
                 plt.show()
 
-        def phi_approx_preparing(self,der_num=0):
+        def phi_approx_preparing(self):
+            # preparing for fast computation next
             try:
                 self.Ne
                 self.dl
@@ -644,14 +714,46 @@ class Flex_beam(object):
                 self.N
             except:
                 raise ValueError("Call Ldivide first!") from None
-            #preparing 
-            self.psi = np.zeros((self.N,6*self.Ne))
-            self.dpsi = np.zeros((self.N,6*self.Ne))
-            self.ddpsi = np.zeros((self.N,6*self.Ne))
-            for (l,i) in zip(self.l_all_true,range(self.N)):  
-                self.psi[i] = self.__get_psi(l)
-                self.dpsi[i] = self.__get_dpsi(l)
-                self.ddpsi[i] =self.__get_ddpsi(l)
+            
+            flag_preparing_already_done = 0
+            if os.path.isfile('psi_vectors.npz'):
+                flag_preparing_already_done = 1
+
+            if flag_preparing_already_done:
+                print("Found numpy zip archive with preparing data: psi vectors. Checking if we can use it!")
+                with np.load('psi_vectors.npz') as npzfile: # for closign after using it
+                    self.psi = npzfile['psi']
+                    self.dpsi = npzfile['dpsi']
+                    self.ddpsi = npzfile['ddpsi']
+                    N = npzfile['N']
+                    Ne = npzfile['Ne']
+                    dl = npzfile['dl']
+                    step = npzfile['step']
+                del npzfile
+            
+            if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl) or (not step==self.step):
+                if flag_preparing_already_done:
+                    print("Checking finished. We cannot use this data as FEM or/and Ldivide parameters mismatch. Creating new one:")
+                self.c1 = self.E*self.I/(self.rho*self.A)
+                self.EI = self.E*self.I
+                start_time = time.time_ns()
+                time.sleep(0.000001) # sleep 1 us
+                self.psi = np.zeros((self.N,6*self.Ne))
+                self.dpsi = np.zeros((self.N,6*self.Ne))
+                self.ddpsi = np.zeros((self.N,6*self.Ne))
+                for (l,i) in zip(self.l_all_true,range(self.N)):  
+                    self.psi[i] = self.__get_psi(l)
+                    self.dpsi[i] = self.__get_dpsi(l)
+                    self.ddpsi[i] =self.__get_ddpsi(l)
+                time_end = time.time_ns()-start_time-1*1e3
+                print("Preparing time: %s s" % (round(time_end*1e-9,3)))
+
+                np.savez('psi_vectors.npz',psi=self.psi,dpsi=self.dpsi,\
+                     ddpsi=self.ddpsi,N=self.N,Ne=self.Ne,step=self.step,dl=self.dl)
+            else:
+                if flag_preparing_already_done:
+                    print("Checking finished. Using loading data")
+                
 
         def phi_approx(self,disp_time=True,der_num=0):
             """
