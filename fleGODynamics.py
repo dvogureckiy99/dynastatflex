@@ -185,42 +185,22 @@ class Flex_beam(object):
                     a[6*(i+1):6*(i+1)+3] = a[6*(i+1)-3:6*(i+1)]
                     a[6*(i+1)+3:6*(i+2)] = a_diff[5+3*i:8+3*i]
             
-            
-
-            # self.ddphi_appr = np.matmul()
-            # self.dddphi_appr = np.array([])
-            # self.ddddphi_appr = np.array([])
-            # self.cos_phi_appr = np.array([])
-            # self.sin_phi_appr = np.array([])
-            # self.cos_phi_appr = np.append(self.cos_phi_appr,np.cos(self.phi_appr[-1]))
-            # self.sin_phi_appr = np.append(self.sin_phi_appr,np.sin(self.phi_appr[-1]))
-
-            # for x,y constraints
-            # for x 
-            # sin_phi_appr_ddphi_appr = np.multiply(self.sin_phi_appr,self.ddphi_appr)
-            # sin_phi_appr_ddphi_appr_psi_L = sin_phi_appr_ddphi_appr[-1]*self.psi_sum[-1]
-            # sin_phi_appr_ddphi_appr_psi_0 = sin_phi_appr_ddphi_appr[0]*self.psi_sum[0]
-            # M3_x = -np.sum(np.multiply(sin_phi_appr_ddphi_appr,self.dpsi_sum)) + sin_phi_appr_ddphi_appr_psi_L - sin_phi_appr_ddphi_appr_psi_0
-            # for y
-            # cos_phi_appr_ddphi_appr = np.multiply(self.cos_phi_appr,self.ddphi_appr)
-            # cos_phi_appr_ddphi_appr_psi_L = cos_phi_appr_ddphi_appr[-1]*self.psi_sum[-1]
-            # cos_phi_appr_ddphi_appr_psi_0 = cos_phi_appr_ddphi_appr[0]*self.psi_sum[0]
-            # M3_y = np.sum(np.multiply(cos_phi_appr_ddphi_appr,self.dpsi_sum)) - cos_phi_appr_ddphi_appr_psi_L + cos_phi_appr_ddphi_appr_psi_0
-
-            # M1 = -np.sum(np.multiply(self.ddddphi_appr,self.psi_sum))+\
-            #     np.sum(np.multiply(np.multiply(self.dphi_appr**2,self.ddphi_appr),self.psi_sum))
-            
-            # M2 =    self.psi_sum_F_ext_in*self.__delta1((self.L-dl_F_perp_ext)/2)-\
-            #         self.psi_sum_F_ext_out*self.__delta1((self.L+dl_F_perp_ext)/2)
             self.iteration_num += 1   
-            # cost=np.sum((M1*self.c1+M2)**2)
 
             dphi_appr_power3 =  np.power(np.matmul(self.dpsi,a),3)  # [1,N]
+            phi_appr = np.matmul(self.psi,a)  # [1,N]
+            ddphi_appr = np.matmul(self.ddpsi,a)  # [1,N]
+            sinphiappr_ddphiappr = np.multiply(np.sin(phi_appr),ddphi_appr)
+            cosphiappr_ddphiappr = np.multiply(np.cos(phi_appr),ddphi_appr)
+
             cost = np.concatenate( np.matmul(self.F,a)+\
-                                  (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
-                             dphi_appr_power3[self.N]*self.psi[self.N]+dphi_appr_power3[0]*self.psi[0]),\
-                                  ) 
-            print("iter = {}\ncost={}".format(self.iteration_num,np.sum(cost)))
+                                (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
+                            dphi_appr_power3[self.N]*self.psi[self.N]+dphi_appr_power3[0]*self.psi[0]),\
+                                -np.sum(np.multiply(sinphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)+\
+                            sinphiappr_ddphiappr[self.N]*self.psi[self.N]-sinphiappr_ddphiappr[0]*self.psi[0],\
+                                np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
+                            cosphiappr_ddphiappr[self.N]*self.psi[self.N]+cosphiappr_ddphiappr[0]*self.psi[0]) # 3*6*Ne
+            print("iter={},cost= {}".format(self.iteration_num,np.sum(cost)))
             return cost
             
 
