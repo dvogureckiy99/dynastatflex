@@ -261,23 +261,21 @@ class Flex_beam(object):
                 raise ValueError("Call Ldivide first!") from None
             self.c1 = self.E*self.I/(self.rho*self.dl*self.A)
             self.EI = self.E*self.I
+
             # preparing for fast computation next
-            self.e = np.int32(self.l_all_true)
-            for i in range(self.N):
-                self.e[i] = int(self.l_all_true[i]//self.dl)
-            self.e[-1] = int(self.Ne - 1)
-            self.psi = np.zeros((self.N,6))
-            self.dpsi = np.zeros((self.N,6))
-            self.ddpsi = np.zeros((self.N,6))
-            # self.dddpsi = np.zeros((self.N,6))
-            self.ddddpsi = np.zeros((self.N,6))
-            for (l,e,i) in zip(self.l_all_true,self.e,range(self.N)):  
-                for m in range(6): 
-                    self.psi[i,m] = self.__get_psi(m,e,l)
-                    self.dpsi[i,m] = self.__get_dpsi(m,e,l)
-                    self.ddpsi[i,m] =self.__get_ddpsi(m,e,l)
-                    # self.dddpsi[i,m] =self.__get_ddpsi(m,e,l)
-                    self.ddddpsi[i,m] =self.__get_ddddpsi(m,e,l)
+            self.psi = np.zeros((self.N,6*self.Ne))
+            self.dpsi = np.zeros((self.N,6*self.Ne))
+            self.ddpsi = np.zeros((self.N,6*self.Ne))
+            self.dddpsi = np.zeros((self.N,6*self.Ne))
+            self.ddddpsi = np.zeros((self.N,6*self.Ne))
+            for (l,i) in zip(self.l_all_true,range(self.N)):  
+                self.psi[i] = self.__get_psi(l)
+                self.dpsi[i] = self.__get_dpsi(l)
+                self.ddpsi[i] =self.__get_ddpsi(l)
+                self.dddpsi[i] =self.__get_dddpsi(l)
+                self.ddddpsi[i] =self.__get_ddddpsi(l)
+
+            
 
             self.psi_sum = np.sum(self.psi,axis=1)
             self.dpsi_sum = np.sum(self.dpsi,axis=1)
@@ -301,24 +299,27 @@ class Flex_beam(object):
                 #                -0.24857425,0.25505484,0.99999997,-0.24857546,0.25505483,1.00000002,-0.24857545,0.25505484,1.00000026,
                 #                -0.24857441,0.25505484,0.99994755,-0.24858544,0.25505376,0.99399755,-0.24949161,0.25491721,1.20695856,
                 #                -0.1501284,0.26941578,2.049172,1.17788224,0.71017331])
-            # bound_min = np.zeros((1,len(a0)))[0]
-            # bound_max = np.zeros((1,len(a0)))[0]
-            # bound_min[0]=-5
-            # bound_max[0]=5
-            # bound_min[1]=-10
-            # bound_max[1]=10
-            # for i in range(len(a0)-2-1):
-            #     if i%3 == 0:
-            #         bound_min[i+2]=-np.pi
-            #         bound_max[i+2]=np.pi
-            #     if i%3 == 1:
-            #         bound_min[i+2]=-5
-            #         bound_max[i+2]=5
-            #     if i%3 == 2:
-            #         bound_min[i+2]=-10
-            #         bound_max[i+2]=10
-            # bound_min[-1]=-np.pi
-            # bound_max[-1]=np.pi
+            """
+            bound_min = np.zeros((1,len(a0)))[0]
+            bound_max = np.zeros((1,len(a0)))[0]
+            bound_min[0]=-5
+            bound_max[0]=5
+            bound_min[1]=-10
+            bound_max[1]=10
+            for i in range(len(a0)-2-1):
+                if i%3 == 0:
+                    bound_min[i+2]=-np.pi
+                    bound_max[i+2]=np.pi
+                if i%3 == 1:
+                    bound_min[i+2]=-5
+                    bound_max[i+2]=5
+                if i%3 == 2:
+                    bound_min[i+2]=-10
+                    bound_max[i+2]=10
+            bound_min[-1]=-np.pi
+            bound_max[-1]=np.pi
+            """
+            
             start_time = time.time()
             # res = sp.optimize.minimize(self.__fun_static_optim, a0,args=(F_perp_ext,dl_F_perp_ext),method='Nelder-Mead')
             res = sp.optimize.least_squares(self.__fun_static_optim,a0,args=(F_perp_ext,dl_F_perp_ext),
