@@ -12,9 +12,12 @@ import os
 
 """
 Idea:
-1. add saving files with different FEM approximation and Ldivide settings in files.
-For using it next time.
-2. Add checking matching between Ldivide and FEM approx parameters in preparation algorithm for static calc.
+1. add saving files with parameters with different names _1,_2,_3 e.c. with checking
+ if this number file_name already exist.
+2. when loading: open in sequence files until file with appropriate FEM and Ldivide parameters will be found.
+    2.1 discover all files in root folder and finding with right name
+    2.2 checking all files with different names _1,_2,_3 e.c. until file 
+    with appropriate FEM and Ldivide parameters will be found
 """
 
 class Flex_beam(object):
@@ -144,7 +147,7 @@ class Flex_beam(object):
             if len(a.shape) > 2:
                 raise ValueError('bmatrix can at most display two dimensions')
             a = np.round(a,3)
-            lines = str(a).replace('\n  ', ' ').replace('[', '').replace(']', '').splitlines()
+            lines = np.array2string(a,formatter={'float':lambda x: "%.4f" % x}).replace('\n  ', ' ').replace('[', '').replace(']', '').splitlines()
             rv = [r'\begin{bmatrix}']
             rv += ['  ' + ' & '.join(l.split()) + r'\\' for l in lines]
             rv +=  [r'\end{bmatrix}']
@@ -173,10 +176,6 @@ class Flex_beam(object):
             # preparing a vector for each FE, cause a_diff contain only unique values 
             a = np.zeros((1,6*self.Ne))[0]
             a[0] = 0
-            # a[:6] = a_diff[:6]
-            # for i in range(self.Ne-1):
-            #     a[6*(i+1):6*(i+1)+3] = a[6*(i+1)-3:6*(i+1)]
-            #     a[6*(i+1)+3:6*(i+2)] = a_diff[6+3*i:9+3*i]
             a[1:6] = a_diff[:5]
             for i in range(self.Ne-1):
                 if i==self.Ne-2:
@@ -186,61 +185,28 @@ class Flex_beam(object):
                     a[6*(i+1):6*(i+1)+3] = a[6*(i+1)-3:6*(i+1)]
                     a[6*(i+1)+3:6*(i+2)] = a_diff[5+3*i:8+3*i]
             
-            self.phi_appr = np.array([])
-            self.dphi_appr = np.array([])
-            self.ddphi_appr = np.array([])
+            dphi_appr = np.matmul(self.dpsi,a) # [N,1]
+            
+            
+            # self.ddphi_appr = np.matmul()
             # self.dddphi_appr = np.array([])
-            self.ddddphi_appr = np.array([])
-            self.cos_phi_appr = np.array([])
-            self.sin_phi_appr = np.array([])
-            for i in range(self.N):
-                self.phi_appr = np.append(self.phi_appr,np.dot(self.psi[i],a[6*self.e[i]:6*(self.e[i]+1)]))
-                self.dphi_appr = np.append(self.dphi_appr,np.dot(self.dpsi[i],a[6*self.e[i]:6*(self.e[i]+1)]))
-                self.ddphi_appr = np.append(self.ddphi_appr,np.dot(self.ddpsi[i],a[6*self.e[i]:6*(self.e[i]+1)]))
-                # self.dddphi_appr = np.append(self.dddphi_appr,np.dot(self.dddpsi[i],a[6*self.e[i]:6*(self.e[i]+1)]))
-                self.ddddphi_appr = np.append(self.ddddphi_appr,np.dot(self.ddddpsi[i],a[6*self.e[i]:6*(self.e[i]+1)]))
-                # for x,y constraints
-                self.cos_phi_appr = np.append(self.cos_phi_appr,np.cos(self.phi_appr[-1]))
-                self.sin_phi_appr = np.append(self.sin_phi_appr,np.sin(self.phi_appr[-1]))
+            # self.ddddphi_appr = np.array([])
+            # self.cos_phi_appr = np.array([])
+            # self.sin_phi_appr = np.array([])
+            # self.cos_phi_appr = np.append(self.cos_phi_appr,np.cos(self.phi_appr[-1]))
+            # self.sin_phi_appr = np.append(self.sin_phi_appr,np.sin(self.phi_appr[-1]))
+
             # for x,y constraints
             # for x 
-            sin_phi_appr_ddphi_appr = np.multiply(self.sin_phi_appr,self.ddphi_appr)
-            sin_phi_appr_ddphi_appr_psi_L = sin_phi_appr_ddphi_appr[-1]*self.psi_sum[-1]
-            sin_phi_appr_ddphi_appr_psi_0 = sin_phi_appr_ddphi_appr[0]*self.psi_sum[0]
-            M3_x = -np.sum(np.multiply(sin_phi_appr_ddphi_appr,self.dpsi_sum)) + sin_phi_appr_ddphi_appr_psi_L - sin_phi_appr_ddphi_appr_psi_0
+            # sin_phi_appr_ddphi_appr = np.multiply(self.sin_phi_appr,self.ddphi_appr)
+            # sin_phi_appr_ddphi_appr_psi_L = sin_phi_appr_ddphi_appr[-1]*self.psi_sum[-1]
+            # sin_phi_appr_ddphi_appr_psi_0 = sin_phi_appr_ddphi_appr[0]*self.psi_sum[0]
+            # M3_x = -np.sum(np.multiply(sin_phi_appr_ddphi_appr,self.dpsi_sum)) + sin_phi_appr_ddphi_appr_psi_L - sin_phi_appr_ddphi_appr_psi_0
             # for y
-            cos_phi_appr_ddphi_appr = np.multiply(self.cos_phi_appr,self.ddphi_appr)
-            cos_phi_appr_ddphi_appr_psi_L = cos_phi_appr_ddphi_appr[-1]*self.psi_sum[-1]
-            cos_phi_appr_ddphi_appr_psi_0 = cos_phi_appr_ddphi_appr[0]*self.psi_sum[0]
-            M3_y = np.sum(np.multiply(cos_phi_appr_ddphi_appr,self.dpsi_sum)) - cos_phi_appr_ddphi_appr_psi_L + cos_phi_appr_ddphi_appr_psi_0
-
-            # M32_x = 
-            # self.int_cumsum_x = np.cumsum(self.cos_phi_appr)
-            # self.int_cumsum_y = np.cumsum(self.sin_phi_appr)
-            # self.ddx_sum = np.multiply(-self.sin_phi_appr,self.dphi_appr) 
-            # self.ddx_sum = np.multiply(self.cos_phi_appr,self.dphi_appr) 
-            # self.a_x = np.array([])
-            # self.a_y = np.array([])
-            # for m in range(self.Ne*6):
-            #     if m%6 == 0:
-            #         self.a_x = np.append(self.a_x, self.__get_x_approx(self.Ldl[(m)//6]) )
-            #         self.a_y = np.append(self.a_y, self.__get_y_approx(self.Ldl[(m)//6]) )
-            #     if m%6 == 1:
-            #         self.a_x = np.append(self.a_x, self.__get_dx_approx(self.Ldl[(m)//6]) )
-            #         self.a_y = np.append(self.a_y, self.__get_dy_approx(self.Ldl[(m)//6]) )
-            #     if m%6 == 2:
-            #         self.a_x = np.append(self.a_x, self.__get_ddx_approx(self.Ldl[(m)//6]) )
-            #         self.a_y = np.append(self.a_y, self.__get_ddy_approx(self.Ldl[(m)//6]) )
-            #     if m%6 == 3:
-            #         self.a_x = np.append(self.a_x, self.__get_x_approx(self.Ldl[(m)//6+1]) )
-            #         self.a_y = np.append(self.a_y, self.__get_y_approx(self.Ldl[(m)//6+1]) )
-            #     if m%6 == 4:
-            #         self.a_x = np.append(self.a_x, self.__get_dx_approx(self.Ldl[(m)//6+1]) )
-            #         self.a_y = np.append(self.a_y, self.__get_dy_approx(self.Ldl[(m)//6+1]) )
-            #     if m%6 == 5:
-            #         self.a_x = np.append(self.a_x, self.__get_ddx_approx(self.Ldl[(m)//6+1]) )
-            #         self.a_y = np.append(self.a_y, self.__get_ddy_approx(self.Ldl[(m)//6+1]) )
-            
+            # cos_phi_appr_ddphi_appr = np.multiply(self.cos_phi_appr,self.ddphi_appr)
+            # cos_phi_appr_ddphi_appr_psi_L = cos_phi_appr_ddphi_appr[-1]*self.psi_sum[-1]
+            # cos_phi_appr_ddphi_appr_psi_0 = cos_phi_appr_ddphi_appr[0]*self.psi_sum[0]
+            # M3_y = np.sum(np.multiply(cos_phi_appr_ddphi_appr,self.dpsi_sum)) - cos_phi_appr_ddphi_appr_psi_L + cos_phi_appr_ddphi_appr_psi_0
 
             M1 = -np.sum(np.multiply(self.ddddphi_appr,self.psi_sum))+\
                 np.sum(np.multiply(np.multiply(self.dphi_appr**2,self.ddphi_appr),self.psi_sum))
@@ -274,7 +240,7 @@ class Flex_beam(object):
                 flag_preparing_already_done = 1
 
             if flag_preparing_already_done:
-                print("Found numpy zip archive with preparing data: psi vectors, F matrix. Checking if we can use it!")
+                print("Found numpy zip archive with preparing data: psi vectors, F,M matrix. Checking if we can use it!")
                 with np.load('psi_matrix_and_vectors.npz') as npzfile: # for closign after using it
                     self.c1 = npzfile['c1']
                     self.EI = npzfile['EI']
@@ -284,6 +250,7 @@ class Flex_beam(object):
                     self.dddpsi = npzfile['dddpsi']
                     self.ddddpsi = npzfile['ddddpsi']
                     self.F = npzfile['F']
+                    self.M = npzfile['M']
                     N = npzfile['N']
                     Ne = npzfile['Ne']
                     dl = npzfile['dl']
@@ -319,7 +286,12 @@ class Flex_beam(object):
                         self.F[j][i]= np.sum( np.multiply( self.ddpsi[:,i],self.ddpsi[:,j] )*self.step ) +\
                             self.dddpsi[-1,i]*self.psi[-1,j]-self.dddpsi[0,i]*self.psi[0,j]-\
                             self.ddpsi[-1,i]*self.dpsi[-1,j]+self.ddpsi[0,i]*self.dpsi[0,j]
-                        
+                
+                self.M = np.zeros((6*self.Ne,6*self.Ne))
+                for j in range(6*self.Ne):
+                    for i in range(6*self.Ne):
+                        self.M[j][i]= np.sum( np.multiply( self.psi[:,i],self.psi[:,j] )*self.step )
+
                 time_end = time.time_ns()-start_time-1*1e3
                 if (time_end-time_psi_calc)==0:
                     print("Psi matrix and vectors calculation time is less then 1 ns")
@@ -329,26 +301,15 @@ class Flex_beam(object):
             
                 np.savez('psi_matrix_and_vectors.npz',psi=self.psi,dpsi=self.dpsi,\
                      ddpsi=self.ddpsi,dddpsi=self.dddpsi,ddddpsi=self.ddddpsi,F=self.F,\
-                        c1=self.c1,EI=self.EI,\
+                        c1=self.c1,EI=self.EI,M=self.M,\
                         N=self.N,Ne=self.Ne,step=self.step,dl=self.dl)
             else:
                 if flag_preparing_already_done:
-                    print("Checking finished. Using loading data")
-            
-            # flag_preparing_already_done = 0
-            # if os.path.isfile('F3.npz'):
-            #     flag_preparing_already_done = 1
-
-            # if flag_preparing_already_done:
-            #     print("Found numpy zip archive with preparing data: F3. Loading it.")
-            #     with np.load('psi_matrix_and_vectors.npz') as npzfile: # for closign after using it
-            #         self.F3 = npzfile['F3']
-            #     del npzfile
-            # else:
-
+                    print("Checking finished. Using loaded data")
 
             if disp:
                 display(Math("\\bm{F}="+self.__bmatrix(self.F)))
+                display(Math("\\bm{M}="+self.__bmatrix(self.M)))
 
         def static(self,F_perp_ext=1,dl_F_perp_ext=1e-2,a0=[1,2]):
             # # self.psi_sum = np.sum(self.psi,axis=1)
@@ -752,7 +713,7 @@ class Flex_beam(object):
                      ddpsi=self.ddpsi,N=self.N,Ne=self.Ne,step=self.step,dl=self.dl)
             else:
                 if flag_preparing_already_done:
-                    print("Checking finished. Using loading data")
+                    print("Checking finished. Using loaded data")
                 
 
         def phi_approx(self,disp_time=True,der_num=0):
