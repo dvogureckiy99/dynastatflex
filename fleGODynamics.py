@@ -694,55 +694,36 @@ class Flex_beam(object):
                     print("evaluation time: %s ms" % (round(end_time*1e-6,3)))
                     print("time for 1 step: %s us" % (round(1e-3*end_time/self.N,3)))
             elif der_num == 1:
-                #preparing
-                self.e = np.int32(self.l_all_true)
-                for i in range(self.N):
-                    self.e[i] = int(self.l_all_true[i]//self.dl)
-                self.e[-1] = int(self.Ne - 1)
-                phi = np.zeros((len(self.l_all_true),6))
-                dphi = np.zeros((len(self.l_all_true),6))
-                for (l,e,i) in zip(self.l_all_true,self.e,range(len(self.l_all_true))):  
-                    for m in range(6): 
-                        phi[i][m] = self.__get_psi(m,e,l)
-                        dphi[i][m] = self.__get_dpsi(m,e,l)
                 #evaluation
-                start_time = datetime.datetime.now()
-                x = np.array([0])
-                y = np.array([0])
-                phi_appr = np.array([])
-                dphi_appr = np.array([])
-                for i in range(len(phi)):
-                    phi_appr = np.append(phi_appr,np.dot(phi[i],self.a[6*self.e[i]:6*(self.e[i]+1)]))
-                    dphi_appr = np.append(dphi_appr,np.dot(dphi[i],self.a[6*self.e[i]:6*(self.e[i]+1)]))
-                    if i:
-                        x = np.append(x,np.cos(phi_appr[-1])*self.step+x[-1])
-                        y = np.append(y,np.sin(phi_appr[-1])*self.step+y[-1])
-                end_time = ((time.time()-start_time)%1) *1000 + ((time.time()-start_time)%1000)*1e3 
-                print("evaluation time:%s ms" % (round(end_time,0)))
-                print("time for 1 step:%s us" % (round(1e3*end_time/len(self.l_all_true),0)))
+                start_time = time.time_ns()
+                time.sleep(0.000001) # sleep 1 us
+                phi_appr = np.matmul(self.psi,self.a)
+                dphi_appr = np.matmul(self.dpsi,self.a)
+                cos_phi_appr = np.cos(phi_appr)
+                sin_phi_appr = np.sin(phi_appr)
+                x = -self.step+np.cumsum(cos_phi_appr)*self.step
+                y = np.cumsum(sin_phi_appr)*self.step
+                end_time = time.time_ns()-start_time-1*1e3
+                if end_time==0:
+                    print("evaluation time is less then 1 ns")
+                else:
+                    print("evaluation time: %s ms" % (round(end_time*1e-6,3)))
+                    print("time for 1 step: %s us" % (round(1e-3*end_time/self.N,3)))
             elif der_num == 0:
-                #preparing
-                self.e = np.int32(self.l_all_true)
-                for i in range(len(self.l_all_true)):
-                    self.e[i] = int(self.l_all_true[i]//self.dl)
-                self.e[-1] = int(self.Ne - 1)
-                phi = np.zeros((len(self.l_all_true),6))
-                for (l,e,i) in zip(self.l_all_true,self.e,range(len(self.l_all_true))):  
-                    for m in range(6): 
-                        phi[i][m] = self.__get_psi(m,e,l)
                 #evaluation
-                start_time = datetime.datetime.now()
-                x = np.array([0])
-                y = np.array([0])
-                phi_appr = np.array([])
-                for i in range(len(phi)):
-                    phi_appr = np.append(phi_appr,np.dot(phi[i],self.a[6*self.e[i]:6*(self.e[i]+1)]))
-                    if i:
-                        x = np.append(x,np.cos(phi_appr[-1])*self.step+x[-1])
-                        y = np.append(y,np.sin(phi_appr[-1])*self.step+y[-1])
-                end_time = ((datetime.datetime.now()-start_time)%1) *1000 + ((datetime.datetime.now()-start_time)%1000)*1e3 
-                print("evaluation time:%s ms" % (round(end_time,0)))
-                print("time for 1 step:%s us" % (round(1e3*end_time/len(self.l_all_true),0)))
+                start_time = time.time_ns()
+                time.sleep(0.000001) # sleep 1 us
+                phi_appr = np.matmul(self.psi,self.a)
+                cos_phi_appr = np.cos(phi_appr)
+                sin_phi_appr = np.sin(phi_appr)
+                x = -self.step+np.cumsum(cos_phi_appr)*self.step
+                y = np.cumsum(sin_phi_appr)*self.step
+                end_time = time.time_ns()-start_time-1*1e3
+                if end_time==0:
+                    print("evaluation time is less then 1 ns")
+                else:
+                    print("evaluation time: %s ms" % (round(end_time*1e-6,3)))
+                    print("time for 1 step: %s us" % (round(1e-3*end_time/self.N,3)))
 
             plt.subplots(2,2,figsize = (20,8))
             plt.subplot(221)
@@ -768,27 +749,27 @@ class Flex_beam(object):
             plt.legend(fontsize="15",loc='best')
             plt.title("x,y approx and true")
             plt.subplot(223)
+            labels = ['$\\frac{\partial \\varphi_{true} }{\partial l}$','$\\frac{\partial\\varphi_{approx}}{\partial l}$']
+            colours = ['b','r']
             if der_num == 1 or der_num == 2:
-                labels = ['$\\frac{\partial \\varphi_{true} }{\partial l}$','$\\frac{\partial\\varphi_{approx}}{\partial l}$']
-                colours = ['b','r']
                 plt.plot(self.l_all_true,dphi_appr,label=labels[1],color=colours[1])
                 if not flag_a_approx_is:
                     plt.plot(self.l_all_true,self.dphi_true,"--",label=labels[0],color=colours[0])
-                plt.grid(True)
-                plt.xlabel("$l$ [mm]")
-                plt.ylabel("$\\frac{\partial\\varphi(l,t=0)}{\partial l}$")
-                plt.legend(fontsize="15",loc='best')
-                plt.title("dphi approx and true")
+            plt.grid(True)
+            plt.xlabel("$l$ [mm]")
+            plt.ylabel("$\\frac{\partial\\varphi(l,t=0)}{\partial l}$")
+            plt.legend(fontsize="15",loc='best')
+            plt.title("dphi approx and true")
             plt.subplot(224)
+            labels = ['$\\frac{\partial\\varphi^2_{true}}{\partial l^2}$','$\\frac{\partial\\varphi^2_{approx}}{\partial l^2}$']
+            colours = ['b','r']
             if der_num == 2:
-                labels = ['$\\frac{\partial\\varphi^2_{true}}{\partial l^2}$','$\\frac{\partial\\varphi^2_{approx}}{\partial l^2}$']
-                colours = ['b','r']
                 plt.plot(self.l_all_true/self.mult,ddphi_appr,label=labels[1],color=colours[1])
                 if not flag_a_approx_is:
                     plt.plot(self.l_all_true/self.mult,self.ddphi_true,"--",label=labels[0],color=colours[0])
-                plt.grid(True)
-                plt.xlabel("$l$ [mm]")
-                plt.ylabel("$\\frac{\partial\\varphi^2(l,t=0)}{\partial l^2}$")
-                plt.legend(fontsize="15",loc='best')
-                plt.title("ddphi approx and true")
+            plt.grid(True)
+            plt.xlabel("$l$ [mm]")
+            plt.ylabel("$\\frac{\partial\\varphi^2(l,t=0)}{\partial l^2}$")
+            plt.legend(fontsize="15",loc='best')
+            plt.title("ddphi approx and true")
             plt.show()
