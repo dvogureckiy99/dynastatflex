@@ -185,9 +185,8 @@ class Flex_beam(object):
                     a[6*(i+1):6*(i+1)+3] = a[6*(i+1)-3:6*(i+1)]
                     a[6*(i+1)+3:6*(i+2)] = a_diff[5+3*i:8+3*i]
             
-            dphi_appr = np.matmul(self.dpsi,a) # [N,1]
             
-            
+
             # self.ddphi_appr = np.matmul()
             # self.dddphi_appr = np.array([])
             # self.ddddphi_appr = np.array([])
@@ -208,15 +207,19 @@ class Flex_beam(object):
             # cos_phi_appr_ddphi_appr_psi_0 = cos_phi_appr_ddphi_appr[0]*self.psi_sum[0]
             # M3_y = np.sum(np.multiply(cos_phi_appr_ddphi_appr,self.dpsi_sum)) - cos_phi_appr_ddphi_appr_psi_L + cos_phi_appr_ddphi_appr_psi_0
 
-            M1 = -np.sum(np.multiply(self.ddddphi_appr,self.psi_sum))+\
-                np.sum(np.multiply(np.multiply(self.dphi_appr**2,self.ddphi_appr),self.psi_sum))
+            # M1 = -np.sum(np.multiply(self.ddddphi_appr,self.psi_sum))+\
+            #     np.sum(np.multiply(np.multiply(self.dphi_appr**2,self.ddphi_appr),self.psi_sum))
             
             # M2 =    self.psi_sum_F_ext_in*self.__delta1((self.L-dl_F_perp_ext)/2)-\
             #         self.psi_sum_F_ext_out*self.__delta1((self.L+dl_F_perp_ext)/2)
             self.iteration_num += 1   
             # cost=np.sum((M1*self.c1+M2)**2)
-            cost = np.array([M1*self.EI+self.int_psi_dF_ext,M3_x,M3_y])
-            # cost=np.sum((M1*self.c1+self.int_psi_sum_F_ext)**2+()**2)
+
+            dphi_appr_power3 =  np.power(np.matmul(self.dpsi,a),3)  # [1,N]
+            cost = np.concatenate( np.matmul(self.F,a)+\
+                                  (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
+                             dphi_appr_power3[self.N]*self.psi[self.N]+dphi_appr_power3[0]*self.psi[0]),\
+                                  ) 
             print("iter = {}\ncost={}".format(self.iteration_num,np.sum(cost)))
             return cost
             
