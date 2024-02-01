@@ -36,6 +36,8 @@ Problems:ы
         4.6.2 Trying solve it: delete Fext at all ---> although a little bit worser, but now so warse as in 4.4
         4.6.3 With large force something goes wrong.
         4.6.4 with different sign something goes wrong
+    4.7 Size of f3 reduced to the form as in the article exactly.
+        4.7.1 now sign of Fext change the direction of bending                                          ^^^^^^^^^^^11111^^^^       
 """
 
 class Flex_beam(object):
@@ -200,8 +202,8 @@ class Flex_beam(object):
             self.iteration_num += 1   
 
             dphi_appr_power3 =  np.power(np.matmul(self.dpsi,a),3)  # [1,N]
-            phi_appr = np.matmul(self.psi,a)  # [1,N]
-            ddphi_appr = np.matmul(self.ddpsi,a)  # [1,N]
+            phi_appr = np.matmul(self.psi[:self.ind_N2],a)  # [1,N]
+            ddphi_appr = np.matmul(self.ddpsi[:self.ind_N2],a)  # [1,N]
             sinphiappr_ddphiappr = np.multiply(np.sin(phi_appr),ddphi_appr)
             cosphiappr_ddphiappr = np.multiply(np.cos(phi_appr),ddphi_appr)
 
@@ -209,12 +211,12 @@ class Flex_beam(object):
             cost = np.concatenate([ self.dFext-self.EI*(np.matmul(self.F,a)+\
                                 (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
                             dphi_appr_power3[int(self.N-1)]*self.psi[int(self.N-1)]+dphi_appr_power3[0]*self.psi[0])),\
-                                self.Fext+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)+\
+                                self.Fext[:self.ind_N2]+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr.reshape(self.ind_N2,1),self.dpsi[:self.ind_N2])*self.step,axis=0)),\
                                 # self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)+\
-                            sinphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]-sinphiappr_ddphiappr[0]*self.psi[0]),\
-                                self.Fext+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
+                            # sinphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]-sinphiappr_ddphiappr[0]*self.psi[0]),\
+                                self.Fext[:self.ind_N2]+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.ind_N2,1),self.dpsi[:self.ind_N2])*self.step,axis=0)) ])
                                 # self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
-                            cosphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]+cosphiappr_ddphiappr[0]*self.psi[0]) ]) # 3*6*Ne
+                            # cosphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]+cosphiappr_ddphiappr[0]*self.psi[0]) ]) # 3*6*Ne
             # cost = np.sum(np.power(cost,2))
             print("iter={},cost= {}".format(self.iteration_num,cost[0]))
             # print("iter={}".format(self.iteration_num))
@@ -247,6 +249,7 @@ class Flex_beam(object):
                 raise ValueError("Call Ldivide first!") from None
             self.Fext_point = Fext
             self.l_Fext = l_Fext
+            self.ind_N2 = self.__search_index(self.l_all_true,self.Ldl[2])+1
 
             flag_preparing_already_done = 0
             if os.path.isfile('psi_matrix_and_vectors.npz'):
