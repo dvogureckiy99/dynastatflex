@@ -45,6 +45,7 @@ Problems:ы
           visually quality of line improved 
             4.7.4.1 sign change this led to not only a change in the bending direction, but also a qualitatively different bend 
         4.7.5 f3 made exactly as in article with j=3. ---> res cost =31, visually quality of beam improved very much
+            4.7.5.1 now when chenging sign of Fext beam bend exactly symmetrically
 """
 
 class Flex_beam(object):
