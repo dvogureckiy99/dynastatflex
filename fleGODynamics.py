@@ -350,67 +350,97 @@ class Flex_beam(object):
                 display(Math("\\bm{M}="+self.__bmatrix(self.M)))
 
         def static(self,a0=[1,2]):
-            self.iteration_num = 0
-            if np.shape(a0)[0]<3:
-                a0 = np.ones((1,6+3*(self.Ne-1)-1-2))[0]
-                # a0 = np.array([1.39805362,0.52238212,0.98447721,-0.24425985,0.25443791,1.00086218,-0.24874274,0.25506558,0.99999917,
-                #                -0.24857425,0.25505484,0.99999997,-0.24857546,0.25505483,1.00000002,-0.24857545,0.25505484,1.00000026,
-                #                -0.24857441,0.25505484,0.99994755,-0.24858544,0.25505376,0.99399755,-0.24949161,0.25491721,1.20695856,
-                #                -0.1501284,0.26941578,2.049172,1.17788224,0.71017331])
-            """
-            bound_min = np.zeros((1,len(a0)))[0]
-            bound_max = np.zeros((1,len(a0)))[0]
-            bound_min[0]=-5
-            bound_max[0]=5
-            bound_min[1]=-10
-            bound_max[1]=10
-            for i in range(len(a0)-2-1):
-                if i%3 == 0:
-                    bound_min[i+2]=-np.pi
-                    bound_max[i+2]=np.pi
-                if i%3 == 1:
-                    bound_min[i+2]=-5
-                    bound_max[i+2]=5
-                if i%3 == 2:
-                    bound_min[i+2]=-10
-                    bound_max[i+2]=10
-            bound_min[-1]=-np.pi
-            bound_max[-1]=np.pi
-            """
-            
-            start_time = time.time()
-            # res = sp.optimize.minimize(self.__fun_static_optim, a0,method='Nelder-Mead')
-            tol=1e-3
-            res = sp.optimize.least_squares(self.__fun_static_optim,a0,\
-                                            ftol=tol,gtol=tol,xtol=tol,max_nfev=1e6,method='trf')
-            end_time = time.time()-start_time
-            print("status: %s"%(res.message))
-            print("status: %s"%(res.status))
-            print("evaluation time:%s s" % (round(end_time,0)))
-            print("time on 1 iter:%s ms" % (round(1e3*end_time/self.iteration_num,0)))  
-            print("iteration number:%s" % (self.iteration_num))
+            flag_preparing_already_done = 0
+            if os.path.isfile('a.npz'):
+                flag_preparing_already_done = 1
 
-            self.a_diff = np.ones((1,6+3*(self.Ne-1)-1-2))[0]
-            for i in range(6+3*(self.Ne-1)-1-2):
-                self.a_diff[i] = res.x[i]
+            if flag_preparing_already_done:
+                print("Found numpy zip archive with a approx data. Checking if we can use it!")
+                with np.load('a.npz') as npzfile: # for closign after using it
+                    self.a_approx = npzfile['a']
+                    c1 = npzfile['c1']
+                    c3 = npzfile['c3']
+                    EI = npzfile['EI']
+                    N = npzfile['N']
+                    Ne = npzfile['Ne']
+                    dl = npzfile['dl']
+                    step = npzfile['step']
+                del npzfile
 
-            self.a_approx = np.zeros((1,6*self.Ne))[0]
-            self.a_approx[0] = 0
-            self.a_approx[1:6] = self.a_diff[:5]
-            for i in range(self.Ne-1):
-                if i==self.Ne-2:
-                    self.a_approx[6*(i+1):6*(i+1)+3] = self.a_approx[6*(i+1)-3:6*(i+1)]
-                    self.a_approx[6*(i+1)+3:6*(i+2)] = np.concatenate([ self.a_diff[5+3*i:],np.array([0,0])])
+            if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl) or (not step==self.step) or (not c1==self.c1) or (not c3==self.c3) or (not EI==self.EI):
+                if flag_preparing_already_done:
+                    print("Checking finished. We cannot use this a approx data as some parameters mismatch. Starting optimizarion:")
                 else:
-                    self.a_approx[6*(i+1):6*(i+1)+3] = self.a_approx[6*(i+1)-3:6*(i+1)]
-                    self.a_approx[6*(i+1)+3:6*(i+2)] = self.a_diff[5+3*i:8+3*i]
-            print("res cost = {}".format(res.cost))  
-              
-            """
-            'L-BFGS-B' work long
-            'Nelder-Mead' work somehow
-            least_squares - worked excellent
-            """
+                    print("Starting optimizarion:")
+
+                self.iteration_num = 0
+                if np.shape(a0)[0]<3:
+                    a0 = np.ones((1,6+3*(self.Ne-1)-1-2))[0]
+                    # a0 = np.array([1.39805362,0.52238212,0.98447721,-0.24425985,0.25443791,1.00086218,-0.24874274,0.25506558,0.99999917,
+                    #                -0.24857425,0.25505484,0.99999997,-0.24857546,0.25505483,1.00000002,-0.24857545,0.25505484,1.00000026,
+                    #                -0.24857441,0.25505484,0.99994755,-0.24858544,0.25505376,0.99399755,-0.24949161,0.25491721,1.20695856,
+                    #                -0.1501284,0.26941578,2.049172,1.17788224,0.71017331])
+                """
+                bound_min = np.zeros((1,len(a0)))[0]
+                bound_max = np.zeros((1,len(a0)))[0]
+                bound_min[0]=-5
+                bound_max[0]=5
+                bound_min[1]=-10
+                bound_max[1]=10
+                for i in range(len(a0)-2-1):
+                    if i%3 == 0:
+                        bound_min[i+2]=-np.pi
+                        bound_max[i+2]=np.pi
+                    if i%3 == 1:
+                        bound_min[i+2]=-5
+                        bound_max[i+2]=5
+                    if i%3 == 2:
+                        bound_min[i+2]=-10
+                        bound_max[i+2]=10
+                bound_min[-1]=-np.pi
+                bound_max[-1]=np.pi
+                """
+                
+                start_time = time.time()
+                # res = sp.optimize.minimize(self.__fun_static_optim, a0,method='Nelder-Mead')
+                tol=1e-3
+                res = sp.optimize.least_squares(self.__fun_static_optim,a0,\
+                                                ftol=tol,gtol=tol,xtol=tol,max_nfev=1e6,method='trf')
+                end_time = time.time()-start_time
+                print("status: %s"%(res.message))
+                print("status: %s"%(res.status))
+                print("evaluation time:%s s" % (round(end_time,0)))
+                print("time on 1 iter:%s ms" % (round(1e3*end_time/self.iteration_num,0)))  
+                print("iteration number:%s" % (self.iteration_num))
+
+                self.a_diff = np.ones((1,6+3*(self.Ne-1)-1-2))[0]
+                for i in range(6+3*(self.Ne-1)-1-2):
+                    self.a_diff[i] = res.x[i]
+
+                self.a_approx = np.zeros((1,6*self.Ne))[0]
+                self.a_approx[0] = 0
+                self.a_approx[1:6] = self.a_diff[:5]
+                for i in range(self.Ne-1):
+                    if i==self.Ne-2:
+                        self.a_approx[6*(i+1):6*(i+1)+3] = self.a_approx[6*(i+1)-3:6*(i+1)]
+                        self.a_approx[6*(i+1)+3:6*(i+2)] = np.concatenate([ self.a_diff[5+3*i:],np.array([0,0])])
+                    else:
+                        self.a_approx[6*(i+1):6*(i+1)+3] = self.a_approx[6*(i+1)-3:6*(i+1)]
+                        self.a_approx[6*(i+1)+3:6*(i+2)] = self.a_diff[5+3*i:8+3*i]
+                print("res cost = {}".format(res.cost))  
+                
+                """
+                'L-BFGS-B' work long
+                'Nelder-Mead' work somehow
+                least_squares - worked excellent
+                """
+                np.savez('a.npz',\
+                        c1=self.c1,EI=self.EI,c3=self.c3,\
+                        N=self.N,Ne=self.Ne,step=self.step,\
+                        dl=self.dl,a=self.a_approx)
+            else:
+                if flag_preparing_already_done:
+                    print("Checking finished. Using loaded a_approx data!")
 
         def __search_index(self,v,x):
             return bisect.bisect(v, x) - 1 
