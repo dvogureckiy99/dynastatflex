@@ -153,11 +153,7 @@ class Flex_beam(object):
             rv +=  [r'\end{bmatrix}']
             return '\n'.join(rv)
 
-        def __delta1(self,l):
-            if l>=0:
-                return 1
-            else:
-                return 0
+
 
         # def __get_x_approx(self,l):
         #     return self.int_cumsum_x[self.__search_index(self.l_all_true,l)]
@@ -203,8 +199,18 @@ class Flex_beam(object):
             print("iter={},cost= {}".format(self.iteration_num,np.sum(cost)))
             return cost
             
+        def __delta1(self,l):
+            if l>=0:
+                return 1
+            else:
+                return 0
 
-        def static_preparing(self,disp=True):
+        def __delta_approx(self,l,dl,e):
+            # https://math.stackexchange.com/questions/4280517/simplest-smooth-c-infty-approximation-to-diracs-delta-with-bounded-su
+            # https://mathworld.wolfram.com/DeltaFunction.html
+            return e/((l-dl)**2+e**2)/np.pi
+
+        def static_preparing(self,disp=True,Fext=1,l_Fext=0.01):
             try:
                 self.Ne
                 self.dl
@@ -290,26 +296,33 @@ class Flex_beam(object):
                 if flag_preparing_already_done:
                     print("Checking finished. Using loaded data")
 
+            # preparing Fext
+            step = 1e-4
+            e=1e-4
+            l_all = np.arange(0,self.L+step/2,step)
+            l_Fext = l_Fext * 1e3 * self.mult
+            Fext_max  = Fext
+            Fext = np.zeros((1,len(l_all)))[0]
+            for i in range(len(l_all)):
+                Fext[i] = Fext_max*self.__delta_approx(l_all[i],l_Fext,e)
+            plt.figure(figsize = (20,4))
+            plt.subplot(1,2,1)
+            plt.plot(l_all,Fext)
+            plt.grid()
+            plt.subplot(1,2,2)
+            plt.plot(l_all,Fext)
+            plt.grid()
+            plt.ylim([0,e])
+            plt.show()
+            
+            res = sp.integrate.quad(self.__delta_approx,0,self.L,args=(l_Fext,e))
+            print("delta integral value=%.3f,error=%f"%(Fext_max*res[0],res[1]))
+
             if disp:
                 display(Math("\\bm{F}="+self.__bmatrix(self.F)))
                 display(Math("\\bm{M}="+self.__bmatrix(self.M)))
 
-        def static(self,F_perp_ext=1,dl_F_perp_ext=1e-2,a0=[1,2]):
-            # # self.psi_sum = np.sum(self.psi,axis=1)
-            # # self.dpsi_sum = np.sum(self.dpsi,axis=1)
-            # # self.dF_ext_const = F_perp_ext/dl_F_perp_ext/2
-            # # self.dF_ext = np.zeros((1,self.N))[0]
-            # # for i in range(self.N):
-            # #     self.dF_ext[i] = self.dF_ext_const*self.__delta1(self.l_all_true[i]-((self.L-dl_F_perp_ext)/2))-\
-            # #         (self.dF_ext_const*2)*self.__delta1(self.l_all_true[i]-((self.L)/2))+\
-            # #         (self.dF_ext_const)*self.__delta1(self.l_all_true[i]-((self.L+dl_F_perp_ext)/2))
-                
-            # # plt.plot(self.l_all_true,self.dF_ext)
-            # # plt.xlim((self.L-dl_F_perp_ext)/2,(self.L+dl_F_perp_ext)/2)
-            # # plt.show()
-            # self.int_psi_dF_ext = np.sum(np.multiply(self.psi_sum,self.dF_ext))
-            # # display(Math("\\bm{F}_1="+self.__bmatrix(F1)))
-
+        def static(self,a0=[1,2]):
             # self.iteration_num = 0
             # if np.shape(a0)[0]<3:
             #     a0 = np.ones((1,6+3*(self.Ne-1)-1-2))[0]
