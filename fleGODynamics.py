@@ -200,7 +200,8 @@ class Flex_beam(object):
                                 self.Fext+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
                             cosphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]+cosphiappr_ddphiappr[0]*self.psi[0]) ]) # 3*6*Ne
             # cost = np.sum(np.power(cost,2))
-            print("iter={},cost= {}".format(self.iteration_num,np.sum(cost)))
+            # print("iter={},cost= {}".format(self.iteration_num,np.sum(cost)))
+            print("iter={}".format(self.iteration_num))
             return cost
             
         def __delta1(self,l):
@@ -313,7 +314,6 @@ class Flex_beam(object):
             Fext_max  = Fext
             w_steps_num = 5 # wisth in steps of the area of application of force
             w = Fext_max/(2*w_steps_num*self.step) # distributed force
-            print(w)
             dFext = np.zeros((1,self.N))[0] 
             dFext[int(self.N/2)-w_steps_num]=w
             dFext[int(self.N/2)+w_steps_num]=-w
@@ -828,7 +828,10 @@ class Flex_beam(object):
             plt.xlabel("$l$ [mm]")
             plt.ylabel("$\\varphi(l,t=0)$")
             plt.legend(fontsize="15",loc='best')
-            plt.title("phi approx and true")
+            if flag_a_approx_is:
+                plt.title("phi approx")
+            else:
+                plt.title("phi approx and true")
             plt.subplot(222)
             labels = ['$(x,y)_{true}$','$(x,y)_{approx}$']
             colours = ['b','r']
@@ -839,7 +842,10 @@ class Flex_beam(object):
             plt.xlabel("$x$ [mm]")
             plt.ylabel("$y$ [mm]")
             plt.legend(fontsize="15",loc='best')
-            plt.title("x,y approx and true")
+            if flag_a_approx_is:
+                plt.title("x,y approx")
+            else:
+                plt.title("x,y approx and true")
             plt.subplot(223)
             labels = ['$\\frac{\partial \\varphi_{true} }{\partial l}$','$\\frac{\partial\\varphi_{approx}}{\partial l}$']
             colours = ['b','r']
@@ -851,7 +857,10 @@ class Flex_beam(object):
             plt.xlabel("$l$ [mm]")
             plt.ylabel("$\\frac{\partial\\varphi(l,t=0)}{\partial l}$")
             plt.legend(fontsize="15",loc='best')
-            plt.title("dphi approx and true")
+            if flag_a_approx_is:
+                plt.title("dphi approx")
+            else:
+                plt.title("dphi approx and true")
             plt.subplot(224)
             labels = ['$\\frac{\partial\\varphi^2_{true}}{\partial l^2}$','$\\frac{\partial\\varphi^2_{approx}}{\partial l^2}$']
             colours = ['b','r']
@@ -863,5 +872,8 @@ class Flex_beam(object):
             plt.xlabel("$l$ [mm]")
             plt.ylabel("$\\frac{\partial\\varphi^2(l,t=0)}{\partial l^2}$")
             plt.legend(fontsize="15",loc='best')
-            plt.title("ddphi approx and true")
+            if flag_a_approx_is:
+                plt.title("ddphi approx")
+            else:
+                plt.title("ddphi approx and true")
             plt.show()
