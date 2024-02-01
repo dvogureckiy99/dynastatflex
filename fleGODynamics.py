@@ -34,6 +34,8 @@ Problems:ы
         4.6.1 Trying solve it: delete dFext at all ---> nothing special, just a little warse cause of high freq in dphi.
         It is seen that now dFext plays a role.
         4.6.2 Trying solve it: delete Fext at all ---> although a little bit worser, but now so warse as in 4.4
+        4.6.3 With large force something goes wrong.
+        4.6.4 with different sign something goes wrong
 """
 
 class Flex_beam(object):
@@ -410,7 +412,7 @@ class Flex_beam(object):
                 
                 start_time = time.time()
                 # res = sp.optimize.minimize(self.__fun_static_optim, a0,method='Nelder-Mead')
-                tol=1e-3
+                tol=1e-8
                 res = sp.optimize.least_squares(self.__fun_static_optim,a0,\
                                                 ftol=tol,gtol=tol,xtol=tol,max_nfev=1e6,method='trf')
                 end_time = time.time()-start_time
