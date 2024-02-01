@@ -196,6 +196,7 @@ class Flex_beam(object):
                             sinphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]-sinphiappr_ddphiappr[0]*self.psi[0],\
                                 np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
                             cosphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]+cosphiappr_ddphiappr[0]*self.psi[0] ]) # 3*6*Ne
+            # cost = np.sum(np.power(cost,2))
             print("iter={},cost= {}".format(self.iteration_num,np.sum(cost)))
             return cost
             
@@ -306,14 +307,18 @@ class Flex_beam(object):
             l_Fext = l_Fext * 1e3 * self.mult
             Fext_max  = Fext
             Fext = np.zeros((1,self.N))[0]
+            # for i in range(self.N):
+            #     Fext[i] = Fext_max*self.__delta_approx(self.l_all_true[i],l_Fext,e)
             for i in range(self.N):
-                Fext[i] = Fext_max*self.__delta_approx(self.l_all_true[i],l_Fext,e)
-            Fext /= 1e10
-            dFext = np.diff(Fext)
+                Fext[i] = Fext_max*self.l_all_true[i]/l_Fext*2 -\
+                    2*Fext_max*(self.l_all_true[i]-l_Fext)*self.__delta1(self.l_all_true[i]-l_Fext)/l_Fext*2
+            # Fext /= 1e10
+            dFext = np.diff(Fext)/self.step
             dFext = np.concatenate([[0],dFext])
             dFext = np.roll(dFext,-1)
-            ddFext = np.diff(dFext)
+            ddFext = np.diff(dFext)/self.step
             ddFext = np.concatenate([[0],ddFext])
+            ddFext[-1] = 0
             self.ddFext = self.c3*np.sum(np.multiply( ddFext.reshape(self.N,1),self.psi)*self.step,axis=0) 
 
             if disp:
@@ -378,9 +383,9 @@ class Flex_beam(object):
             """
             
             start_time = time.time()
-            res = sp.optimize.minimize(self.__fun_static_optim, a0,method='Nelder-Mead')
-            # res = sp.optimize.least_squares(self.__fun_static_optim,a0,\
-            #                                 ftol=1e-8,gtol=1e-8,xtol=1e-20,max_nfev=1e6,method='trf')
+            # res = sp.optimize.minimize(self.__fun_static_optim, a0,method='Nelder-Mead')
+            res = sp.optimize.least_squares(self.__fun_static_optim,a0,\
+                                            ftol=1e-8,gtol=1e-8,xtol=1e-20,max_nfev=1e6,method='trf')
             end_time = time.time()-start_time
             print("status: %s"%(res.message))
             print("status: %s"%(res.status))
