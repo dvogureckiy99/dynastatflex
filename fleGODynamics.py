@@ -19,8 +19,10 @@ Idea:
     2.1 discover all files in root folder and finding with right name
     2.2 checking all files with different names _1,_2,_3 e.c. until file 
     with appropriate FEM and Ldivide parameters will be found
+Problems:
 3. Problem with E,I,L=1
 4. Decrease dim0 of psi to Ne instead of N and see what'll happen
+3. When decreasing Fext beam bend in minus angle WHy?
 """
 
 class Flex_beam(object):
@@ -229,7 +231,7 @@ class Flex_beam(object):
                 self.N
             except:
                 raise ValueError("Call Ldivide first!") from None
-            self.Fext = Fext
+            self.Fext_point = Fext
             self.l_Fext = l_Fext
 
             flag_preparing_already_done = 0
@@ -361,7 +363,7 @@ class Flex_beam(object):
                 print("Found numpy zip archive with a approx data. Checking if we can use it!")
                 with np.load('a.npz') as npzfile: # for closign after using it
                     self.a_approx = npzfile['a']
-                    Fext = npzfile['Fext']
+                    Fext_point = npzfile['Fext_point']
                     l_Fext = npzfile['l_Fext']
                     c1 = npzfile['c1']
                     c3 = npzfile['c3']
@@ -372,7 +374,7 @@ class Flex_beam(object):
                     step = npzfile['step']
                 del npzfile
 
-            if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl) or (not step==self.step) or (not c1==self.c1) or (not c3==self.c3) or (not EI==self.EI) or (not Fext==self.Fext) or (not l_Fext==self.l_Fext):
+            if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl) or (not step==self.step) or (not c1==self.c1) or (not c3==self.c3) or (not EI==self.EI) or (not Fext_point==self.Fext_point) or (not l_Fext==self.l_Fext):
                 if flag_preparing_already_done:
                     print("Checking finished. We cannot use this a approx data as some parameters mismatch. Starting optimization:")
                 else:
@@ -408,7 +410,7 @@ class Flex_beam(object):
                 
                 start_time = time.time()
                 # res = sp.optimize.minimize(self.__fun_static_optim, a0,method='Nelder-Mead')
-                tol=1e-3
+                tol=1e-8
                 res = sp.optimize.least_squares(self.__fun_static_optim,a0,\
                                                 ftol=tol,gtol=tol,xtol=tol,max_nfev=1e6,method='trf')
                 end_time = time.time()-start_time
@@ -442,7 +444,7 @@ class Flex_beam(object):
                 np.savez('a.npz',\
                         c1=self.c1,EI=self.EI,c3=self.c3,\
                         N=self.N,Ne=self.Ne,step=self.step,\
-                        dl=self.dl,a=self.a_approx,Fext=self.Fext,\
+                        dl=self.dl,a=self.a_approx,Fext_point=self.Fext_point,\
                         l_Fext=self.l_Fext)
             else:
                 if flag_preparing_already_done:
