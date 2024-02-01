@@ -304,52 +304,37 @@ class Flex_beam(object):
                     print("Checking finished. Using loaded data")
 
             # preparing ddFext
-            e=self.step*5e-11
-            l_Fext = l_Fext * 1e3 * self.mult
+            l_Fext = l_Fext * 1e3 * self.mult # point of application of force
             Fext_max  = Fext
-            Fext = np.zeros((1,self.N))[0]
-            for i in range(self.N):
-                Fext[i] = Fext_max*self.__delta_approx(self.l_all_true[i],l_Fext,e)
-            # for i in range(self.N):
-            #     Fext[i] = Fext_max*self.l_all_true[i]/l_Fext*2 -\
-            #         2*Fext_max*(self.l_all_true[i]-l_Fext)*self.__delta1(self.l_all_true[i]-l_Fext)/l_Fext*2
-            Fext /= 1e10
-            dFext = np.diff(Fext)/self.step
-            dFext = np.concatenate([[0],dFext])
-            dFext = np.roll(dFext,-1)
-            ddFext = np.diff(dFext)/self.step
-            ddFext = np.concatenate([[0],ddFext])
-            ddFext[-1] = 0
-            self.ddFext = self.c3*np.sum(np.multiply( ddFext.reshape(self.N,1),self.psi)*self.step,axis=0) 
+            w_steps_num = 5 # wisth in steps of the area of application of force
+            w = Fext_max/(2*w_steps_num*self.step) # distributed force
+            dFext = np.zeros((1,self.N))[0] 
+            dFext[int(self.N/2)-w_steps_num]=w
+            dFext[int(self.N/2)+w_steps_num]=-w
+            self.dFext = self.c3*np.sum(np.multiply( dFext.reshape(self.N,1),self.psi)*self.step,axis=0) 
+            Fext = np.cumsum(dFext)
 
             if disp:
+                print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
                 plt.figure(figsize = (20,4))
+                plt.title("Fext - distributed force [N/m]")
                 plt.subplot(1,2,1)
                 plt.plot(self.l_all_true,Fext)
                 plt.grid()
                 plt.subplot(1,2,2)
                 plt.plot(self.l_all_true,Fext)
                 plt.grid()
-                plt.xlim([l_Fext-2*self.step,l_Fext+2*self.step])
+                plt.xlim([l_Fext-(w_steps_num+1)*self.step,l_Fext+(w_steps_num+1)*self.step])
                 plt.show()
-                print("delta integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
                 plt.figure(figsize = (20,4))
+                plt.title("dFext - distributed force derivative [N/m^2]")
                 plt.subplot(1,2,1)
                 plt.plot(self.l_all_true,dFext)
                 plt.grid()
                 plt.subplot(1,2,2)
                 plt.plot(self.l_all_true,dFext)
                 plt.grid()
-                plt.xlim([l_Fext-2*self.step,l_Fext+2*self.step])
-                plt.show()
-                plt.figure(figsize = (20,4))
-                plt.subplot(1,2,1)
-                plt.plot(self.l_all_true,ddFext)
-                plt.grid()
-                plt.subplot(1,2,2)
-                plt.plot(self.l_all_true,ddFext)
-                plt.grid()
-                plt.xlim([l_Fext-2*self.step,l_Fext+2*self.step])
+                plt.xlim([l_Fext-(w_steps_num+1)*self.step,l_Fext+(w_steps_num+1)*self.step])
                 plt.show()
                 display(Math("\\bm{F}="+self.__bmatrix(self.F)))
                 display(Math("\\bm{M}="+self.__bmatrix(self.M)))
