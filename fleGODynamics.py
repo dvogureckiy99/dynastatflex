@@ -200,8 +200,8 @@ class Flex_beam(object):
                                 self.Fext+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
                             cosphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]+cosphiappr_ddphiappr[0]*self.psi[0]) ]) # 3*6*Ne
             # cost = np.sum(np.power(cost,2))
-            # print("iter={},cost= {}".format(self.iteration_num,np.sum(cost)))
-            print("iter={}".format(self.iteration_num))
+            print("iter={},cost= {}".format(self.iteration_num,cost[0]))
+            # print("iter={}".format(self.iteration_num))
             return cost
             
         def __delta1(self,l):
@@ -229,7 +229,9 @@ class Flex_beam(object):
                 self.N
             except:
                 raise ValueError("Call Ldivide first!") from None
-            
+            self.Fext = Fext
+            self.l_Fext = l_Fext
+
             flag_preparing_already_done = 0
             if os.path.isfile('psi_matrix_and_vectors.npz'):
                 flag_preparing_already_done = 1
@@ -315,13 +317,14 @@ class Flex_beam(object):
             w_steps_num = 5 # wisth in steps of the area of application of force
             w = Fext_max/(2*w_steps_num*self.step) # distributed force
             dFext = np.zeros((1,self.N))[0] 
-            dFext[int(self.N/2)-w_steps_num]=w
-            dFext[int(self.N/2)+w_steps_num]=-w
+            force_appl_point = self.__search_index(self.l_all_true,l_Fext)
+            dFext[int(force_appl_point)-w_steps_num]=w
+            dFext[int(force_appl_point)+w_steps_num]=-w
             self.dFext = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi)*self.step,axis=0) 
             Fext = np.zeros((1,self.N))[0] 
-            Fext[int(self.N/2)-w_steps_num+1:int(self.N/2)+w_steps_num+1]=w
-            Fext[int(self.N/2)-w_steps_num]=w/2
-            Fext[int(self.N/2)+w_steps_num]=w/2
+            Fext[int(force_appl_point)-w_steps_num+1:int(force_appl_point)+w_steps_num+1]=w
+            Fext[int(force_appl_point)-w_steps_num]=w/2
+            Fext[int(force_appl_point)+w_steps_num]=w/2
             self.Fext = np.sum(np.multiply( Fext.reshape(self.N,1),self.psi)*self.step,axis=0) 
 
             if disp:
@@ -358,6 +361,8 @@ class Flex_beam(object):
                 print("Found numpy zip archive with a approx data. Checking if we can use it!")
                 with np.load('a.npz') as npzfile: # for closign after using it
                     self.a_approx = npzfile['a']
+                    Fext = npzfile['Fext']
+                    l_Fext = npzfile['l_Fext']
                     c1 = npzfile['c1']
                     c3 = npzfile['c3']
                     EI = npzfile['EI']
@@ -367,11 +372,11 @@ class Flex_beam(object):
                     step = npzfile['step']
                 del npzfile
 
-            if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl) or (not step==self.step) or (not c1==self.c1) or (not c3==self.c3) or (not EI==self.EI):
+            if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl) or (not step==self.step) or (not c1==self.c1) or (not c3==self.c3) or (not EI==self.EI) or (not Fext==self.Fext) or (not l_Fext==self.l_Fext):
                 if flag_preparing_already_done:
-                    print("Checking finished. We cannot use this a approx data as some parameters mismatch. Starting optimizarion:")
+                    print("Checking finished. We cannot use this a approx data as some parameters mismatch. Starting optimization:")
                 else:
-                    print("Starting optimizarion:")
+                    print("Starting optimization:")
 
                 self.iteration_num = 0
                 if np.shape(a0)[0]<3:
@@ -437,7 +442,8 @@ class Flex_beam(object):
                 np.savez('a.npz',\
                         c1=self.c1,EI=self.EI,c3=self.c3,\
                         N=self.N,Ne=self.Ne,step=self.step,\
-                        dl=self.dl,a=self.a_approx)
+                        dl=self.dl,a=self.a_approx,Fext=self.Fext,\
+                        l_Fext=self.l_Fext)
             else:
                 if flag_preparing_already_done:
                     print("Checking finished. Using loaded a_approx data!")
