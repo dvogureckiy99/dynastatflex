@@ -279,6 +279,10 @@ class Flex_beam(object):
                     self.ddpsi[i] =self.__get_ddpsi(l)
                     self.dddpsi[i] =self.__get_dddpsi(l)
                     self.ddddpsi[i] =self.__get_ddddpsi(l)
+                    if not i%(int(self.N/10)):
+                        time_psi_calc = time.time_ns()-start_time-1*1e3
+                        print("Psi calculation time: {} s; iters: {}; left: {}%".format(round(time_psi_calc*1e-9,3),i,round(i*100/self.N,2))) 
+
                 
                 time_psi_calc = time.time_ns()-start_time-1*1e3
                 print("Psi calculation time: %s s" % (round(time_psi_calc*1e-9,3)))
@@ -315,11 +319,11 @@ class Flex_beam(object):
                 l_Fext = self.L/2
             else:
                 l_Fext = l_Fext * 1e3 * self.mult # point of application of force
-            Fext_max  = Fext
+            Fext_max = Fext
             w_steps_num = 5 # wisth in steps of the area of application of force
             w = Fext_max/(2*w_steps_num*self.step) # distributed force
-            dFext = np.zeros((1,self.N))[0] 
             force_appl_point = self.__search_index(self.l_all_true,l_Fext)
+            dFext = np.zeros((1,self.N))[0] 
             dFext[int(force_appl_point)-w_steps_num]=w
             dFext[int(force_appl_point)+w_steps_num]=-w
             self.dFext = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi)*self.step,axis=0) 
@@ -383,10 +387,6 @@ class Flex_beam(object):
                 self.iteration_num = 0
                 if np.shape(a0)[0]<3:
                     a0 = np.ones((1,6+3*(self.Ne-1)-1-2))[0]
-                    # a0 = np.array([1.39805362,0.52238212,0.98447721,-0.24425985,0.25443791,1.00086218,-0.24874274,0.25506558,0.99999917,
-                    #                -0.24857425,0.25505484,0.99999997,-0.24857546,0.25505483,1.00000002,-0.24857545,0.25505484,1.00000026,
-                    #                -0.24857441,0.25505484,0.99994755,-0.24858544,0.25505376,0.99399755,-0.24949161,0.25491721,1.20695856,
-                    #                -0.1501284,0.26941578,2.049172,1.17788224,0.71017331])
                 """
                 bound_min = np.zeros((1,len(a0)))[0]
                 bound_max = np.zeros((1,len(a0)))[0]
@@ -410,7 +410,7 @@ class Flex_beam(object):
                 
                 start_time = time.time()
                 # res = sp.optimize.minimize(self.__fun_static_optim, a0,method='Nelder-Mead')
-                tol=1e-3
+                tol=1e-8
                 res = sp.optimize.least_squares(self.__fun_static_optim,a0,\
                                                 ftol=tol,gtol=tol,xtol=tol,max_nfev=1e6,method='trf')
                 end_time = time.time()-start_time
@@ -879,6 +879,7 @@ class Flex_beam(object):
             plt.grid(True)
             plt.xlabel("$x$ [mm]")
             plt.ylabel("$y$ [mm]")
+            plt.axis('equal')
             plt.legend(fontsize="15",loc='best')
             if flag_a_approx_is:
                 plt.title("x,y approx")
@@ -914,4 +915,5 @@ class Flex_beam(object):
                 plt.title("ddphi approx")
             else:
                 plt.title("ddphi approx and true")
+            plt.tight_layout()
             plt.show()
