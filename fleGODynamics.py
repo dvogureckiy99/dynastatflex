@@ -192,10 +192,11 @@ class Flex_beam(object):
             cost = np.concatenate([ self.ddFext+np.matmul(self.F,a)+\
                                 (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
                             dphi_appr_power3[int(self.N-1)]*self.psi[int(self.N-1)]+dphi_appr_power3[0]*self.psi[0]),\
-                                -np.sum(np.multiply(sinphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)+\
-                            sinphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]-sinphiappr_ddphiappr[0]*self.psi[0],\
-                                np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
-                            cosphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]+cosphiappr_ddphiappr[0]*self.psi[0] ]) # 3*6*Ne
+                            [np.cos(phi_appr[0])],[np.sin(phi_appr[0])] ])
+                            #     -np.sum(np.multiply(sinphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)+\
+                            # sinphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]-sinphiappr_ddphiappr[0]*self.psi[0],\
+                            #     np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
+                            # cosphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]+cosphiappr_ddphiappr[0]*self.psi[0] ]) # 3*6*Ne
             # cost = np.sum(np.power(cost,2))
             print("iter={},cost= {}".format(self.iteration_num,np.sum(cost)))
             return cost
@@ -307,12 +308,12 @@ class Flex_beam(object):
             l_Fext = l_Fext * 1e3 * self.mult
             Fext_max  = Fext
             Fext = np.zeros((1,self.N))[0]
-            # for i in range(self.N):
-            #     Fext[i] = Fext_max*self.__delta_approx(self.l_all_true[i],l_Fext,e)
             for i in range(self.N):
-                Fext[i] = Fext_max*self.l_all_true[i]/l_Fext*2 -\
-                    2*Fext_max*(self.l_all_true[i]-l_Fext)*self.__delta1(self.l_all_true[i]-l_Fext)/l_Fext*2
-            # Fext /= 1e10
+                Fext[i] = Fext_max*self.__delta_approx(self.l_all_true[i],l_Fext,e)
+            # for i in range(self.N):
+            #     Fext[i] = Fext_max*self.l_all_true[i]/l_Fext*2 -\
+            #         2*Fext_max*(self.l_all_true[i]-l_Fext)*self.__delta1(self.l_all_true[i]-l_Fext)/l_Fext*2
+            Fext /= 1e10
             dFext = np.diff(Fext)/self.step
             dFext = np.concatenate([[0],dFext])
             dFext = np.roll(dFext,-1)
