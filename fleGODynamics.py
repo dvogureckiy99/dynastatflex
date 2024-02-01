@@ -415,7 +415,7 @@ class Flex_beam(object):
                 
                 start_time = time.time()
                 # res = sp.optimize.minimize(self.__fun_static_optim, a0,method='Nelder-Mead')
-                tol=1e-8
+                tol=1e-3
                 res = sp.optimize.least_squares(self.__fun_static_optim,a0,\
                                                 ftol=tol,gtol=tol,xtol=tol,max_nfev=1e6,method='trf')
                 end_time = time.time()-start_time
