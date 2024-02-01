@@ -44,6 +44,7 @@ Problems:ы
         4.7.4 Ne increased: Ne=80,step_mult=0.2 ---> res cost decreased a little in 2 times =2198, i.e. res cost depends mostly on Ne not on step_mult
           visually quality of line improved 
             4.7.4.1 sign change this led to not only a change in the bending direction, but also a qualitatively different bend 
+        4.7.5 f3 made exactly as in article with j=3. ---> res cost =31, visually quality of beam improved very much
 """
 
 class Flex_beam(object):
@@ -216,10 +217,10 @@ class Flex_beam(object):
             cost = np.concatenate([ self.dFext-self.EI*(np.matmul(self.F,a)+\
                                 (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
                             dphi_appr_power3[int(self.N-1)]*self.psi[int(self.N-1)]+dphi_appr_power3[0]*self.psi[0])),\
-                                self.Fext+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr.reshape(self.ind_N2,1),self.dpsi[:self.ind_N2])*self.step,axis=0)),\
+                                [self.Fext[3]+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0)) ],\
                                 # self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)+\
                             # sinphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]-sinphiappr_ddphiappr[0]*self.psi[0]),\
-                                self.Fext+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.ind_N2,1),self.dpsi[:self.ind_N2])*self.step,axis=0)) ])
+                                [self.Fext[3]+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0))] ])
                                 # self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
                             # cosphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]+cosphiappr_ddphiappr[0]*self.psi[0]) ]) # 3*6*Ne
             # cost = np.sum(np.power(cost,2))
