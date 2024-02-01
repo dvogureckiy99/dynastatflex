@@ -20,9 +20,10 @@ Idea:
     2.2 checking all files with different names _1,_2,_3 e.c. until file 
     with appropriate FEM and Ldivide parameters will be found
 Problems:
-3. Problem with E,I,L=1
-4. Decrease dim0 of psi to Ne instead of N and see what'll happen
+1. Problem with E,I,L=1
+2. Decrease dim0 of psi to Ne instead of N and see what'll happen
 3. When decreasing Fext beam bend in minus angle WHy?
+4. Sign of Fext doesn't influence on simulation. 
 """
 
 class Flex_beam(object):
