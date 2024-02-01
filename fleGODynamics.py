@@ -19,11 +19,17 @@ Idea:
     2.1 discover all files in root folder and finding with right name
     2.2 checking all files with different names _1,_2,_3 e.c. until file 
     with appropriate FEM and Ldivide parameters will be found
-Problems:
+Problems:ы
 1. Problem with E,I,L=1
 2. Decrease dim0 of psi to Ne instead of N and see what'll happen
 3. When decreasing Fext beam bend in minus angle WHy?
 4. Sign of Fext doesn't influence on simulation. 
+    4.1 Trying solve it: change manually sign of Fexts in both f3 and F ---> nothing
+    4.2 Trying solve it: change manually sign of Fexts in F only ---> nothing
+    4.3 Trying solve it: change manually sign of Fexts in f3 only ---> nothing
+    4.4 Trying solve it: delete Fext at all ---> very bad, even angle wrong. Fext is very important.
+    4.5 Trying solve it: delete dFext at all ---> nothing. Think as dFext very small and doesn't influence.
+    4.6 Trying change the way of Fext setup. Try tryangle Fext.
 """
 
 class Flex_beam(object):
@@ -159,8 +165,6 @@ class Flex_beam(object):
             rv +=  [r'\end{bmatrix}']
             return '\n'.join(rv)
 
-
-
         # def __get_x_approx(self,l):
         #     return self.int_cumsum_x[self.__search_index(self.l_all_true,l)]
         # def __get_y_approx(self,l):
@@ -195,12 +199,15 @@ class Flex_beam(object):
             sinphiappr_ddphiappr = np.multiply(np.sin(phi_appr),ddphi_appr)
             cosphiappr_ddphiappr = np.multiply(np.cos(phi_appr),ddphi_appr)
 
+            # cost = np.concatenate([ self.EI*(np.matmul(self.F,a)+\
             cost = np.concatenate([ self.dFext-self.EI*(np.matmul(self.F,a)+\
                                 (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
                             dphi_appr_power3[int(self.N-1)]*self.psi[int(self.N-1)]+dphi_appr_power3[0]*self.psi[0])),\
                                 self.Fext+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)+\
+                                # self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)+\
                             sinphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]-sinphiappr_ddphiappr[0]*self.psi[0]),\
                                 self.Fext+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
+                                # self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
                             cosphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]+cosphiappr_ddphiappr[0]*self.psi[0]) ]) # 3*6*Ne
             # cost = np.sum(np.power(cost,2))
             print("iter={},cost= {}".format(self.iteration_num,cost[0]))
@@ -411,7 +418,7 @@ class Flex_beam(object):
                 
                 start_time = time.time()
                 # res = sp.optimize.minimize(self.__fun_static_optim, a0,method='Nelder-Mead')
-                tol=1e-8
+                tol=1e-3
                 res = sp.optimize.least_squares(self.__fun_static_optim,a0,\
                                                 ftol=tol,gtol=tol,xtol=tol,max_nfev=1e6,method='trf')
                 end_time = time.time()-start_time
@@ -544,7 +551,6 @@ class Flex_beam(object):
                 return 1
             else:
                 return 0
-
         def __get_psi(self,l): # psi
             ret = np.array([])
             if l==self.L:
@@ -777,7 +783,6 @@ class Flex_beam(object):
                 if flag_preparing_already_done:
                     print("Checking finished. Using loaded data")
                 
-
         def phi_approx(self,disp_time=True,der_num=0):
             """
             Phi function approximation. Opportunity to approximate dphi and ddphi functions.
