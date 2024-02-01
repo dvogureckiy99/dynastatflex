@@ -21,7 +21,7 @@ Idea:
 """
 
 class Flex_beam(object):
-    def __init__(self,L=0.06,E=2.95*1e9,h=0.01,w=0.001):
+    def __init__(self,L=1,E=1,h=1,w=1,rho=1):
         """
         Creating Flex_beam Class instance
         # Parameters
@@ -35,7 +35,7 @@ class Flex_beam(object):
         self.E = E * 1e-6 /self.mult**2
         self.h = h * 1e3 * self.mult
         self.w = w * 1e3 * self.mult
-        self.rho = 1270 * 1e-9 / self.mult**3
+        self.rho = rho * 1e-9 / self.mult**3
 
     def Create_Simulation(self,disp=False):
         """
@@ -189,14 +189,13 @@ class Flex_beam(object):
             sinphiappr_ddphiappr = np.multiply(np.sin(phi_appr),ddphi_appr)
             cosphiappr_ddphiappr = np.multiply(np.cos(phi_appr),ddphi_appr)
 
-            cost = np.concatenate([ self.ddFext+self.c1*(np.matmul(self.F,a)+\
+            cost = np.concatenate([ self.dFext+self.EI*(np.matmul(self.F,a)+\
                                 (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
                             dphi_appr_power3[int(self.N-1)]*self.psi[int(self.N-1)]+dphi_appr_power3[0]*self.psi[0])),\
-                            [np.cos(phi_appr[0])],[np.sin(phi_appr[0])] ])
-                            #     -np.sum(np.multiply(sinphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)+\
-                            # sinphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]-sinphiappr_ddphiappr[0]*self.psi[0],\
-                            #     np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
-                            # cosphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]+cosphiappr_ddphiappr[0]*self.psi[0] ]) # 3*6*Ne
+                                self.Fext-self.EI*(np.sum(np.multiply(sinphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)+\
+                            sinphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]-sinphiappr_ddphiappr[0]*self.psi[0]),\
+                                self.Fext+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
+                            cosphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]+cosphiappr_ddphiappr[0]*self.psi[0]) ]) # 3*6*Ne
             # cost = np.sum(np.power(cost,2))
             print("iter={},cost= {}".format(self.iteration_num,np.sum(cost)))
             return cost
@@ -213,7 +212,7 @@ class Flex_beam(object):
             # return e/((l-dl)**2+e**2)/np.pi
             return (1-np.tanh((l-dl)/e)**2)/2/e
 
-        def static_preparing(self,disp=True,Fext=1,l_Fext=0.01):
+        def static_preparing(self,disp=True,Fext=1,l_Fext=None):
             try:
                 self.Ne
                 self.dl
@@ -304,19 +303,23 @@ class Flex_beam(object):
                     print("Checking finished. Using loaded data")
 
             # preparing ddFext
-            l_Fext = l_Fext * 1e3 * self.mult # point of application of force
+            if l_Fext==None:
+                l_Fext = self.L/2
+            else:
+                l_Fext = l_Fext * 1e3 * self.mult # point of application of force
             Fext_max  = Fext
             w_steps_num = 5 # wisth in steps of the area of application of force
             w = Fext_max/(2*w_steps_num*self.step) # distributed force
+            print(w)
             dFext = np.zeros((1,self.N))[0] 
             dFext[int(self.N/2)-w_steps_num]=w
             dFext[int(self.N/2)+w_steps_num]=-w
-            self.dFext = self.c3*np.sum(np.multiply( dFext.reshape(self.N,1),self.psi)*self.step,axis=0) 
+            self.dFext = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi)*self.step,axis=0) 
             Fext = np.zeros((1,self.N))[0] 
             Fext[int(self.N/2)-w_steps_num+1:int(self.N/2)+w_steps_num+1]=w
             Fext[int(self.N/2)-w_steps_num]=w/2
             Fext[int(self.N/2)+w_steps_num]=w/2
-            self.Fext = self.c3*np.sum(np.multiply( Fext.reshape(self.N,1),self.psi)*self.step,axis=0) 
+            self.Fext = np.sum(np.multiply( Fext.reshape(self.N,1),self.psi)*self.step,axis=0) 
 
             if disp:
                 print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
@@ -374,8 +377,9 @@ class Flex_beam(object):
             
             start_time = time.time()
             # res = sp.optimize.minimize(self.__fun_static_optim, a0,method='Nelder-Mead')
+            tol=1e-3
             res = sp.optimize.least_squares(self.__fun_static_optim,a0,\
-                                            ftol=1e-8,gtol=1e-8,xtol=1e-20,max_nfev=1e6,method='trf')
+                                            ftol=tol,gtol=tol,xtol=tol,max_nfev=1e6,method='trf')
             end_time = time.time()-start_time
             print("status: %s"%(res.message))
             print("status: %s"%(res.status))
