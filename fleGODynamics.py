@@ -37,7 +37,13 @@ Problems:ы
         4.6.3 With large force something goes wrong.
         4.6.4 with different sign something goes wrong
     4.7 Size of f3 reduced to the form as in the article exactly.
-        4.7.1 now sign of Fext change the direction of bending                                          ^^^^^^^^^^^11111^^^^       
+        4.7.1 now sign of Fext change the direction of bending                                          ^^^^^^^^^^^11111^^^^ 
+        4.7.2 tolerance doesn't affect
+        4.7.3 step size reduced Ne=20,step_mult=0.05 ---> res cost doesn't decrease, visually quality of line doesn't improved
+        4.7.4 Ne increased: Ne=40,step_mult=0.05 ---> res cost decreased a little in 2 times =4394, visually quality of line improved  
+        4.7.4 Ne increased: Ne=80,step_mult=0.2 ---> res cost decreased a little in 2 times =2198, i.e. res cost depends mostly on Ne not on step_mult
+          visually quality of line improved 
+            4.7.4.1 sign change this led to not only a change in the bending direction, but also a qualitatively different bend 
 """
 
 class Flex_beam(object):
@@ -166,8 +172,7 @@ class Flex_beam(object):
             """
             if len(a.shape) > 2:
                 raise ValueError('bmatrix can at most display two dimensions')
-            a = np.round(a,3)
-            lines = np.array2string(a,formatter={'float':lambda x: "%.4f" % x}).replace('\n  ', ' ').replace('[', '').replace(']', '').splitlines()
+            lines = np.array2string(a,formatter={'float':lambda x: "%.6f" % x}).replace('\n  ', ' ').replace('[', '').replace(']', '').splitlines()
             rv = [r'\begin{bmatrix}']
             rv += ['  ' + ' & '.join(l.split()) + r'\\' for l in lines]
             rv +=  [r'\end{bmatrix}']
@@ -211,10 +216,10 @@ class Flex_beam(object):
             cost = np.concatenate([ self.dFext-self.EI*(np.matmul(self.F,a)+\
                                 (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
                             dphi_appr_power3[int(self.N-1)]*self.psi[int(self.N-1)]+dphi_appr_power3[0]*self.psi[0])),\
-                                self.Fext[:self.ind_N2]+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr.reshape(self.ind_N2,1),self.dpsi[:self.ind_N2])*self.step,axis=0)),\
+                                self.Fext+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr.reshape(self.ind_N2,1),self.dpsi[:self.ind_N2])*self.step,axis=0)),\
                                 # self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)+\
                             # sinphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]-sinphiappr_ddphiappr[0]*self.psi[0]),\
-                                self.Fext[:self.ind_N2]+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.ind_N2,1),self.dpsi[:self.ind_N2])*self.step,axis=0)) ])
+                                self.Fext+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.ind_N2,1),self.dpsi[:self.ind_N2])*self.step,axis=0)) ])
                                 # self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
                             # cosphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]+cosphiappr_ddphiappr[0]*self.psi[0]) ]) # 3*6*Ne
             # cost = np.sum(np.power(cost,2))
