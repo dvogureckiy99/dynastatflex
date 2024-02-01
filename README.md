@@ -1,7 +1,7 @@
 # fleGODynamics
 Python library for modeling dynamic of flexible mechanisms. Useful for robotics application.
 
-## Instalation
+## Installation
 First need to setup conda environment:
 ```
 conda env create --file fleGODynamics.yml -n fleGODynamics
