@@ -31,6 +31,9 @@ Problems:ы
     4.5 Trying solve it: delete dFext at all ---> nothing. Think as dFext very small and doesn't influence.
     4.6 Trying change the way of Fext setup. Try tryangle Fext. ---> something changed. First derivative became look like
     exactly second derivative should. There is error somewhere.
+        4.6.1 Trying solve it: delete dFext at all ---> nothing special, just a little warse cause of high freq in dphi.
+        It is seen that now dFext plays a role.
+        4.6.2 Trying solve it: delete Fext at all ---> although a little bit worser, but now so warse as in 4.4
 """
 
 class Flex_beam(object):
