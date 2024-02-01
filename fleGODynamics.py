@@ -189,9 +189,9 @@ class Flex_beam(object):
             sinphiappr_ddphiappr = np.multiply(np.sin(phi_appr),ddphi_appr)
             cosphiappr_ddphiappr = np.multiply(np.cos(phi_appr),ddphi_appr)
 
-            cost = np.concatenate([ self.ddFext+np.matmul(self.F,a)+\
+            cost = np.concatenate([ self.ddFext+self.c1*(np.matmul(self.F,a)+\
                                 (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
-                            dphi_appr_power3[int(self.N-1)]*self.psi[int(self.N-1)]+dphi_appr_power3[0]*self.psi[0]),\
+                            dphi_appr_power3[int(self.N-1)]*self.psi[int(self.N-1)]+dphi_appr_power3[0]*self.psi[0])),\
                             [np.cos(phi_appr[0])],[np.sin(phi_appr[0])] ])
                             #     -np.sum(np.multiply(sinphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)+\
                             # sinphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]-sinphiappr_ddphiappr[0]*self.psi[0],\
@@ -312,7 +312,11 @@ class Flex_beam(object):
             dFext[int(self.N/2)-w_steps_num]=w
             dFext[int(self.N/2)+w_steps_num]=-w
             self.dFext = self.c3*np.sum(np.multiply( dFext.reshape(self.N,1),self.psi)*self.step,axis=0) 
-            Fext = np.cumsum(dFext)
+            Fext = np.zeros((1,self.N))[0] 
+            Fext[int(self.N/2)-w_steps_num+1:int(self.N/2)+w_steps_num+1]=w
+            Fext[int(self.N/2)-w_steps_num]=w/2
+            Fext[int(self.N/2)+w_steps_num]=w/2
+            self.Fext = self.c3*np.sum(np.multiply( Fext.reshape(self.N,1),self.psi)*self.step,axis=0) 
 
             if disp:
                 print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
