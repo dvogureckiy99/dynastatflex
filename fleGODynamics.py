@@ -18,6 +18,8 @@ Idea:
     2.1 discover all files in root folder and finding with right name
     2.2 checking all files with different names _1,_2,_3 e.c. until file 
     with appropriate FEM and Ldivide parameters will be found
+3. Problem with E,I,L=1
+4. Decrease dim0 of psi to Ne instead of N and see what'll happen
 """
 
 class Flex_beam(object):
