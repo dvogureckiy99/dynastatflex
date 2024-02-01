@@ -194,10 +194,10 @@ class Flex_beam(object):
             sinphiappr_ddphiappr = np.multiply(np.sin(phi_appr),ddphi_appr)
             cosphiappr_ddphiappr = np.multiply(np.cos(phi_appr),ddphi_appr)
 
-            cost = np.concatenate([ self.dFext+self.EI*(np.matmul(self.F,a)+\
+            cost = np.concatenate([ self.dFext-self.EI*(np.matmul(self.F,a)+\
                                 (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
                             dphi_appr_power3[int(self.N-1)]*self.psi[int(self.N-1)]+dphi_appr_power3[0]*self.psi[0])),\
-                                self.Fext-self.EI*(np.sum(np.multiply(sinphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)+\
+                                self.Fext+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)+\
                             sinphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]-sinphiappr_ddphiappr[0]*self.psi[0]),\
                                 self.Fext+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
                             cosphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]+cosphiappr_ddphiappr[0]*self.psi[0]) ]) # 3*6*Ne
@@ -410,7 +410,7 @@ class Flex_beam(object):
                 
                 start_time = time.time()
                 # res = sp.optimize.minimize(self.__fun_static_optim, a0,method='Nelder-Mead')
-                tol=1e-8
+                tol=1e-3
                 res = sp.optimize.least_squares(self.__fun_static_optim,a0,\
                                                 ftol=tol,gtol=tol,xtol=tol,max_nfev=1e6,method='trf')
                 end_time = time.time()-start_time
