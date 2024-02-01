@@ -11,6 +11,7 @@ import os
 # https://www.geeksforgeeks.org/inheritance-in-python-inner-class/
 
 """
+Release 1.0.2
 Idea:
 1. add saving files with parameters with different names _1,_2,_3 e.c. with checking
  if this number file_name already exist.
