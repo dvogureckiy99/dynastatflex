@@ -29,7 +29,8 @@ Problems:ы
     4.3 Trying solve it: change manually sign of Fexts in f3 only ---> nothing
     4.4 Trying solve it: delete Fext at all ---> very bad, even angle wrong. Fext is very important.
     4.5 Trying solve it: delete dFext at all ---> nothing. Think as dFext very small and doesn't influence.
-    4.6 Trying change the way of Fext setup. Try tryangle Fext.
+    4.6 Trying change the way of Fext setup. Try tryangle Fext. ---> something changed. First derivative became look like
+    exactly second derivative should. There is error somewhere.
 """
 
 class Flex_beam(object):
@@ -215,10 +216,10 @@ class Flex_beam(object):
             return cost
             
         def __delta1(self,l):
-            if l>=0:
-                return 1
-            else:
+            if l<0:
                 return 0
+            else:
+                return 1
 
         def __delta_approx(self,l,dl,e):
             # https://math.stackexchange.com/questions/4280517/simplest-smooth-c-infty-approximation-to-diracs-delta-with-bounded-su
@@ -328,40 +329,28 @@ class Flex_beam(object):
             else:
                 l_Fext = l_Fext * 1e3 * self.mult # point of application of force
             Fext_max = Fext
-            w_steps_num = 5 # wisth in steps of the area of application of force
-            w = Fext_max/(2*w_steps_num*self.step) # distributed force
-            force_appl_point = self.__search_index(self.l_all_true,l_Fext)
+            w = 2*Fext_max/self.L # distributed force
+            dw = 2*w/self.L
+            # force_appl_point = self.__search_index(self.l_all_true,l_Fext)
+            Fext = np.zeros((1,self.N))[0]
             dFext = np.zeros((1,self.N))[0] 
-            dFext[int(force_appl_point)-w_steps_num]=w
-            dFext[int(force_appl_point)+w_steps_num]=-w
-            self.dFext = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi)*self.step,axis=0) 
-            Fext = np.zeros((1,self.N))[0] 
-            Fext[int(force_appl_point)-w_steps_num+1:int(force_appl_point)+w_steps_num+1]=w
-            Fext[int(force_appl_point)-w_steps_num]=w/2
-            Fext[int(force_appl_point)+w_steps_num]=w/2
+            for (l,i) in zip(self.l_all_true,range(self.N)):
+                Fext[i]=dw*l-2*self.__delta1(l-l_Fext)*(l-l_Fext)*dw
+                dFext[i]=dw-2*self.__delta1(l-l_Fext)*dw
             self.Fext = np.sum(np.multiply( Fext.reshape(self.N,1),self.psi)*self.step,axis=0) 
+            self.dFext = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi)*self.step,axis=0) 
 
             if disp:
                 print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
                 plt.figure(figsize = (20,4))
+                plt.subplot(1,2,1)
                 plt.title("Fext - distributed force [N/m]")
-                plt.subplot(1,2,1)
                 plt.plot(self.l_all_true,Fext)
                 plt.grid()
                 plt.subplot(1,2,2)
-                plt.plot(self.l_all_true,Fext)
-                plt.grid()
-                plt.xlim([l_Fext-(w_steps_num+1)*self.step,l_Fext+(w_steps_num+1)*self.step])
-                plt.show()
-                plt.figure(figsize = (20,4))
                 plt.title("dFext - distributed force derivative [N/m^2]")
-                plt.subplot(1,2,1)
                 plt.plot(self.l_all_true,dFext)
                 plt.grid()
-                plt.subplot(1,2,2)
-                plt.plot(self.l_all_true,dFext)
-                plt.grid()
-                plt.xlim([l_Fext-(w_steps_num+1)*self.step,l_Fext+(w_steps_num+1)*self.step])
                 plt.show()
                 display(Math("\\bm{F}="+self.__bmatrix(self.F)))
                 display(Math("\\bm{M}="+self.__bmatrix(self.M)))
