@@ -349,7 +349,7 @@ class Flex_beam(object):
 
             if Fext_type=='delta':
                 Fext_max = Fext
-                w_steps_num = int(self.N*0.9/2) # wisth in steps of the area of application of force
+                w_steps_num = int(self.N*0.5/2) # wisth in steps of the area of application of force
                 w = Fext_max/(2*w_steps_num*self.step) # distributed force
                 force_appl_point = self.__search_index(self.l_all_true,l_Fext)
                 dFext = np.zeros((1,self.N))[0] 
@@ -411,7 +411,7 @@ class Flex_beam(object):
                     display(Math("\\bm{F}="+self.__bmatrix(self.F)))
                     display(Math("\\bm{M}="+self.__bmatrix(self.M)))
 
-        def static(self,a0=[1,2]):
+        def static(self,a0=[1,2],flag_compute_a_anyway=1):
             flag_preparing_already_done = 0
             if os.path.isfile('a.npz'):
                 flag_preparing_already_done = 1
@@ -432,7 +432,7 @@ class Flex_beam(object):
                     Fext_type = npzfile['Fext_type']
                 del npzfile
 
-            if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl) or (not step==self.step) or (not c1==self.c1) or (not c3==self.c3) or (not EI==self.EI) or (not Fext_point==self.Fext_point) or (not l_Fext==self.l_Fext) or (not Fext_type==self.Fext_type):
+            if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl) or (not step==self.step) or (not c1==self.c1) or (not c3==self.c3) or (not EI==self.EI) or (not Fext_point==self.Fext_point) or (not l_Fext==self.l_Fext) or (not Fext_type==self.Fext_type) or flag_compute_a_anyway:
                 if flag_preparing_already_done:
                     print("Checking finished. We cannot use this a approx data as some parameters mismatch. Starting optimization:")
                 else:
