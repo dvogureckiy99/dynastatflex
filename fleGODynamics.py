@@ -349,7 +349,7 @@ class Flex_beam(object):
 
             if Fext_type=='delta':
                 Fext_max = Fext
-                w_steps_num = int(self.N*0.5/2) # wisth in steps of the area of application of force
+                w_steps_num = int(self.N*0.1/2) # wisth in steps of the area of application of force
                 w = Fext_max/(2*w_steps_num*self.step) # distributed force
                 force_appl_point = self.__search_index(self.l_all_true,l_Fext)
                 dFext = np.zeros((1,self.N))[0] 
@@ -364,7 +364,6 @@ class Flex_beam(object):
                 if disp:
                     print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
                     plt.figure(figsize = (20,8))
-                    plt.title("Fext - distributed force [N/m]")
                     plt.subplot(2,2,1)
                     plt.plot(self.l_all_true,Fext)
                     plt.grid()
@@ -380,6 +379,7 @@ class Flex_beam(object):
                     plt.plot(self.l_all_true,dFext)
                     plt.grid()
                     plt.xlim([l_Fext-(w_steps_num+5)*self.step,l_Fext+(w_steps_num+5)*self.step])
+                    plt.title("Fext - distributed force [N/m]")
                     plt.show()
                     display(Math("\\bm{F}="+self.__bmatrix(self.F)))
                     display(Math("\\bm{M}="+self.__bmatrix(self.M)))
