@@ -47,7 +47,7 @@ Problems:ы
         4.7.5 f3 made exactly as in article with j=3. ---> res cost =31, visually quality of beam improved very much
             4.7.5.1 now when chenging sign of Fext beam bend exactly symmetrically
 5. Try making like in the article
-    5.1 Made opportunity to choose type of Fext: triangle, delta function approximation. delta work bad.  df
+    5.1 Made opportunity to choose type of Fext: triangle, delta function approximation. delta work bad.
 """
 
 class Flex_beam(object):
