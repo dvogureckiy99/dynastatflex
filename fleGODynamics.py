@@ -46,6 +46,8 @@ Problems:ы
             4.7.4.1 sign change this led to not only a change in the bending direction, but also a qualitatively different bend 
         4.7.5 f3 made exactly as in article with j=3. ---> res cost =31, visually quality of beam improved very much
             4.7.5.1 now when chenging sign of Fext beam bend exactly symmetrically
+5. Try making like in the article
+    5.1 Made opportunity to choose type of Fext: triangle, delta function approximation. delta work bad. 
 """
 
 class Flex_beam(object):
@@ -241,7 +243,7 @@ class Flex_beam(object):
             # return e/((l-dl)**2+e**2)/np.pi
             return (1-np.tanh((l-dl)/e)**2)/2/e
 
-        def static_preparing(self,disp=True,Fext=1,l_Fext=None):
+        def static_preparing(self,disp=True,Fext=1,l_Fext=None,Fext_type='triangle'):
             try:
                 self.Ne
                 self.dl
@@ -257,6 +259,7 @@ class Flex_beam(object):
             self.Fext_point = Fext
             self.l_Fext = l_Fext
             self.ind_N2 = self.__search_index(self.l_all_true,self.Ldl[2])+1
+            self.Fext_type = Fext_type
 
             flag_preparing_already_done = 0
             if os.path.isfile('psi_matrix_and_vectors.npz'):
@@ -343,32 +346,70 @@ class Flex_beam(object):
                 l_Fext = self.L/2
             else:
                 l_Fext = l_Fext * 1e3 * self.mult # point of application of force
-            Fext_max = Fext
-            w = 2*Fext_max/self.L # distributed force
-            dw = 2*w/self.L
-            # force_appl_point = self.__search_index(self.l_all_true,l_Fext)
-            Fext = np.zeros((1,self.N))[0]
-            dFext = np.zeros((1,self.N))[0] 
-            for (l,i) in zip(self.l_all_true,range(self.N)):
-                Fext[i]=dw*l-2*self.__delta1(l-l_Fext)*(l-l_Fext)*dw
-                dFext[i]=dw-2*self.__delta1(l-l_Fext)*dw
-            self.Fext = np.sum(np.multiply( Fext.reshape(self.N,1),self.psi)*self.step,axis=0) 
-            self.dFext = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi)*self.step,axis=0) 
 
-            if disp:
-                print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
-                plt.figure(figsize = (20,4))
-                plt.subplot(1,2,1)
-                plt.title("Fext - distributed force [N/m]")
-                plt.plot(self.l_all_true,Fext)
-                plt.grid()
-                plt.subplot(1,2,2)
-                plt.title("dFext - distributed force derivative [N/m^2]")
-                plt.plot(self.l_all_true,dFext)
-                plt.grid()
-                plt.show()
-                display(Math("\\bm{F}="+self.__bmatrix(self.F)))
-                display(Math("\\bm{M}="+self.__bmatrix(self.M)))
+            if Fext_type=='delta':
+                Fext_max = Fext
+                w_steps_num = int(self.N*0.9/2) # wisth in steps of the area of application of force
+                w = Fext_max/(2*w_steps_num*self.step) # distributed force
+                force_appl_point = self.__search_index(self.l_all_true,l_Fext)
+                dFext = np.zeros((1,self.N))[0] 
+                dFext[int(force_appl_point)-w_steps_num]=w
+                dFext[int(force_appl_point)+w_steps_num]=-w
+                self.dFext = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi)*self.step,axis=0) 
+                Fext = np.zeros((1,self.N))[0] 
+                Fext[int(force_appl_point)-w_steps_num+1:int(force_appl_point)+w_steps_num+1]=w
+                Fext[int(force_appl_point)-w_steps_num]=w/2
+                Fext[int(force_appl_point)+w_steps_num]=w/2
+                self.Fext = np.sum(np.multiply( Fext.reshape(self.N,1),self.psi)*self.step,axis=0) 
+                if disp:
+                    print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
+                    plt.figure(figsize = (20,8))
+                    plt.title("Fext - distributed force [N/m]")
+                    plt.subplot(2,2,1)
+                    plt.plot(self.l_all_true,Fext)
+                    plt.grid()
+                    plt.subplot(2,2,2)
+                    plt.plot(self.l_all_true,Fext)
+                    plt.grid()
+                    plt.xlim([l_Fext-(w_steps_num+5)*self.step,l_Fext+(w_steps_num+5)*self.step])
+                    plt.title("dFext - distributed force derivative [N/m^2]")
+                    plt.subplot(2,2,3)
+                    plt.plot(self.l_all_true,dFext)
+                    plt.grid()
+                    plt.subplot(2,2,4)
+                    plt.plot(self.l_all_true,dFext)
+                    plt.grid()
+                    plt.xlim([l_Fext-(w_steps_num+5)*self.step,l_Fext+(w_steps_num+5)*self.step])
+                    plt.show()
+                    display(Math("\\bm{F}="+self.__bmatrix(self.F)))
+                    display(Math("\\bm{M}="+self.__bmatrix(self.M)))
+            elif Fext_type=='triangle':
+                Fext_max = Fext
+                w = 2*Fext_max/self.L # distributed force
+                dw = 2*w/self.L
+                # force_appl_point = self.__search_index(self.l_all_true,l_Fext)
+                Fext = np.zeros((1,self.N))[0]
+                dFext = np.zeros((1,self.N))[0] 
+                for (l,i) in zip(self.l_all_true,range(self.N)):
+                    Fext[i]=dw*l-2*self.__delta1(l-l_Fext)*(l-l_Fext)*dw
+                    dFext[i]=dw-2*self.__delta1(l-l_Fext)*dw
+                self.Fext = np.sum(np.multiply( Fext.reshape(self.N,1),self.psi)*self.step,axis=0) 
+                self.dFext = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi)*self.step,axis=0) 
+
+                if disp:
+                    print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
+                    plt.figure(figsize = (20,4))
+                    plt.subplot(1,2,1)
+                    plt.title("Fext - distributed force [N/m]")
+                    plt.plot(self.l_all_true,Fext)
+                    plt.grid()
+                    plt.subplot(1,2,2)
+                    plt.title("dFext - distributed force derivative [N/m^2]")
+                    plt.plot(self.l_all_true,dFext)
+                    plt.grid()
+                    plt.show()
+                    display(Math("\\bm{F}="+self.__bmatrix(self.F)))
+                    display(Math("\\bm{M}="+self.__bmatrix(self.M)))
 
         def static(self,a0=[1,2]):
             flag_preparing_already_done = 0
@@ -388,9 +429,10 @@ class Flex_beam(object):
                     Ne = npzfile['Ne']
                     dl = npzfile['dl']
                     step = npzfile['step']
+                    Fext_type = npzfile['Fext_type']
                 del npzfile
 
-            if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl) or (not step==self.step) or (not c1==self.c1) or (not c3==self.c3) or (not EI==self.EI) or (not Fext_point==self.Fext_point) or (not l_Fext==self.l_Fext):
+            if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl) or (not step==self.step) or (not c1==self.c1) or (not c3==self.c3) or (not EI==self.EI) or (not Fext_point==self.Fext_point) or (not l_Fext==self.l_Fext) or (not Fext_type==self.Fext_type):
                 if flag_preparing_already_done:
                     print("Checking finished. We cannot use this a approx data as some parameters mismatch. Starting optimization:")
                 else:
@@ -457,7 +499,7 @@ class Flex_beam(object):
                         c1=self.c1,EI=self.EI,c3=self.c3,\
                         N=self.N,Ne=self.Ne,step=self.step,\
                         dl=self.dl,a=self.a_approx,Fext_point=self.Fext_point,\
-                        l_Fext=self.l_Fext)
+                        l_Fext=self.l_Fext,Fext_type=self.Fext_type)
             else:
                 if flag_preparing_already_done:
                     print("Checking finished. Using loaded a_approx data!")
