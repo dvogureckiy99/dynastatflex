@@ -48,7 +48,7 @@ Problems:ы
             4.7.5.1 now when chenging sign of Fext beam bend exactly symmetrically
 5. Try making like in the article
     5.1 Made opportunity to choose type of Fext: triangle, delta function approximation. delta work bad. 
-    what?
+    what?f
 """
 
 class Flex_beam(object):
