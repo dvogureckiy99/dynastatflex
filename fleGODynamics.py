@@ -588,6 +588,8 @@ class Flex_beam(object):
                 return 1
             else:
                 return 0
+        def __M_int(self,l,i,j):
+            return np.polyval(self.p[(i)],l)*np.polyval(self.p[(j)],l)
         def __get_psi(self): # psi
             ret = np.array([]).reshape((0,6))
             L = np.arange(0,self.Ldl[1]+self.step/2,self.step)
