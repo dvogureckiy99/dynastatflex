@@ -260,84 +260,77 @@ class Flex_beam(object):
             self.l_Fext = l_Fext
             self.ind_N2 = self.__search_index(self.l_all_true,self.Ldl[2])+1
             self.Fext_type = Fext_type
+            self.step4psi = self.step/self.Ldl[1]
 
-            # flag_preparing_already_done = 0
-            # if os.path.isfile('psi_matrix_and_vectors.npz'):
-            #     flag_preparing_already_done = 1
+            flag_preparing_already_done = 0
+            if os.path.isfile('psi_matrix_and_vectors.npz'):
+                flag_preparing_already_done = 1
 
-            # if flag_preparing_already_done:
-            #     print("Found numpy zip archive with preparing data: psi vectors, F,M matrix. Checking if we can use it!")
-            #     with np.load('psi_matrix_and_vectors.npz') as npzfile: # for closign after using it
-            #         self.c1 = npzfile['c1']
-            #         self.c3 = npzfile['c3']
-            #         self.EI = npzfile['EI']
-            #         self.psi = npzfile['psi']
-            #         self.dpsi = npzfile['dpsi']
-            #         self.ddpsi = npzfile['ddpsi']
-            #         self.dddpsi = npzfile['dddpsi']
-            #         self.ddddpsi = npzfile['ddddpsi']
-            #         self.F = npzfile['F']
-            #         self.M = npzfile['M']
-            #         N = npzfile['N']
-            #         Ne = npzfile['Ne']
-            #         dl = npzfile['dl']
-            #         step = npzfile['step']
-            #     del npzfile
+            if flag_preparing_already_done:
+                print("Found numpy zip archive with preparing data: psi vectors, F,M matrix. Checking if we can use it!")
+                with np.load('psi_matrix_and_vectors.npz') as npzfile: # for closign after using it
+                    self.c1 = npzfile['c1']
+                    self.c3 = npzfile['c3']
+                    self.EI = npzfile['EI']
+                    self.psi = npzfile['psi']
+                    self.dpsi = npzfile['dpsi']
+                    self.ddpsi = npzfile['ddpsi']
+                    self.dddpsi = npzfile['dddpsi']
+                    self.ddddpsi = npzfile['ddddpsi']
+                    self.F = npzfile['F']
+                    self.M = npzfile['M']
+                    N = npzfile['N']
+                    Ne = npzfile['Ne']
+                    dl = npzfile['dl']
+                    step = npzfile['step']
+                del npzfile
             
-            # if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl) or (not step==self.step):
-            #     if flag_preparing_already_done:
-            #         print("Checking finished. We cannot use this data as FEM or/and Ldivide parameters mismatch. Creating new one:")
-            #     else:
-            #         print("Creating psi vectors and matrix started:")
-            self.c1 = self.E*self.I/(self.rho*self.A)
-            self.c3 = 1/(self.rho*self.A)
-            self.EI = self.E*self.I
-            start_time = time.time_ns()
-            time.sleep(0.000001) # sleep 1 us
-            # preparing for fast computation next
-            self.psi = self.__get_psi()
-            self.dpsi = self.__get_dpsi()
-            self.ddpsi = self.__get_ddpsi()
-            self.dddpsi = self.__get_dddpsi()
-            self.ddddpsi = self.__get_ddddpsi()
-            step = self.step/self.Ldl[1]
+            if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl) or (not step==self.step):
+                if flag_preparing_already_done:
+                    print("Checking finished. We cannot use this data as FEM or/and Ldivide parameters mismatch. Creating new one:")
+                else:
+                    print("Creating psi vectors and matrix started:")
+                self.c1 = self.E*self.I/(self.rho*self.A)
+                self.c3 = 1/(self.rho*self.A)
+                self.EI = self.E*self.I
+                start_time = time.time_ns()
+                time.sleep(0.000001) # sleep 1 us
+                # preparing for fast computation next
+                self.psi = self.__get_psi()
+                self.dpsi = self.__get_dpsi()
+                self.ddpsi = self.__get_ddpsi()
+                self.dddpsi = self.__get_dddpsi()
+                self.ddddpsi = self.__get_ddddpsi()
+                
+                time_psi_calc = time.time_ns()-start_time-1*1e3
+                print("Psi calculation time: %s s" % (round(time_psi_calc*1e-9,3)))
+
+                self.F = np.zeros((6,6))
+                for j in range(6):
+                    for i in range(6):
+                        self.F[j][i] = 6*sp.integrate.quad(self.__F_int,0,1,args=(i,j))[0] +\
+                            np.polyval(self.dddp[(i)],1)*np.polyval(self.p[(j)],1)-np.polyval(self.dddp[(i)],0)*np.polyval(self.p[(j)],0)-\
+                            np.polyval(self.ddp[(i)],1)*np.polyval(self.dp[(j)],1)+np.polyval(self.ddp[(i)],0)*np.polyval(self.dp[(j)],0)
+
+                self.M = np.zeros((6,6))
+                for j in range(6):
+                    for i in range(6):
+                        self.M[j][i] = 6*sp.integrate.quad(self.__M_int,0,1,args=(i,j))[0]
+
+                time_end = time.time_ns()-start_time-1*1e3
+                if (time_end-time_psi_calc)==0:
+                    print("Psi matrix and vectors calculation time is less then 1 ns")
+                else:
+                    print("Psi matrix and vectors calculation time: %s ms" % (round((time_end-time_psi_calc)*1e-6,3)))
+                print("Preparing time: %s s" % (round(time_end*1e-9,3)))
             
-            time_psi_calc = time.time_ns()-start_time-1*1e3
-            print("Psi calculation time: %s s" % (round(time_psi_calc*1e-9,3)))
-
-            self.F = np.zeros((6,6))
-            for j in range(6):
-                for i in range(6):
-                    self.F[j][i]= 6*np.sum( np.multiply( self.ddpsi[:,i],self.ddpsi[:,j] )*step ) +\
-                        self.dddpsi[-1,i]*self.psi[-1,j]-self.dddpsi[0,i]*self.psi[0,j]-\
-                        self.ddpsi[-1,i]*self.dpsi[-1,j]+self.ddpsi[0,i]*self.dpsi[0,j]
-            self.F_true = np.zeros((6,6))
-            for j in range(6):
-                for i in range(6):
-                    self.F_true[j][i] = 6*sp.integrate.quad(self.__F_int,0,1,args=(i,j))[0] +\
-                        np.polyval(self.dddp[(i)],1)*np.polyval(self.p[(j)],1)-np.polyval(self.dddp[(i)],0)*np.polyval(self.p[(j)],0)-\
-                        np.polyval(self.ddp[(i)],1)*np.polyval(self.dp[(j)],1)+np.polyval(self.ddp[(i)],0)*np.polyval(self.dp[(j)],0)
-
-
-            self.M = np.zeros((6,6))
-            for j in range(6):
-                for i in range(6):
-                    self.M[j][i] = 6*sp.integrate.quad(self.__M_int,0,1,args=(i,j))[0]
-
-            time_end = time.time_ns()-start_time-1*1e3
-            if (time_end-time_psi_calc)==0:
-                print("Psi matrix and vectors calculation time is less then 1 ns")
+                np.savez('psi_matrix_and_vectors.npz',psi=self.psi,dpsi=self.dpsi,\
+                     ddpsi=self.ddpsi,dddpsi=self.dddpsi,ddddpsi=self.ddddpsi,F=self.F,\
+                        c1=self.c1,EI=self.EI,M=self.M,c3=self.c3,\
+                        N=self.N,Ne=self.Ne,step=self.step,dl=self.dl)
             else:
-                print("Psi matrix and vectors calculation time: %s ms" % (round((time_end-time_psi_calc)*1e-6,3)))
-            print("Preparing time: %s s" % (round(time_end*1e-9,3)))
-            
-                # np.savez('psi_matrix_and_vectors.npz',psi=self.psi,dpsi=self.dpsi,\
-                #      ddpsi=self.ddpsi,dddpsi=self.dddpsi,ddddpsi=self.ddddpsi,F=self.F,\
-                #         c1=self.c1,EI=self.EI,M=self.M,c3=self.c3,\
-                #         N=self.N,Ne=self.Ne,step=self.step,dl=self.dl)
-            # else:
-            #     if flag_preparing_already_done:
-            #         print("Checking finished. Using loaded data")
+                if flag_preparing_already_done:
+                    print("Checking finished. Using loaded data")
 
             # preparing ddFext
             if l_Fext==None:
@@ -407,8 +400,6 @@ class Flex_beam(object):
                     plt.grid()
                     plt.show()
                     display(Math("\\bm{F}="+self.__bmatrix(self.F)))
-                    display(Math("\\bm{F_true}="+self.__bmatrix(self.F_true)))
-                    display(Math("\\bm{F_err}="+self.__bmatrix(np.abs(self.F_true-self.F))))
                     display(Math("\\bm{M}="+self.__bmatrix(self.M)))
 
         def static(self,a0=[1,2],flag_compute_a_anyway=1):
