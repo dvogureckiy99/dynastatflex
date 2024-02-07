@@ -300,6 +300,7 @@ class Flex_beam(object):
             self.ddpsi = self.__get_ddpsi()
             self.dddpsi = self.__get_dddpsi()
             self.ddddpsi = self.__get_ddddpsi()
+            step = self.step/self.Ldl[1]
             
             time_psi_calc = time.time_ns()-start_time-1*1e3
             print("Psi calculation time: %s s" % (round(time_psi_calc*1e-9,3)))
@@ -307,14 +308,23 @@ class Flex_beam(object):
             self.F = np.zeros((6,6))
             for j in range(6):
                 for i in range(6):
-                    self.F[j][i]= np.sum( np.multiply( self.ddpsi[:,i],self.ddpsi[:,j] )*self.step ) +\
+                    self.F[j][i]= np.sum( np.multiply( self.ddpsi[:,i],self.ddpsi[:,j] )*step ) +\
                         self.dddpsi[-1,i]*self.psi[-1,j]-self.dddpsi[0,i]*self.psi[0,j]-\
                         self.ddpsi[-1,i]*self.dpsi[-1,j]+self.ddpsi[0,i]*self.dpsi[0,j]
             
             self.M = np.zeros((6,6))
             for j in range(6):
                 for i in range(6):
-                    self.M[j][i]= np.sum( np.multiply( self.psi[:,i],self.psi[:,j] )*self.step )
+                    # self.M[j][i] = sp.integrate.quad(__M_int,0,self.Ldl[1]
+                    self.M[j][i]= 6*np.sum( np.multiply( self.psi[:,i],self.psi[:,j] )*step )
+
+            self.M_true = np.zeros((6,6))
+            self.M_true_err = np.zeros((6,6))
+            for j in range(6):
+                for i in range(6):
+                    y, err = sp.integrate.quad(self.__M_int,0,1,args=(i,j))
+                    self.M_true[j][i] = y*6
+                    self.M_true_err[j][i] = err
 
             time_end = time.time_ns()-start_time-1*1e3
             if (time_end-time_psi_calc)==0:
@@ -400,6 +410,8 @@ class Flex_beam(object):
                     plt.show()
                     display(Math("\\bm{F}="+self.__bmatrix(self.F)))
                     display(Math("\\bm{M}="+self.__bmatrix(self.M)))
+                    display(Math("\\bm{M}_{true}="+self.__bmatrix(self.M_true)))
+                    display(Math("\\bm{M}_{err}="+self.__bmatrix(self.M_true_err)))
 
         def static(self,a0=[1,2],flag_compute_a_anyway=1):
             flag_preparing_already_done = 0
@@ -593,6 +605,7 @@ class Flex_beam(object):
         def __get_psi(self): # psi
             ret = np.array([]).reshape((0,6))
             L = np.arange(0,self.Ldl[1]+self.step/2,self.step)
+            L /= self.Ldl[1]
             for l in L:
                 l_line = np.array([])
                 for i in range(6):
@@ -602,6 +615,7 @@ class Flex_beam(object):
         def __get_dpsi(self): # dpsi
             ret = np.array([]).reshape((0,6))
             L = np.arange(0,self.Ldl[1]+self.step/2,self.step)
+            L /= self.Ldl[1]
             for l in L:
                 l_line = np.array([])
                 for i in range(6):
@@ -611,6 +625,7 @@ class Flex_beam(object):
         def __get_ddpsi(self): # ddpsi
             ret = np.array([]).reshape((0,6))
             L = np.arange(0,self.Ldl[1]+self.step/2,self.step)
+            L /= self.Ldl[1]
             for l in L:
                 l_line = np.array([])
                 for i in range(6):
@@ -620,6 +635,7 @@ class Flex_beam(object):
         def __get_dddpsi(self): # dddpsi
             ret = np.array([]).reshape((0,6))
             L = np.arange(0,self.Ldl[1]+self.step/2,self.step)
+            L /= self.Ldl[1]
             for l in L:
                 l_line = np.array([])
                 for i in range(6):
@@ -629,6 +645,7 @@ class Flex_beam(object):
         def __get_ddddpsi(self): # psi
             ret = np.array([]).reshape((0,6))
             L = np.arange(0,self.Ldl[1]+self.step/2,self.step)
+            L /= self.Ldl[1] 
             for l in L:
                 l_line = np.array([])
                 for i in range(6):
