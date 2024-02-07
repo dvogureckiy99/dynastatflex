@@ -300,36 +300,21 @@ class Flex_beam(object):
             self.ddpsi = self.__get_ddpsi()
             self.dddpsi = self.__get_dddpsi()
             self.ddddpsi = self.__get_ddddpsi()
-            # self.dpsi = np.zeros((self.N,6*self.Ne))
-            # self.ddpsi = np.zeros((self.N,6*self.Ne))
-            # self.dddpsi = np.zeros((self.N,6*self.Ne))
-            # self.ddddpsi = np.zeros((self.N,6*self.Ne))
-            # for (l,i) in zip(self.l_all_true,range(self.N)):  
-            #     self.psi[i] = self.__get_psi(l)
-            #     self.dpsi[i] = self.__get_dpsi(l)
-            #     self.ddpsi[i] = self.__get_ddpsi(l)
-            #     self.dddpsi[i] = self.__get_dddpsi(l)
-            #     self.ddddpsi[i] = self.__get_ddddpsi(l)
-            #     if not i%(int(self.N/10)):
-            #         time_psi_calc = time.time_ns()-start_time-1*1e3
-            #         print("Psi calculation time: {} s; iters: {}; left: {}%".format(round(time_psi_calc*1e-9,3),i,round(i*100/self.N,2))) 
-
             
             time_psi_calc = time.time_ns()-start_time-1*1e3
             print("Psi calculation time: %s s" % (round(time_psi_calc*1e-9,3)))
 
-
-            # self.F = np.zeros((6*self.Ne,6*self.Ne))
-            # for j in range(6*self.Ne):
-            #     for i in range(6*self.Ne):
-            #         self.F[j][i]= np.sum( np.multiply( self.ddpsi[:,i],self.ddpsi[:,j] )*self.step ) +\
-            #             self.dddpsi[-1,i]*self.psi[-1,j]-self.dddpsi[0,i]*self.psi[0,j]-\
-            #             self.ddpsi[-1,i]*self.dpsi[-1,j]+self.ddpsi[0,i]*self.dpsi[0,j]
+            self.F = np.zeros((6,6))
+            for j in range(6):
+                for i in range(6):
+                    self.F[j][i]= np.sum( np.multiply( self.ddpsi[:,i],self.ddpsi[:,j] )*self.step ) +\
+                        self.dddpsi[-1,i]*self.psi[-1,j]-self.dddpsi[0,i]*self.psi[0,j]-\
+                        self.ddpsi[-1,i]*self.dpsi[-1,j]+self.ddpsi[0,i]*self.dpsi[0,j]
             
-            # self.M = np.zeros((6*self.Ne,6*self.Ne))
-            # for j in range(6*self.Ne):
-            #     for i in range(6*self.Ne):
-            #         self.M[j][i]= np.sum( np.multiply( self.psi[:,i],self.psi[:,j] )*self.step )
+            self.M = np.zeros((6,6))
+            for j in range(6):
+                for i in range(6):
+                    self.M[j][i]= np.sum( np.multiply( self.psi[:,i],self.psi[:,j] )*self.step )
 
             time_end = time.time_ns()-start_time-1*1e3
             if (time_end-time_psi_calc)==0:
@@ -386,8 +371,8 @@ class Flex_beam(object):
                     plt.xlim([l_Fext-(w_steps_num+5)*self.step,l_Fext+(w_steps_num+5)*self.step])
                     plt.title("Fext - distributed force [N/m]")
                     plt.show()
-                    # display(Math("\\bm{F}="+self.__bmatrix(self.F)))
-                    # display(Math("\\bm{M}="+self.__bmatrix(self.M)))
+                    display(Math("\\bm{F}="+self.__bmatrix(self.F)))
+                    display(Math("\\bm{M}="+self.__bmatrix(self.M)))
             elif Fext_type=='triangle':
                 Fext_max = Fext
                 w = 2*Fext_max/self.L # distributed force
@@ -413,8 +398,8 @@ class Flex_beam(object):
                     plt.plot(self.l_all_true,dFext)
                     plt.grid()
                     plt.show()
-                    # display(Math("\\bm{F}="+self.__bmatrix(self.F)))
-                    # display(Math("\\bm{M}="+self.__bmatrix(self.M)))
+                    display(Math("\\bm{F}="+self.__bmatrix(self.F)))
+                    display(Math("\\bm{M}="+self.__bmatrix(self.M)))
 
         def static(self,a0=[1,2],flag_compute_a_anyway=1):
             flag_preparing_already_done = 0
