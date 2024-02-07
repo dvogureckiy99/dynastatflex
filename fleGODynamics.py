@@ -303,9 +303,9 @@ class Flex_beam(object):
                 for (l,i) in zip(self.l_all_true,range(self.N)):  
                     self.psi[i] = self.__get_psi(l)
                     self.dpsi[i] = self.__get_dpsi(l)
-                    self.ddpsi[i] =self.__get_ddpsi(l)
-                    self.dddpsi[i] =self.__get_dddpsi(l)
-                    self.ddddpsi[i] =self.__get_ddddpsi(l)
+                    self.ddpsi[i] = self.__get_ddpsi(l)
+                    self.dddpsi[i] = self.__get_dddpsi(l)
+                    self.ddddpsi[i] = self.__get_ddddpsi(l)
                     if not i%(int(self.N/10)):
                         time_psi_calc = time.time_ns()-start_time-1*1e3
                         print("Psi calculation time: {} s; iters: {}; left: {}%".format(round(time_psi_calc*1e-9,3),i,round(i*100/self.N,2))) 
@@ -512,7 +512,7 @@ class Flex_beam(object):
             self.dl = dl
             self.Ldl = Ldl
             
-        def Ldivide(self,step_mult=1,disp=False):
+        def Ldivide(self,steps_per_fe=100,disp=False):
             """
             Discretize beam length on piecies with some step
             # Parameters
@@ -522,8 +522,9 @@ class Flex_beam(object):
             disp: bool, optional
                 Display data
             """
-            self.step = self.L*step_mult*1e-3
-            self.l_all_true = np.arange(0,self.L+self.step/2,self.step)
+            self.steps_per_fe = steps_per_fe
+            self.l_all_true = np.linspace(0,self.L,self.Ne*steps_per_fe+1)
+            self.step = self.l_all_true[1] - self.l_all_true[0]
             self.N = len(self.l_all_true)
             if disp:
                 display(Math("\\text{number of steps in simulation=}"+np.str_(self.N)))   
@@ -597,19 +598,15 @@ class Flex_beam(object):
                 return 1
             else:
                 return 0
-        def __get_psi(self,l): # psi
+        def __get_psi(self): # psi
             ret = np.array([])
-            if l==self.L:
-                ret = np.zeros((1,self.Ne*6-6))[0]
+            L = np.arange(0,self.Ldl[1]+self.step/2,self.step)
+            for l in L:
+                l_line = np.array([])
                 for i in range(6):
-                    ret=np.append(ret,np.polyval(self.p[(i)],(l-self.Ldl[self.Ne-1])/self.dl))
-                return ret
-            else:
-                for e in range(self.Ne):
-                    for i in range(6):
-                        ret = np.append(ret,np.polyval(self.p[(i)],(l-self.Ldl[e])/self.dl))
-                    ret[-6:]=ret[-6:]*self.__psi_choser(e,l)
-                return ret  
+                    l_line = np.append(l_line,np.polyval(self.p[(i)],l))
+                ret = np.append(ret, l_line)
+            return ret
         def __get_dpsi(self,l): # d^1psi/dlambda^1
             if l==self.L:
                 return np.zeros((1,self.Ne*6))[0]
