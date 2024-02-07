@@ -306,11 +306,19 @@ class Flex_beam(object):
             print("Psi calculation time: %s s" % (round(time_psi_calc*1e-9,3)))
 
             self.F = np.zeros((6,6))
-            # for j in range(6):
-            #     for i in range(6):
-            #         self.F[j][i]= np.sum( np.multiply( self.ddpsi[:,i],self.ddpsi[:,j] )*step ) +\
-            #             self.dddpsi[-1,i]*self.psi[-1,j]-self.dddpsi[0,i]*self.psi[0,j]-\
-            #             self.ddpsi[-1,i]*self.dpsi[-1,j]+self.ddpsi[0,i]*self.dpsi[0,j]
+            for j in range(6):
+                for i in range(6):
+                    self.F[j][i]= 6*np.sum( np.multiply( self.ddpsi[:,i],self.ddpsi[:,j] )*step ) +\
+                        self.dddpsi[-1,i]*self.psi[-1,j]-self.dddpsi[0,i]*self.psi[0,j]-\
+                        self.ddpsi[-1,i]*self.dpsi[-1,j]+self.ddpsi[0,i]*self.dpsi[0,j]
+            self.F_true = np.zeros((6,6))
+            for j in range(6):
+                for i in range(6):
+                    self.F_true[j][i] = 6*sp.integrate.quad(self.__F_int,0,1,args=(i,j))[0] +\
+                        np.polyval(self.dddp[(i)],1)*np.polyval(self.p[(j)],1)-np.polyval(self.dddp[(i)],0)*np.polyval(self.p[(j)],0)-\
+                        np.polyval(self.ddp[(i)],1)*np.polyval(self.dp[(j)],1)+np.polyval(self.ddp[(i)],0)*np.polyval(self.dp[(j)],0)
+
+
             self.M = np.zeros((6,6))
             for j in range(6):
                 for i in range(6):
@@ -399,6 +407,8 @@ class Flex_beam(object):
                     plt.grid()
                     plt.show()
                     display(Math("\\bm{F}="+self.__bmatrix(self.F)))
+                    display(Math("\\bm{F_true}="+self.__bmatrix(self.F_true)))
+                    display(Math("\\bm{F_err}="+self.__bmatrix(np.abs(self.F_true-self.F))))
                     display(Math("\\bm{M}="+self.__bmatrix(self.M)))
 
         def static(self,a0=[1,2],flag_compute_a_anyway=1):
@@ -590,6 +600,10 @@ class Flex_beam(object):
                 return 0
         def __M_int(self,l,i,j):
             return np.polyval(self.p[(i)],l)*np.polyval(self.p[(j)],l)
+
+        def __F_int(self,l,i,j):
+            return np.polyval(self.ddp[(i)],l)*np.polyval(self.ddp[(j)],l)
+
         def __get_psi(self): # psi
             ret = np.array([]).reshape((0,6))
             L = np.arange(0,self.Ldl[1]+self.step/2,self.step)
