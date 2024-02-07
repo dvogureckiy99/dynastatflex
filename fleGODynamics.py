@@ -311,20 +311,12 @@ class Flex_beam(object):
             #         self.F[j][i]= np.sum( np.multiply( self.ddpsi[:,i],self.ddpsi[:,j] )*step ) +\
             #             self.dddpsi[-1,i]*self.psi[-1,j]-self.dddpsi[0,i]*self.psi[0,j]-\
             #             self.ddpsi[-1,i]*self.dpsi[-1,j]+self.ddpsi[0,i]*self.dpsi[0,j]
-            time_psi_calc = time.time_ns()-start_time-1*1e3
             self.M = np.zeros((6,6))
             for j in range(6):
                 for i in range(6):
-                    self.M[j][i]= 6*np.sum( np.multiply( self.psi[1:-1,i],self.psi[1:-1,j] )*step )
-            M_end = time.time_ns()-start_time-1*1e3
-            self.M_true = np.zeros((6,6))
-            for j in range(6):
-                for i in range(6):
-                    self.M_true[j][i] = 6*sp.integrate.quad(self.__M_int,0,1,args=(i,j))[0]
+                    self.M[j][i] = 6*sp.integrate.quad(self.__M_int,0,1,args=(i,j))[0]
 
             time_end = time.time_ns()-start_time-1*1e3
-            print("M calculation time: %s ms" % (round((M_end-time_psi_calc)*1e-6,3)))
-            print("M_true calculation time: %s ms" % (round((time_end-M_end)*1e-6,3)))
             if (time_end-time_psi_calc)==0:
                 print("Psi matrix and vectors calculation time is less then 1 ns")
             else:
@@ -408,8 +400,6 @@ class Flex_beam(object):
                     plt.show()
                     display(Math("\\bm{F}="+self.__bmatrix(self.F)))
                     display(Math("\\bm{M}="+self.__bmatrix(self.M)))
-                    display(Math("\\bm{M}_{true}="+self.__bmatrix(self.M_true)))
-                    display(Math("\\bm{M}_{err}="+self.__bmatrix(np.abs(self.M-self.M_true))))
 
         def static(self,a0=[1,2],flag_compute_a_anyway=1):
             flag_preparing_already_done = 0
