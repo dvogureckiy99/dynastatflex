@@ -261,85 +261,90 @@ class Flex_beam(object):
             self.ind_N2 = self.__search_index(self.l_all_true,self.Ldl[2])+1
             self.Fext_type = Fext_type
 
-            flag_preparing_already_done = 0
-            if os.path.isfile('psi_matrix_and_vectors.npz'):
-                flag_preparing_already_done = 1
+            # flag_preparing_already_done = 0
+            # if os.path.isfile('psi_matrix_and_vectors.npz'):
+            #     flag_preparing_already_done = 1
 
-            if flag_preparing_already_done:
-                print("Found numpy zip archive with preparing data: psi vectors, F,M matrix. Checking if we can use it!")
-                with np.load('psi_matrix_and_vectors.npz') as npzfile: # for closign after using it
-                    self.c1 = npzfile['c1']
-                    self.c3 = npzfile['c3']
-                    self.EI = npzfile['EI']
-                    self.psi = npzfile['psi']
-                    self.dpsi = npzfile['dpsi']
-                    self.ddpsi = npzfile['ddpsi']
-                    self.dddpsi = npzfile['dddpsi']
-                    self.ddddpsi = npzfile['ddddpsi']
-                    self.F = npzfile['F']
-                    self.M = npzfile['M']
-                    N = npzfile['N']
-                    Ne = npzfile['Ne']
-                    dl = npzfile['dl']
-                    step = npzfile['step']
-                del npzfile
+            # if flag_preparing_already_done:
+            #     print("Found numpy zip archive with preparing data: psi vectors, F,M matrix. Checking if we can use it!")
+            #     with np.load('psi_matrix_and_vectors.npz') as npzfile: # for closign after using it
+            #         self.c1 = npzfile['c1']
+            #         self.c3 = npzfile['c3']
+            #         self.EI = npzfile['EI']
+            #         self.psi = npzfile['psi']
+            #         self.dpsi = npzfile['dpsi']
+            #         self.ddpsi = npzfile['ddpsi']
+            #         self.dddpsi = npzfile['dddpsi']
+            #         self.ddddpsi = npzfile['ddddpsi']
+            #         self.F = npzfile['F']
+            #         self.M = npzfile['M']
+            #         N = npzfile['N']
+            #         Ne = npzfile['Ne']
+            #         dl = npzfile['dl']
+            #         step = npzfile['step']
+            #     del npzfile
             
-            if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl) or (not step==self.step):
-                if flag_preparing_already_done:
-                    print("Checking finished. We cannot use this data as FEM or/and Ldivide parameters mismatch. Creating new one:")
-                else:
-                    print("Creating psi vectors and matrix started:")
-                self.c1 = self.E*self.I/(self.rho*self.A)
-                self.c3 = 1/(self.rho*self.A)
-                self.EI = self.E*self.I
-                start_time = time.time_ns()
-                time.sleep(0.000001) # sleep 1 us
-                # preparing for fast computation next
-                self.psi = np.zeros((self.N,6*self.Ne))
-                self.dpsi = np.zeros((self.N,6*self.Ne))
-                self.ddpsi = np.zeros((self.N,6*self.Ne))
-                self.dddpsi = np.zeros((self.N,6*self.Ne))
-                self.ddddpsi = np.zeros((self.N,6*self.Ne))
-                for (l,i) in zip(self.l_all_true,range(self.N)):  
-                    self.psi[i] = self.__get_psi(l)
-                    self.dpsi[i] = self.__get_dpsi(l)
-                    self.ddpsi[i] = self.__get_ddpsi(l)
-                    self.dddpsi[i] = self.__get_dddpsi(l)
-                    self.ddddpsi[i] = self.__get_ddddpsi(l)
-                    if not i%(int(self.N/10)):
-                        time_psi_calc = time.time_ns()-start_time-1*1e3
-                        print("Psi calculation time: {} s; iters: {}; left: {}%".format(round(time_psi_calc*1e-9,3),i,round(i*100/self.N,2))) 
+            # if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl) or (not step==self.step):
+            #     if flag_preparing_already_done:
+            #         print("Checking finished. We cannot use this data as FEM or/and Ldivide parameters mismatch. Creating new one:")
+            #     else:
+            #         print("Creating psi vectors and matrix started:")
+            self.c1 = self.E*self.I/(self.rho*self.A)
+            self.c3 = 1/(self.rho*self.A)
+            self.EI = self.E*self.I
+            start_time = time.time_ns()
+            time.sleep(0.000001) # sleep 1 us
+            # preparing for fast computation next
+            self.psi = self.__get_psi()
+            self.dpsi = self.__get_dpsi()
+            self.ddpsi = self.__get_ddpsi()
+            self.dddpsi = self.__get_dddpsi()
+            self.ddddpsi = self.__get_ddddpsi()
+            # self.dpsi = np.zeros((self.N,6*self.Ne))
+            # self.ddpsi = np.zeros((self.N,6*self.Ne))
+            # self.dddpsi = np.zeros((self.N,6*self.Ne))
+            # self.ddddpsi = np.zeros((self.N,6*self.Ne))
+            # for (l,i) in zip(self.l_all_true,range(self.N)):  
+            #     self.psi[i] = self.__get_psi(l)
+            #     self.dpsi[i] = self.__get_dpsi(l)
+            #     self.ddpsi[i] = self.__get_ddpsi(l)
+            #     self.dddpsi[i] = self.__get_dddpsi(l)
+            #     self.ddddpsi[i] = self.__get_ddddpsi(l)
+            #     if not i%(int(self.N/10)):
+            #         time_psi_calc = time.time_ns()-start_time-1*1e3
+            #         print("Psi calculation time: {} s; iters: {}; left: {}%".format(round(time_psi_calc*1e-9,3),i,round(i*100/self.N,2))) 
 
-                
-                time_psi_calc = time.time_ns()-start_time-1*1e3
-                print("Psi calculation time: %s s" % (round(time_psi_calc*1e-9,3)))
-
-                self.F = np.zeros((6*self.Ne,6*self.Ne))
-                for j in range(6*self.Ne):
-                    for i in range(6*self.Ne):
-                        self.F[j][i]= np.sum( np.multiply( self.ddpsi[:,i],self.ddpsi[:,j] )*self.step ) +\
-                            self.dddpsi[-1,i]*self.psi[-1,j]-self.dddpsi[0,i]*self.psi[0,j]-\
-                            self.ddpsi[-1,i]*self.dpsi[-1,j]+self.ddpsi[0,i]*self.dpsi[0,j]
-                
-                self.M = np.zeros((6*self.Ne,6*self.Ne))
-                for j in range(6*self.Ne):
-                    for i in range(6*self.Ne):
-                        self.M[j][i]= np.sum( np.multiply( self.psi[:,i],self.psi[:,j] )*self.step )
-
-                time_end = time.time_ns()-start_time-1*1e3
-                if (time_end-time_psi_calc)==0:
-                    print("Psi matrix and vectors calculation time is less then 1 ns")
-                else:
-                    print("Psi matrix and vectors calculation time: %s s" % (round((time_end-time_psi_calc)*1e-9,3)))
-                print("Preparing time: %s s" % (round(time_end*1e-9,3)))
             
-                np.savez('psi_matrix_and_vectors.npz',psi=self.psi,dpsi=self.dpsi,\
-                     ddpsi=self.ddpsi,dddpsi=self.dddpsi,ddddpsi=self.ddddpsi,F=self.F,\
-                        c1=self.c1,EI=self.EI,M=self.M,c3=self.c3,\
-                        N=self.N,Ne=self.Ne,step=self.step,dl=self.dl)
+            time_psi_calc = time.time_ns()-start_time-1*1e3
+            print("Psi calculation time: %s s" % (round(time_psi_calc*1e-9,3)))
+
+
+            # self.F = np.zeros((6*self.Ne,6*self.Ne))
+            # for j in range(6*self.Ne):
+            #     for i in range(6*self.Ne):
+            #         self.F[j][i]= np.sum( np.multiply( self.ddpsi[:,i],self.ddpsi[:,j] )*self.step ) +\
+            #             self.dddpsi[-1,i]*self.psi[-1,j]-self.dddpsi[0,i]*self.psi[0,j]-\
+            #             self.ddpsi[-1,i]*self.dpsi[-1,j]+self.ddpsi[0,i]*self.dpsi[0,j]
+            
+            # self.M = np.zeros((6*self.Ne,6*self.Ne))
+            # for j in range(6*self.Ne):
+            #     for i in range(6*self.Ne):
+            #         self.M[j][i]= np.sum( np.multiply( self.psi[:,i],self.psi[:,j] )*self.step )
+
+            time_end = time.time_ns()-start_time-1*1e3
+            if (time_end-time_psi_calc)==0:
+                print("Psi matrix and vectors calculation time is less then 1 ns")
             else:
-                if flag_preparing_already_done:
-                    print("Checking finished. Using loaded data")
+                print("Psi matrix and vectors calculation time: %s s" % (round((time_end-time_psi_calc)*1e-9,3)))
+            print("Preparing time: %s s" % (round(time_end*1e-9,3)))
+            
+                # np.savez('psi_matrix_and_vectors.npz',psi=self.psi,dpsi=self.dpsi,\
+                #      ddpsi=self.ddpsi,dddpsi=self.dddpsi,ddddpsi=self.ddddpsi,F=self.F,\
+                #         c1=self.c1,EI=self.EI,M=self.M,c3=self.c3,\
+                #         N=self.N,Ne=self.Ne,step=self.step,dl=self.dl)
+            # else:
+            #     if flag_preparing_already_done:
+            #         print("Checking finished. Using loaded data")
 
             # preparing ddFext
             if l_Fext==None:
@@ -355,14 +360,14 @@ class Flex_beam(object):
                 dFext = np.zeros((1,self.N))[0] 
                 dFext[int(force_appl_point)-w_steps_num]=w
                 dFext[int(force_appl_point)+w_steps_num]=-w
-                self.dFext = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi)*self.step,axis=0) 
+                # self.dFext = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi)*self.step,axis=0) 
                 Fext = np.zeros((1,self.N))[0] 
                 Fext[int(force_appl_point)-w_steps_num+1:int(force_appl_point)+w_steps_num+1]=w
                 Fext[int(force_appl_point)-w_steps_num]=w/2
                 Fext[int(force_appl_point)+w_steps_num]=w/2
-                self.Fext = np.sum(np.multiply( Fext.reshape(self.N,1),self.psi)*self.step,axis=0) 
+                # self.Fext = np.sum(np.multiply( Fext.reshape(self.N,1),self.psi)*self.step,axis=0) 
                 if disp:
-                    print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
+                    # print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
                     plt.figure(figsize = (20,8))
                     plt.subplot(2,2,1)
                     plt.plot(self.l_all_true,Fext)
@@ -381,8 +386,8 @@ class Flex_beam(object):
                     plt.xlim([l_Fext-(w_steps_num+5)*self.step,l_Fext+(w_steps_num+5)*self.step])
                     plt.title("Fext - distributed force [N/m]")
                     plt.show()
-                    display(Math("\\bm{F}="+self.__bmatrix(self.F)))
-                    display(Math("\\bm{M}="+self.__bmatrix(self.M)))
+                    # display(Math("\\bm{F}="+self.__bmatrix(self.F)))
+                    # display(Math("\\bm{M}="+self.__bmatrix(self.M)))
             elif Fext_type=='triangle':
                 Fext_max = Fext
                 w = 2*Fext_max/self.L # distributed force
@@ -393,8 +398,8 @@ class Flex_beam(object):
                 for (l,i) in zip(self.l_all_true,range(self.N)):
                     Fext[i]=dw*l-2*self.__delta1(l-l_Fext)*(l-l_Fext)*dw
                     dFext[i]=dw-2*self.__delta1(l-l_Fext)*dw
-                self.Fext = np.sum(np.multiply( Fext.reshape(self.N,1),self.psi)*self.step,axis=0) 
-                self.dFext = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi)*self.step,axis=0) 
+                # self.Fext = np.sum(np.multiply( Fext.reshape(self.N,1),self.psi)*self.step,axis=0) 
+                # self.dFext = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi)*self.step,axis=0) 
 
                 if disp:
                     print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
@@ -408,8 +413,8 @@ class Flex_beam(object):
                     plt.plot(self.l_all_true,dFext)
                     plt.grid()
                     plt.show()
-                    display(Math("\\bm{F}="+self.__bmatrix(self.F)))
-                    display(Math("\\bm{M}="+self.__bmatrix(self.M)))
+                    # display(Math("\\bm{F}="+self.__bmatrix(self.F)))
+                    # display(Math("\\bm{M}="+self.__bmatrix(self.M)))
 
         def static(self,a0=[1,2],flag_compute_a_anyway=1):
             flag_preparing_already_done = 0
@@ -599,49 +604,49 @@ class Flex_beam(object):
             else:
                 return 0
         def __get_psi(self): # psi
-            ret = np.array([])
+            ret = np.array([]).reshape((0,6))
             L = np.arange(0,self.Ldl[1]+self.step/2,self.step)
             for l in L:
                 l_line = np.array([])
                 for i in range(6):
                     l_line = np.append(l_line,np.polyval(self.p[(i)],l))
-                ret = np.append(ret, l_line)
+                ret = np.vstack((ret, l_line))
             return ret
         def __get_dpsi(self): # dpsi
-            ret = np.array([])
+            ret = np.array([]).reshape((0,6))
             L = np.arange(0,self.Ldl[1]+self.step/2,self.step)
             for l in L:
                 l_line = np.array([])
                 for i in range(6):
                     l_line = np.append(l_line,np.polyval(self.dp[(i)],l))
-                ret = np.append(ret, l_line)
+                ret = np.vstack((ret, l_line))
             return ret
         def __get_ddpsi(self): # ddpsi
-            ret = np.array([])
+            ret = np.array([]).reshape((0,6))
             L = np.arange(0,self.Ldl[1]+self.step/2,self.step)
             for l in L:
                 l_line = np.array([])
                 for i in range(6):
                     l_line = np.append(l_line,np.polyval(self.ddp[(i)],l))
-                ret = np.append(ret, l_line)
+                ret = np.vstack((ret, l_line))
             return ret
         def __get_dddpsi(self): # dddpsi
-            ret = np.array([])
+            ret = np.array([]).reshape((0,6))
             L = np.arange(0,self.Ldl[1]+self.step/2,self.step)
             for l in L:
                 l_line = np.array([])
                 for i in range(6):
                     l_line = np.append(l_line,np.polyval(self.dddp[(i)],l))
-                ret = np.append(ret, l_line)
+                ret = np.vstack((ret, l_line))
             return ret
         def __get_ddddpsi(self): # psi
-            ret = np.array([])
+            ret = np.array([]).reshape((0,6))
             L = np.arange(0,self.Ldl[1]+self.step/2,self.step)
             for l in L:
                 l_line = np.array([])
                 for i in range(6):
                     l_line = np.append(l_line,np.polyval(self.ddddp[(i)],l))
-                ret = np.append(ret, l_line)
+                ret = np.vstack((ret, l_line))
             return ret
 
         def show_one_element_approx(self,e=1):
