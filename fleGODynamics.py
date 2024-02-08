@@ -904,8 +904,10 @@ class Flex_beam(object):
                 #evaluation
                 start_time = time.time_ns()
                 time.sleep(0.000001) # sleep 1 us
-                phi_appr =  np.sum(np.row_stack(np.hsplit(np.matmul(self.psi_full_h,self.a),self.Ne)),axis=1)
-                dphi_appr =  np.sum(np.row_stack(np.hsplit(np.matmul(self.dpsi_full_h,self.a),self.Ne)),axis=1)
+                phi_appr =  np.sum(np.row_stack(np.hsplit(np.multiply(self.psi_full_h,self.a),self.Ne)),axis=1)
+                dphi_appr =  np.sum(np.row_stack(np.hsplit(np.multiply(self.dpsi_full_h,self.a),self.Ne)),axis=1)
+                phi_appr = np.delete(phi_appr, index)
+                dphi_appr = np.delete(dphi_appr, index)
                 cos_phi_appr = np.cos(phi_appr)
                 sin_phi_appr = np.sin(phi_appr)
                 x = -self.step+np.cumsum(cos_phi_appr)*self.step
@@ -920,7 +922,8 @@ class Flex_beam(object):
                 #evaluation
                 start_time = time.time_ns()
                 time.sleep(0.000001) # sleep 1 us
-                phi_appr =  np.sum(np.row_stack(np.hsplit(np.matmul(self.psi_full_h,self.a),self.Ne)),axis=1)
+                phi_appr =  np.sum(np.row_stack(np.hsplit(np.multiply(self.psi_full_h,self.a),self.Ne)),axis=1)
+                phi_appr = np.delete(phi_appr, index)
                 cos_phi_appr = np.cos(phi_appr)
                 sin_phi_appr = np.sin(phi_appr)
                 x = -self.step+np.cumsum(cos_phi_appr)*self.step
