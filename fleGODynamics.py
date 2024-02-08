@@ -210,6 +210,13 @@ class Flex_beam(object):
             
             self.iteration_num += 1   
 
+            phi_appr =  np.sum(np.row_stack(np.hsplit(np.multiply(self.psi_full_h,a),self.Ne)),axis=1)
+            dphi_appr =  np.sum(np.row_stack(np.hsplit(np.multiply(self.dpsi_full_h,a),self.Ne)),axis=1)
+            ddphi_appr =  np.sum(np.row_stack(np.hsplit(np.multiply(self.ddpsi_full_h,a),self.Ne)),axis=1) 
+            phi_appr = np.delete(phi_appr, self.index)
+            dphi_appr = np.delete(dphi_appr, self.index)
+            ddphi_appr = np.delete(ddphi_appr, self.index)
+
             dphi_appr_power3 =  np.power(np.matmul(self.dpsi,a),3)  # [1,N]
             phi_appr = np.matmul(self.psi[:self.ind_N2],a)  # [1,N]
             ddphi_appr = np.matmul(self.ddpsi[:self.ind_N2],a)  # [1,N]
@@ -261,6 +268,10 @@ class Flex_beam(object):
             self.ind_N2 = self.__search_index(self.l_all_true,self.Ldl[2])+1
             self.Fext_type = Fext_type
             self.step4psi = self.step/self.Ldl[1]
+            self.index = np.array([])
+            for i in range(self.Ne-1):
+                self.index = np.append(self.index,self.steps_per_fe+1+(self.steps_per_fe+1)*i) 
+            self.index = np.int16(self.index)
 
             flag_preparing_already_done = 0
             if os.path.isfile('psi_matrix_and_vectors.npz'):
@@ -339,6 +350,16 @@ class Flex_beam(object):
                         c1=self.c1,EI=self.EI,M=self.M,c3=self.c3,\
                         N=self.N,Ne=self.Ne,step=self.step,dl=self.dl)
             else:
+                self.psi_full_h = np.array([]).reshape(np.shape(self.psi)[0],0)
+                for i in range(self.Ne):
+                    self.psi_full_h = np.hstack((self.psi_full_h,self.psi))
+                self.dpsi_full_h = np.array([]).reshape(np.shape(self.psi)[0],0)
+                for i in range(self.Ne):
+                    self.dpsi_full_h = np.hstack((self.dpsi_full_h,self.dpsi))
+                self.ddpsi_full_h = np.array([]).reshape(np.shape(self.psi)[0],0)
+                for i in range(self.Ne):
+                    self.ddpsi_full_h = np.hstack((self.ddpsi_full_h,self.ddpsi))
+
                 if flag_preparing_already_done:
                     print("Checking finished. Using loaded data")
 
