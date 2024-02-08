@@ -874,14 +874,22 @@ class Flex_beam(object):
                 print("Found an approximation. Will use it!")
                 self.a = self.a_approx
                 flag_a_approx_is = 1
-                
+
+            index = np.array([])
+            for i in range(self.Ne-1):
+                index = np.append(index,self.steps_per_fe+1+(self.steps_per_fe+1)*i) 
+            index = np.int16(index)
+
             if der_num == 2:
                 #evaluation
                 start_time = time.time_ns()
                 time.sleep(0.000001) # sleep 1 us
-                phi_appr = np.matmul(self.psi,self.a)
-                dphi_appr = np.matmul(self.dpsi,self.a)
-                ddphi_appr = np.matmul(self.ddpsi,self.a)
+                phi_appr =  np.sum(np.row_stack(np.hsplit(np.multiply(self.psi_full_h,self.a),self.Ne)),axis=1)
+                dphi_appr =  np.sum(np.row_stack(np.hsplit(np.multiply(self.dpsi_full_h,self.a),self.Ne)),axis=1)
+                ddphi_appr =  np.sum(np.row_stack(np.hsplit(np.multiply(self.ddpsi_full_h,self.a),self.Ne)),axis=1) 
+                phi_appr = np.delete(phi_appr, index)
+                dphi_appr = np.delete(dphi_appr, index)
+                ddphi_appr = np.delete(ddphi_appr, index)
                 cos_phi_appr = np.cos(phi_appr)
                 sin_phi_appr = np.sin(phi_appr)
                 x = -self.step+np.cumsum(cos_phi_appr)*self.step
@@ -896,8 +904,8 @@ class Flex_beam(object):
                 #evaluation
                 start_time = time.time_ns()
                 time.sleep(0.000001) # sleep 1 us
-                phi_appr = np.matmul(self.psi,self.a)
-                dphi_appr = np.matmul(self.dpsi,self.a)
+                phi_appr =  np.sum(np.row_stack(np.hsplit(np.matmul(self.psi_full_h,self.a),self.Ne)),axis=1)
+                dphi_appr =  np.sum(np.row_stack(np.hsplit(np.matmul(self.dpsi_full_h,self.a),self.Ne)),axis=1)
                 cos_phi_appr = np.cos(phi_appr)
                 sin_phi_appr = np.sin(phi_appr)
                 x = -self.step+np.cumsum(cos_phi_appr)*self.step
@@ -912,7 +920,7 @@ class Flex_beam(object):
                 #evaluation
                 start_time = time.time_ns()
                 time.sleep(0.000001) # sleep 1 us
-                phi_appr = np.matmul(self.psi,self.a)
+                phi_appr =  np.sum(np.row_stack(np.hsplit(np.matmul(self.psi_full_h,self.a),self.Ne)),axis=1)
                 cos_phi_appr = np.cos(phi_appr)
                 sin_phi_appr = np.sin(phi_appr)
                 x = -self.step+np.cumsum(cos_phi_appr)*self.step
