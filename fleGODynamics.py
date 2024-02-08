@@ -805,6 +805,9 @@ class Flex_beam(object):
                     self.psi = npzfile['psi']
                     self.dpsi = npzfile['dpsi']
                     self.ddpsi = npzfile['ddpsi']
+                    self.psi_full_h = npzfile['psi_full_h']
+                    self.dpsi_full_h = npzfile['dpsi_full_h']
+                    self.ddpsi_full_h = npzfile['ddpsi_full_h']
                     N = npzfile['N']
                     Ne = npzfile['Ne']
                     dl = npzfile['dl']
@@ -814,6 +817,8 @@ class Flex_beam(object):
             if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl) or (not step==self.step):
                 if flag_preparing_already_done:
                     print("Checking finished. We cannot use this data as FEM or/and Ldivide parameters mismatch. Creating new one:")
+                else:
+                    print("Checking finished. There is no psi vectors prepared, creating new one!")
                 self.c1 = self.E*self.I/(self.rho*self.A)
                 self.EI = self.E*self.I
                 start_time = time.time_ns()
@@ -821,9 +826,6 @@ class Flex_beam(object):
                 self.psi = self.__get_psi()
                 self.dpsi = self.__get_dpsi()
                 self.ddpsi = self.__get_ddpsi()
-                self.dddpsi = self.__get_dddpsi()
-                self.ddddpsi = self.__get_ddddpsi()
-                
                 self.psi_full_h = np.array([]).reshape(np.shape(self.psi)[0],0)
                 for i in range(self.Ne):
                     self.psi_full_h = np.hstack((self.psi_full_h,self.psi))
@@ -838,7 +840,8 @@ class Flex_beam(object):
                 print("Preparing time: %s s" % (round(time_end*1e-9,3)))
 
                 np.savez('psi_vectors.npz',psi=self.psi,dpsi=self.dpsi,\
-                     ddpsi=self.ddpsi,N=self.N,Ne=self.Ne,step=self.step,dl=self.dl)
+                    ddpsi=self.ddpsi,N=self.N,Ne=self.Ne,step=self.step,dl=self.dl,\
+                    psi_full_h=self.psi_full_h,dpsi_full_h=self.dpsi_full_h,ddpsi_full_h=self.ddpsi_full_h)
             else:
                 if flag_preparing_already_done:
                     print("Checking finished. Using loaded data")
