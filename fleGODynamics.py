@@ -302,6 +302,16 @@ class Flex_beam(object):
                 self.dddpsi = self.__get_dddpsi()
                 self.ddddpsi = self.__get_ddddpsi()
                 
+                self.psi_full_h = np.array([]).reshape(np.shape(self.psi)[0],0)
+                for i in range(self.Ne):
+                    self.psi_full_h = np.hstack((self.psi_full_h,self.psi))
+                self.dpsi_full_h = np.array([]).reshape(np.shape(self.psi)[0],0)
+                for i in range(self.Ne):
+                    self.dpsi_full_h = np.hstack((self.dpsi_full_h,self.dpsi))
+                self.ddpsi_full_h = np.array([]).reshape(np.shape(self.psi)[0],0)
+                for i in range(self.Ne):
+                    self.ddpsi_full_h = np.hstack((self.ddpsi_full_h,self.ddpsi))
+                
                 time_psi_calc = time.time_ns()-start_time-1*1e3
                 print("Psi calculation time: %s s" % (round(time_psi_calc*1e-9,3)))
 
@@ -808,13 +818,22 @@ class Flex_beam(object):
                 self.EI = self.E*self.I
                 start_time = time.time_ns()
                 time.sleep(0.000001) # sleep 1 us
-                self.psi = np.zeros((self.N,6*self.Ne))
-                self.dpsi = np.zeros((self.N,6*self.Ne))
-                self.ddpsi = np.zeros((self.N,6*self.Ne))
-                for (l,i) in zip(self.l_all_true,range(self.N)):  
-                    self.psi[i] = self.__get_psi(l)
-                    self.dpsi[i] = self.__get_dpsi(l)
-                    self.ddpsi[i] =self.__get_ddpsi(l)
+                self.psi = self.__get_psi()
+                self.dpsi = self.__get_dpsi()
+                self.ddpsi = self.__get_ddpsi()
+                self.dddpsi = self.__get_dddpsi()
+                self.ddddpsi = self.__get_ddddpsi()
+                
+                self.psi_full_h = np.array([]).reshape(np.shape(self.psi)[0],0)
+                for i in range(self.Ne):
+                    self.psi_full_h = np.hstack((self.psi_full_h,self.psi))
+                self.dpsi_full_h = np.array([]).reshape(np.shape(self.psi)[0],0)
+                for i in range(self.Ne):
+                    self.dpsi_full_h = np.hstack((self.dpsi_full_h,self.dpsi))
+                self.ddpsi_full_h = np.array([]).reshape(np.shape(self.psi)[0],0)
+                for i in range(self.Ne):
+                    self.ddpsi_full_h = np.hstack((self.ddpsi_full_h,self.ddpsi))
+
                 time_end = time.time_ns()-start_time-1*1e3
                 print("Preparing time: %s s" % (round(time_end*1e-9,3)))
 
