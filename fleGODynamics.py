@@ -224,7 +224,7 @@ class Flex_beam(object):
             cosphiappr_ddphiappr = np.multiply(np.cos(phi_appr),ddphi_appr)
 
             # cost = np.concatenate([ self.EI*(np.matmul(self.F,a)+\
-            cost = np.concatenate([ self.dFext-self.EI*(np.matmul(self.F,a)+\
+            cost = np.concatenate([ self.dFext-self.EI*(np.matmul(self.F_full_h,a)+\
                                 (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N,1),self.dpsi_full_v)*self.step,axis=0)-\
                             dphi_appr_power3[int(self.N-1)]*self.psi_full_v[int(self.N-1)]+dphi_appr_power3[0]*self.psi_full_v[0])),\
                                 # [self.Fext[3]+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0)) ],\
@@ -345,11 +345,17 @@ class Flex_beam(object):
                         self.F[j][i] = 6*sp.integrate.quad(self.__F_int,0,1,args=(i,j))[0] +\
                             np.polyval(self.dddp[(i)],1)*np.polyval(self.p[(j)],1)-np.polyval(self.dddp[(i)],0)*np.polyval(self.p[(j)],0)-\
                             np.polyval(self.ddp[(i)],1)*np.polyval(self.dp[(j)],1)+np.polyval(self.ddp[(i)],0)*np.polyval(self.dp[(j)],0)
+                self.F_full_h = np.array([]).reshape(6,0)
+                for i in range(self.Ne):
+                    self.F_full_h = np.hstack((self.F_full_h,self.F))
 
                 self.M = np.zeros((6,6))
                 for j in range(6):
                     for i in range(6):
                         self.M[j][i] = 6*sp.integrate.quad(self.__M_int,0,1,args=(i,j))[0]
+                self.M_full_h = np.array([]).reshape(6,0)
+                for i in range(self.Ne):
+                    self.M_full_h = np.hstack((self.M_full_h,self.M))
 
                 time_end = time.time_ns()-start_time-1*1e3
                 if (time_end-time_psi_calc)==0:
@@ -385,6 +391,13 @@ class Flex_beam(object):
                 for i in range(self.Ne):
                     self.ddpsi_full_v = np.vstack((self.ddpsi_full_v,self.ddpsi))
                 self.ddpsi_full_v = np.delete(self.ddpsi_full_v, self.index,axis=0)
+
+                self.F_full_h = np.array([]).reshape(6,0)
+                for i in range(self.Ne):
+                    self.F_full_h = np.hstack((self.F_full_h,self.F))
+                self.M_full_h = np.array([]).reshape(6,0)
+                for i in range(self.Ne):
+                    self.M_full_h = np.hstack((self.M_full_h,self.M))
 
                 if flag_preparing_already_done:
                     print("Checking finished. Using loaded data")
