@@ -325,15 +325,15 @@ class Flex_beam(object):
 
                 self.psi_full_v = np.array([]).reshape(0,6)
                 for i in range(self.Ne):
-                    self.psi_full_v = np.hstack((self.psi_full_v,self.psi))
+                    self.psi_full_v = np.vstack((self.psi_full_v,self.psi))
                 self.psi_full_v = np.delete(self.psi_full_v, self.index,axis=0)
                 self.dpsi_full_v = np.array([]).reshape(0,6)
                 for i in range(self.Ne):
-                    self.dpsi_full_v = np.hstack((self.dpsi_full_v,self.dpsi))
-                self.dpsi_full_v = np.delete(self.dpsi_full_hpsi_full_v, self.index,axis=0)
+                    self.dpsi_full_v = np.vstack((self.dpsi_full_v,self.dpsi))
+                self.dpsi_full_v = np.delete(self.dpsi_full_v, self.index,axis=0)
                 self.ddpsi_full_v = np.array([]).reshape(0,6)
                 for i in range(self.Ne):
-                    self.ddpsi_full_v = np.hstack((self.ddpsi_full_v,self.ddpsi))
+                    self.ddpsi_full_v = np.vstack((self.ddpsi_full_v,self.ddpsi))
                 self.ddpsi_full_v = np.delete(self.ddpsi_full_v, self.index,axis=0)
                 
                 time_psi_calc = time.time_ns()-start_time-1*1e3
@@ -375,15 +375,15 @@ class Flex_beam(object):
 
                 self.psi_full_v = np.array([]).reshape(0,6)
                 for i in range(self.Ne):
-                    self.psi_full_v = np.hstack((self.psi_full_v,self.psi))
+                    self.psi_full_v = np.vstack((self.psi_full_v,self.psi))
                 self.psi_full_v = np.delete(self.psi_full_v, self.index,axis=0)
                 self.dpsi_full_v = np.array([]).reshape(0,6)
                 for i in range(self.Ne):
-                    self.dpsi_full_v = np.hstack((self.dpsi_full_v,self.dpsi))
-                self.dpsi_full_v = np.delete(self.dpsi_full_hpsi_full_v, self.index,axis=0)
+                    self.dpsi_full_v = np.vstack((self.dpsi_full_v,self.dpsi))
+                self.dpsi_full_v = np.delete(self.dpsi_full_v, self.index,axis=0)
                 self.ddpsi_full_v = np.array([]).reshape(0,6)
                 for i in range(self.Ne):
-                    self.ddpsi_full_v = np.hstack((self.ddpsi_full_v,self.ddpsi))
+                    self.ddpsi_full_v = np.vstack((self.ddpsi_full_v,self.ddpsi))
                 self.ddpsi_full_v = np.delete(self.ddpsi_full_v, self.index,axis=0)
 
                 if flag_preparing_already_done:
@@ -441,7 +441,7 @@ class Flex_beam(object):
                 for (l,i) in zip(self.l_all_true,range(self.N)):
                     Fext[i]=dw*l-2*self.__delta1(l-l_Fext)*(l-l_Fext)*dw
                     dFext[i]=dw-2*self.__delta1(l-l_Fext)*dw
-                self.Fext = np.sum(np.multiply( Fext.reshape(self.N,1),self.psi_full_h)*self.step,axis=0) 
+                self.Fext = np.sum(np.multiply( Fext.reshape(self.N,1),self.psi_full_v)*self.step,axis=0) 
                 self.dFext = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi_full_v)*self.step,axis=0) 
 
                 if disp:
