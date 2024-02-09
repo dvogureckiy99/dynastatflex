@@ -247,13 +247,13 @@ class Flex_beam(object):
                                 (1/3)*(np.sum(f3*self.step,axis=0)-\
                             dphi_appr_power3[int(self.N-1)]*self.psi_full_end + dphi_appr_power3[0]*self.psi_full_start)),\
                                 # [self.Fext[3]+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0)) ],\
-                                self.Fext + self.EI*(-np.sum(f3x*self.step,axis=0)+\
+                                self.Fext + self.EI*(-np.sum(f3x*self.step,axis=0) +\
                             sinphiappr_ddphiappr[int(self.N-1)]*self.psi_full_end - sinphiappr_ddphiappr[0]*self.psi_full_start),\
                                 # [self.Fext[3]+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0))] ])
-                                self.Fext + self.EI*(np.sum(f3y*self.step,axis=0)-\
+                                self.Fext + self.EI*(np.sum(f3y*self.step,axis=0) -\
                             cosphiappr_ddphiappr[int(self.N-1)]*self.psi_full_end + cosphiappr_ddphiappr[0]*self.psi_full_start) ]) # 3*6*Ne
             # cost = np.sum(np.power(cost,2))
-            print("iter={},cost={}".format(self.iteration_num,cost[0]))
+            print("iter={},cost={}".format(self.iteration_num,np.sum(np.power(cost,2))))
             # print("iter={}".format(self.iteration_num))
             return cost
             
@@ -564,7 +564,7 @@ class Flex_beam(object):
                 
                 start_time = time.time()
                 # res = sp.optimize.minimize(self.__fun_static_optim, a0,method='Nelder-Mead')
-                tol=1e-3
+                tol=1e-15
                 res = sp.optimize.least_squares(self.__fun_static_optim,a0,\
                                                 ftol=tol,gtol=tol,xtol=tol,max_nfev=1e6,method='trf')
                 end_time = time.time()-start_time
