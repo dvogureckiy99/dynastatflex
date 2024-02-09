@@ -223,18 +223,37 @@ class Flex_beam(object):
             sinphiappr_ddphiappr = np.multiply(np.sin(phi_appr),ddphi_appr)
             cosphiappr_ddphiappr = np.multiply(np.cos(phi_appr),ddphi_appr)
 
+            f3 = np.array([]).reshape(self.N,0)
+            f3_repeat = np.multiply(dphi_appr_power3.reshape(self.N,1),self.dpsi_full_v)
+            for i in range(self.Ne):
+                f3 = np.hstack((f3,f3_repeat))
+            f3x = np.array([]).reshape(self.N,0)
+            f3x_repeat = np.multiply(sinphiappr_ddphiappr.reshape(self.N,1),self.dpsi_full_v)
+            for i in range(self.Ne):
+                f3x = np.hstack((f3x,f3x_repeat))
+            f3y = np.array([]).reshape(self.N,0)
+            f3y_repeat = np.multiply(cosphiappr_ddphiappr.reshape(self.N,1),self.dpsi_full_v)
+            for i in range(self.Ne):
+                f3y = np.hstack((f3y,f3y_repeat))
+            
+            
+            # try:
+            #     print(np.shape(  np.sum(np.row_stack(np.hsplit(np.multiply(self.F_full_h,a),self.Ne)),axis=1)  ))
+            # except:
+            #     print("error")
+
             # cost = np.concatenate([ self.EI*(np.matmul(self.F,a)+\
-            cost = np.concatenate([ self.dFext-self.EI*(np.matmul(self.F_full_h,a)+\
-                                (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N,1),self.dpsi_full_v)*self.step,axis=0)-\
-                            dphi_appr_power3[int(self.N-1)]*self.psi_full_v[int(self.N-1)]+dphi_appr_power3[0]*self.psi_full_v[0])),\
+            cost = np.concatenate([ self.dFext-self.EI*(np.sum(np.row_stack(np.hsplit(np.multiply(self.F_full_h,a),self.Ne)),axis=1)+\
+                                (1/3)*(np.sum(f3*self.step,axis=0)-\
+                            dphi_appr_power3[int(self.N-1)]*self.psi_full_end + dphi_appr_power3[0]*self.psi_full_start)),\
                                 # [self.Fext[3]+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0)) ],\
-                                self.Fext + self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr.reshape(self.N,1),self.dpsi_full_v)*self.step,axis=0)+\
-                            sinphiappr_ddphiappr[int(self.N-1)]*self.psi_full_v[int(self.N-1)]-sinphiappr_ddphiappr[0]*self.psi_full_v[0]),\
+                                self.Fext + self.EI*(-np.sum(f3x*self.step,axis=0)+\
+                            sinphiappr_ddphiappr[int(self.N-1)]*self.psi_full_end - sinphiappr_ddphiappr[0]*self.psi_full_start),\
                                 # [self.Fext[3]+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0))] ])
-                                self.Fext + self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.N,1),self.dpsi_full_v)*self.step,axis=0)-\
-                            cosphiappr_ddphiappr[int(self.N-1)]*self.psi_full_v[int(self.N-1)]+cosphiappr_ddphiappr[0]*self.psi_full_v[0]) ]) # 3*6
+                                self.Fext + self.EI*(np.sum(f3y*self.step,axis=0)-\
+                            cosphiappr_ddphiappr[int(self.N-1)]*self.psi_full_end + cosphiappr_ddphiappr[0]*self.psi_full_start) ]) # 3*6*Ne
             # cost = np.sum(np.power(cost,2))
-            print("iter={},cost= {}".format(self.iteration_num,cost[0]))
+            print("iter={},cost={}".format(self.iteration_num,cost[0]))
             # print("iter={}".format(self.iteration_num))
             return cost
             
@@ -335,6 +354,13 @@ class Flex_beam(object):
                 for i in range(self.Ne):
                     self.ddpsi_full_v = np.vstack((self.ddpsi_full_v,self.ddpsi))
                 self.ddpsi_full_v = np.delete(self.ddpsi_full_v, self.index,axis=0)
+
+                self.psi_full_end = np.array([])
+                for i in range(self.Ne):
+                    self.psi_full_end = np.append(self.psi_full_end,self.psi[-1])
+                self.psi_full_start = np.array([])
+                for i in range(self.Ne):
+                    self.psi_full_start = np.append(self.psi_full_start,self.psi[0])
                 
                 time_psi_calc = time.time_ns()-start_time-1*1e3
                 print("Psi calculation time: %s s" % (round(time_psi_calc*1e-9,3)))
@@ -399,6 +425,13 @@ class Flex_beam(object):
                 for i in range(self.Ne):
                     self.M_full_h = np.hstack((self.M_full_h,self.M))
 
+                self.psi_full_end = np.array([])
+                for i in range(self.Ne):
+                    self.psi_full_end = np.append(self.psi_full_end,self.psi[-1])
+                self.psi_full_start = np.array([])
+                for i in range(self.Ne):
+                    self.psi_full_start = np.append(self.psi_full_start,self.psi[0])
+
                 if flag_preparing_already_done:
                     print("Checking finished. Using loaded data")
 
@@ -454,8 +487,14 @@ class Flex_beam(object):
                 for (l,i) in zip(self.l_all_true,range(self.N)):
                     Fext[i]=dw*l-2*self.__delta1(l-l_Fext)*(l-l_Fext)*dw
                     dFext[i]=dw-2*self.__delta1(l-l_Fext)*dw
-                self.Fext = np.sum(np.multiply( Fext.reshape(self.N,1),self.psi_full_v)*self.step,axis=0) 
-                self.dFext = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi_full_v)*self.step,axis=0) 
+                Fext_one = np.sum(np.multiply( Fext.reshape(self.N,1),self.psi_full_v)*self.step,axis=0) 
+                self.Fext = np.array([])
+                for i in range(self.Ne):
+                    self.Fext = np.append(self.Fext,Fext_one)
+                dFext_one = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi_full_v)*self.step,axis=0) 
+                self.dFext = np.array([])
+                for i in range(self.Ne):
+                    self.dFext = np.append(self.dFext,dFext_one)
 
                 if disp:
                     print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
