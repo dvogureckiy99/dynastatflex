@@ -226,13 +226,13 @@ class Flex_beam(object):
             # cost = np.concatenate([ self.EI*(np.matmul(self.F,a)+\
             cost = np.concatenate([ self.dFext-self.EI*(np.matmul(self.F,a)+\
                                 (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N,1),self.dpsi_full_v)*self.step,axis=0)-\
-                            dphi_appr_power3[int(self.N-1)]*self.psi[int(self.N-1)]+dphi_appr_power3[0]*self.psi[0])),\
+                            dphi_appr_power3[int(self.N-1)]*self.psi_full_v[int(self.N-1)]+dphi_appr_power3[0]*self.psi_full_v[0])),\
                                 # [self.Fext[3]+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0)) ],\
                                 self.Fext + self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr.reshape(self.N,1),self.dpsi_full_v)*self.step,axis=0)+\
-                            sinphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]-sinphiappr_ddphiappr[0]*self.psi[0]),\
+                            sinphiappr_ddphiappr[int(self.N-1)]*self.psi_full_v[int(self.N-1)]-sinphiappr_ddphiappr[0]*self.psi_full_v[0]),\
                                 # [self.Fext[3]+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0))] ])
-                                self.Fext + self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
-                            cosphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]+cosphiappr_ddphiappr[0]*self.psi[0]) ]) # 3*6*Ne
+                                self.Fext + self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.N,1),self.dpsi_full_v)*self.step,axis=0)-\
+                            cosphiappr_ddphiappr[int(self.N-1)]*self.psi_full_v[int(self.N-1)]+cosphiappr_ddphiappr[0]*self.psi_full_v[0]) ]) # 3*6
             # cost = np.sum(np.power(cost,2))
             print("iter={},cost= {}".format(self.iteration_num,cost[0]))
             # print("iter={}".format(self.iteration_num))
