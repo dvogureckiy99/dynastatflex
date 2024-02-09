@@ -243,7 +243,8 @@ class Flex_beam(object):
             #     print("error")
 
             # cost = np.concatenate([ self.EI*(np.matmul(self.F,a)+\
-            cost = np.concatenate([ self.dFext-self.EI*(np.sum(np.row_stack(np.hsplit(np.multiply(self.F_full_h,a),self.Ne)),axis=1)+\
+            for i in range(self.Ne):
+                cost = np.concatenate([cost, self.dFext-self.EI*(np.matmul(self.F,a[i*6:i*6+6])+\
                                 (1/3)*(np.sum(f3*self.step,axis=0)-\
                             dphi_appr_power3[int(self.N-1)]*self.psi_full_end + dphi_appr_power3[0]*self.psi_full_start)),\
                                 # [self.Fext[3]+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0)) ],\
@@ -251,8 +252,7 @@ class Flex_beam(object):
                             sinphiappr_ddphiappr[int(self.N-1)]*self.psi_full_end - sinphiappr_ddphiappr[0]*self.psi_full_start),\
                                 # [self.Fext[3]+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0))] ])
                                 self.Fext + self.EI*(np.sum(f3y*self.step,axis=0) -\
-                            cosphiappr_ddphiappr[int(self.N-1)]*self.psi_full_end + cosphiappr_ddphiappr[0]*self.psi_full_start),\
-                                 [np.cos(phi_appr[-1])], [np.sin(phi_appr[-1])] ]) # 3*6*Ne
+                            cosphiappr_ddphiappr[int(self.N-1)]*self.psi_full_end + cosphiappr_ddphiappr[0]*self.psi_full_start)  ]) # 3*6*Ne
             # cost = np.sum(np.power(cost,2))
             print("iter={},cost={}".format(self.iteration_num,np.sum(np.power(cost,2))))
             # print("iter={}".format(self.iteration_num))
@@ -288,153 +288,21 @@ class Flex_beam(object):
             self.ind_N2 = self.__search_index(self.l_all_true,self.Ldl[2])+1
             self.Fext_type = Fext_type
             self.step4psi = self.step/self.Ldl[1]
-            self.index = np.array([])
-            for i in range(self.Ne-1):
-                self.index = np.append(self.index,self.steps_per_fe+1+(self.steps_per_fe+1)*i) 
-            self.index = np.int16(self.index)
 
-            flag_preparing_already_done = 0
-            if os.path.isfile('psi_matrix_and_vectors.npz'):
-                flag_preparing_already_done = 1
+            self.c1 = self.E*self.I/(self.rho*self.A)
+            self.c3 = 1/(self.rho*self.A)
+            self.EI = self.E*self.I
 
-            if flag_preparing_already_done:
-                print("Found numpy zip archive with preparing data: psi vectors, F,M matrix. Checking if we can use it!")
-                with np.load('psi_matrix_and_vectors.npz') as npzfile: # for closign after using it
-                    self.c1 = npzfile['c1']
-                    self.c3 = npzfile['c3']
-                    self.EI = npzfile['EI']
-                    self.psi = npzfile['psi']
-                    self.dpsi = npzfile['dpsi']
-                    self.ddpsi = npzfile['ddpsi']
-                    self.dddpsi = npzfile['dddpsi']
-                    self.ddddpsi = npzfile['ddddpsi']
-                    self.F = npzfile['F']
-                    self.M = npzfile['M']
-                    N = npzfile['N']
-                    Ne = npzfile['Ne']
-                    dl = npzfile['dl']
-                    step = npzfile['step']
-                del npzfile
-            
-            if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl) or (not step==self.step):
-                if flag_preparing_already_done:
-                    print("Checking finished. We cannot use this data as FEM or/and Ldivide parameters mismatch. Creating new one:")
-                else:
-                    print("Creating psi vectors and matrix started:")
-                self.c1 = self.E*self.I/(self.rho*self.A)
-                self.c3 = 1/(self.rho*self.A)
-                self.EI = self.E*self.I
-                start_time = time.time_ns()
-                time.sleep(0.000001) # sleep 1 us
-                # preparing for fast computation next
-                self.psi = self.__get_psi()
-                self.dpsi = self.__get_dpsi()
-                self.ddpsi = self.__get_ddpsi()
-                self.dddpsi = self.__get_dddpsi()
-                self.ddddpsi = self.__get_ddddpsi()
-                
-                self.psi_full_h = np.array([]).reshape(np.shape(self.psi)[0],0)
-                for i in range(self.Ne):
-                    self.psi_full_h = np.hstack((self.psi_full_h,self.psi))
-                self.dpsi_full_h = np.array([]).reshape(np.shape(self.psi)[0],0)
-                for i in range(self.Ne):
-                    self.dpsi_full_h = np.hstack((self.dpsi_full_h,self.dpsi))
-                self.ddpsi_full_h = np.array([]).reshape(np.shape(self.psi)[0],0)
-                for i in range(self.Ne):
-                    self.ddpsi_full_h = np.hstack((self.ddpsi_full_h,self.ddpsi))
-
-                self.psi_full_v = np.array([]).reshape(0,6)
-                for i in range(self.Ne):
-                    self.psi_full_v = np.vstack((self.psi_full_v,self.psi))
-                self.psi_full_v = np.delete(self.psi_full_v, self.index,axis=0)
-                self.dpsi_full_v = np.array([]).reshape(0,6)
-                for i in range(self.Ne):
-                    self.dpsi_full_v = np.vstack((self.dpsi_full_v,self.dpsi))
-                self.dpsi_full_v = np.delete(self.dpsi_full_v, self.index,axis=0)
-                self.ddpsi_full_v = np.array([]).reshape(0,6)
-                for i in range(self.Ne):
-                    self.ddpsi_full_v = np.vstack((self.ddpsi_full_v,self.ddpsi))
-                self.ddpsi_full_v = np.delete(self.ddpsi_full_v, self.index,axis=0)
-
-                self.psi_full_end = np.array([])
-                for i in range(self.Ne):
-                    self.psi_full_end = np.append(self.psi_full_end,self.psi[-1])
-                self.psi_full_start = np.array([])
-                for i in range(self.Ne):
-                    self.psi_full_start = np.append(self.psi_full_start,self.psi[0])
-                
-                time_psi_calc = time.time_ns()-start_time-1*1e3
-                print("Psi calculation time: %s s" % (round(time_psi_calc*1e-9,3)))
-
-                self.F = np.zeros((6,6))
-                for j in range(6):
-                    for i in range(6):
-                        self.F[j][i] = 6*sp.integrate.quad(self.__F_int,0,1,args=(i,j))[0] +\
-                            np.polyval(self.dddp[(i)],1)*np.polyval(self.p[(j)],1)-np.polyval(self.dddp[(i)],0)*np.polyval(self.p[(j)],0)-\
-                            np.polyval(self.ddp[(i)],1)*np.polyval(self.dp[(j)],1)+np.polyval(self.ddp[(i)],0)*np.polyval(self.dp[(j)],0)
-                self.F_full_h = np.array([]).reshape(6,0)
-                for i in range(self.Ne):
-                    self.F_full_h = np.hstack((self.F_full_h,self.F))
-
-                self.M = np.zeros((6,6))
-                for j in range(6):
-                    for i in range(6):
-                        self.M[j][i] = 6*sp.integrate.quad(self.__M_int,0,1,args=(i,j))[0]
-                self.M_full_h = np.array([]).reshape(6,0)
-                for i in range(self.Ne):
-                    self.M_full_h = np.hstack((self.M_full_h,self.M))
-
-                time_end = time.time_ns()-start_time-1*1e3
-                if (time_end-time_psi_calc)==0:
-                    print("Psi matrix and vectors calculation time is less then 1 ns")
-                else:
-                    print("Psi matrix and vectors calculation time: %s ms" % (round((time_end-time_psi_calc)*1e-6,3)))
-                print("Preparing time: %s s" % (round(time_end*1e-9,3)))
-            
-                np.savez('psi_matrix_and_vectors.npz',psi=self.psi,dpsi=self.dpsi,\
-                     ddpsi=self.ddpsi,dddpsi=self.dddpsi,ddddpsi=self.ddddpsi,F=self.F,\
-                        c1=self.c1,EI=self.EI,M=self.M,c3=self.c3,\
-                        N=self.N,Ne=self.Ne,step=self.step,dl=self.dl)
-            else:
-                self.psi_full_h = np.array([]).reshape(np.shape(self.psi)[0],0)
-                for i in range(self.Ne):
-                    self.psi_full_h = np.hstack((self.psi_full_h,self.psi))
-                self.dpsi_full_h = np.array([]).reshape(np.shape(self.psi)[0],0)
-                for i in range(self.Ne):
-                    self.dpsi_full_h = np.hstack((self.dpsi_full_h,self.dpsi))
-                self.ddpsi_full_h = np.array([]).reshape(np.shape(self.psi)[0],0)
-                for i in range(self.Ne):
-                    self.ddpsi_full_h = np.hstack((self.ddpsi_full_h,self.ddpsi))
-
-                self.psi_full_v = np.array([]).reshape(0,6)
-                for i in range(self.Ne):
-                    self.psi_full_v = np.vstack((self.psi_full_v,self.psi))
-                self.psi_full_v = np.delete(self.psi_full_v, self.index,axis=0)
-                self.dpsi_full_v = np.array([]).reshape(0,6)
-                for i in range(self.Ne):
-                    self.dpsi_full_v = np.vstack((self.dpsi_full_v,self.dpsi))
-                self.dpsi_full_v = np.delete(self.dpsi_full_v, self.index,axis=0)
-                self.ddpsi_full_v = np.array([]).reshape(0,6)
-                for i in range(self.Ne):
-                    self.ddpsi_full_v = np.vstack((self.ddpsi_full_v,self.ddpsi))
-                self.ddpsi_full_v = np.delete(self.ddpsi_full_v, self.index,axis=0)
-
-                self.F_full_h = np.array([]).reshape(6,0)
-                for i in range(self.Ne):
-                    self.F_full_h = np.hstack((self.F_full_h,self.F))
-                self.M_full_h = np.array([]).reshape(6,0)
-                for i in range(self.Ne):
-                    self.M_full_h = np.hstack((self.M_full_h,self.M))
-
-                self.psi_full_end = np.array([])
-                for i in range(self.Ne):
-                    self.psi_full_end = np.append(self.psi_full_end,self.psi[-1])
-                self.psi_full_start = np.array([])
-                for i in range(self.Ne):
-                    self.psi_full_start = np.append(self.psi_full_start,self.psi[0])
-
-                if flag_preparing_already_done:
-                    print("Checking finished. Using loaded data")
+            self.F = np.zeros((6,6))
+            for j in range(6):
+                for i in range(6):
+                    self.F[j][i] = 6*sp.integrate.quad(self.__F_int,0,1,args=(i,j))[0] +\
+                        np.polyval(self.dddp[(i)],1)*np.polyval(self.p[(j)],1)-np.polyval(self.dddp[(i)],0)*np.polyval(self.p[(j)],0)-\
+                        np.polyval(self.ddp[(i)],1)*np.polyval(self.dp[(j)],1)+np.polyval(self.ddp[(i)],0)*np.polyval(self.dp[(j)],0)
+            self.M = np.zeros((6,6))
+            for j in range(6):
+                for i in range(6):
+                    self.M[j][i] = 6*sp.integrate.quad(self.__M_int,0,1,args=(i,j))[0]
 
             # preparing ddFext
             if l_Fext==None:
@@ -488,14 +356,10 @@ class Flex_beam(object):
                 for (l,i) in zip(self.l_all_true,range(self.N)):
                     Fext[i]=dw*l-2*self.__delta1(l-l_Fext)*(l-l_Fext)*dw
                     dFext[i]=dw-2*self.__delta1(l-l_Fext)*dw
+                def __Fext_int(self,l):
+                    return 
                 Fext_one = np.sum(np.multiply( Fext.reshape(self.N,1),self.psi_full_v)*self.step,axis=0) 
-                self.Fext = np.array([])
-                for i in range(self.Ne):
-                    self.Fext = np.append(self.Fext,Fext_one)
                 dFext_one = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi_full_v)*self.step,axis=0) 
-                self.dFext = np.array([])
-                for i in range(self.Ne):
-                    self.dFext = np.append(self.dFext,dFext_one)
 
                 if disp:
                     print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
