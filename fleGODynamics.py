@@ -299,7 +299,7 @@ class Flex_beam(object):
             # cost = np.sum(np.power(cost,2))
             print("iter={},cost={}".format(self.iteration_num,np.sum(np.power(cost,2))))
             # print("iter={}".format(self.iteration_num))
-            print(self.__bmatrix(a))
+            display(Math(self.__bmatrix(a)))
             return cost
             
         def __delta1(self,l):
