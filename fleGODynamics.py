@@ -259,6 +259,7 @@ class Flex_beam(object):
             
             self.f3_last = np.zeros((1,6))[0]
             self.f3x_last = np.zeros((1,6))[0]
+            self.f3y_last = np.zeros((1,6))[0]
             self.Fextx_last = np.zeros((1,6))[0]
             self.Fexty_last = np.zeros((1,6))[0]
             def cost_one_element(a,e):
@@ -298,6 +299,7 @@ class Flex_beam(object):
             # cost = np.sum(np.power(cost,2))
             print("iter={},cost={}".format(self.iteration_num,np.sum(np.power(cost,2))))
             # print("iter={}".format(self.iteration_num))
+            print(self.__bmatrix(a))
             return cost
             
         def __delta1(self,l):
