@@ -373,7 +373,7 @@ class Flex_beam(object):
                             np.polyval(self.dddp[(i)],1)*np.polyval(self.p[(j)],1)-np.polyval(self.dddp[(i)],0)*np.polyval(self.p[(j)],0)-\
                             np.polyval(self.ddp[(i)],1)*np.polyval(self.dp[(j)],1)+np.polyval(self.ddp[(i)],0)*np.polyval(self.dp[(j)],0)
                 self.F_full_h = np.array([]).reshape(6,0)
-                for i in range(self.Ne):
+                for e in range(self.Ne):
                     self.F_full_h = np.hstack((self.F_full_h,self.F))
 
                 self.M = np.zeros((6,6))
