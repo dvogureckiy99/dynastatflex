@@ -444,18 +444,26 @@ class Flex_beam(object):
 
             if Fext_type=='delta':
                 Fext_max = Fext
-                w_steps_num = int(self.N*1e-2/2) # wisth in steps of the area of application of force
+                w_steps_num = 2 # wisth in steps of the area of application of force
                 w = Fext_max/(2*w_steps_num*self.step) # distributed force
                 force_appl_point = self.__search_index(self.l_all_true,l_Fext)
                 dFext = np.zeros((1,self.N))[0] 
                 dFext[int(force_appl_point)-w_steps_num]=w
                 dFext[int(force_appl_point)+w_steps_num]=-w
-                self.dFext = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi_full_v)*self.step,axis=0) 
                 Fext = np.zeros((1,self.N))[0] 
                 Fext[int(force_appl_point)-w_steps_num+1:int(force_appl_point)+w_steps_num+1]=w
                 Fext[int(force_appl_point)-w_steps_num]=w/2
                 Fext[int(force_appl_point)+w_steps_num]=w/2
-                self.Fext = np.sum(np.multiply( Fext.reshape(self.N,1),self.psi_full_v)*self.step,axis=0) 
+
+                Fext_one = np.sum(np.multiply( Fext.reshape(self.N,1),self.psi_full_v)*self.step,axis=0) 
+                self.Fext = np.array([])
+                for i in range(self.Ne):
+                    self.Fext = np.append(self.Fext,Fext_one)
+                dFext_one = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi_full_v)*self.step,axis=0) 
+                self.dFext = np.array([])
+                for i in range(self.Ne):
+                    self.dFext = np.append(self.dFext,dFext_one)
+
                 if disp:
                     # print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
                     plt.figure(figsize = (20,8))
