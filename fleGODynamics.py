@@ -288,37 +288,37 @@ class Flex_beam(object):
             def cost_one_element(a,e):
                 f3 = np.array([])
                 for j in range(6):
-                    f3 = np.append(f3,sp.integrate.quad(__f3_int,self.Ldl[e],self.Ldl[e+1],args=(a,j))[0] )
+                    f3 = np.append(f3,sp.integrate.quad(__f3_int,0,self.Ldl[1],args=(a,j))[0] )
                 f3 += self.f3_last
                 self.f3_last = f3
                 f3x = np.array([])
                 for j in range(6):
-                    f3x = np.append(f3x,sp.integrate.quad(__f3x_int,self.Ldl[e],self.Ldl[e+1],args=(a,j))[0] )
+                    f3x = np.append(f3x,sp.integrate.quad(__f3x_int,0,self.Ldl[1],args=(a,j))[0] )
                 f3x += self.f3x_last
                 self.f3x_last = f3x
                 f3y = np.array([])
                 for j in range(6):
-                    f3y = np.append(f3y,sp.integrate.quad(__f3y_int,self.Ldl[e],self.Ldl[e+1],args=(a,j))[0] )
+                    f3y = np.append(f3y,sp.integrate.quad(__f3y_int,0,self.Ldl[1],args=(a,j))[0] )
                 f3y += self.f3y_last
                 self.f3y_last = f3y
                 Fextx = np.array([])
                 for j in range(6):
-                    Fextx = np.append(Fextx,sp.integrate.quad(__Fextx_int,self.Ldl[e],self.Ldl[e+1],args=(a,j))[0] )
+                    Fextx = np.append(Fextx,sp.integrate.quad(__Fextx_int,0,self.Ldl[1],args=(a,j))[0] )
                 Fextx += self.Fextx_last
                 self.Fextx_last = Fextx
                 Fexty = np.array([])
                 for j in range(6):
-                    Fexty = np.append(Fexty,sp.integrate.quad(__Fexty_int,self.Ldl[e],self.Ldl[e+1],args=(a,j))[0] )
+                    Fexty = np.append(Fexty,sp.integrate.quad(__Fexty_int,0,self.Ldl[1],args=(a,j))[0] )
                 Fexty += self.Fexty_last
                 self.Fexty_last = Fexty
                 return np.concatenate([self.dFext[e] - self.EI*(np.matmul(self.F,a)+\
-                                (1/3)*(f3+np.array([a[1]**3,0,0,-a[4]**3,0,0]) )),\
+                                (1/3)*(f3+np.array([a[1]**3,0,0,-a[4]**3,0,0])) ),\
                                 Fextx - self.EI*f3x,\
                                 Fexty + self.EI*f3y ])
             
             cost = np.array([])
             for e in range(self.Ne):
-                cost = np.concatenate([cost, cost_one_element(a[i*6:i*6+6],e)  ]) # 6*Ne
+                cost = np.concatenate([cost, cost_one_element(a[e*6:e*6+6],e)  ]) # 6*Ne
             # cost = np.sum(np.power(cost,2))
             print("iter={},cost={}".format(self.iteration_num,np.sum(np.power(cost,2))))
             # print("iter={}".format(self.iteration_num))
