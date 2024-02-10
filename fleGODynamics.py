@@ -264,19 +264,27 @@ class Flex_beam(object):
                         np.polyval(self.ddp[2],l/self.Ldl[1]),np.polyval(self.ddp[3],l/self.Ldl[1]),\
                         np.polyval(self.ddp[4],l/self.Ldl[1]),np.polyval(self.ddp[5],l/self.Ldl[1])]),\
                         a)*np.polyval(self.dp[j],l/self.Ldl[1]) 
-            def __Fextx_int(l,e,j):
-                    return (Fext_distr*self.__delta1(l-l_Fext-Fext_distr_halfwidth)-\
-                        Fext_distr*self.__delta1(l-l_Fext+Fext_distr_halfwidth))*\
-                        np.polyval(self.p[(j)],(l-self.Ldl[e])/self.Ldl[1])
-            def __dFexty_int(l,e,j,l_Fext,Fext_distr_halfwidth,dFext_distr_halfwidth,dFext_distr):
-                    return (dFext_distr*self.__delta1(l-l_Fext-Fext_distr_halfwidth-dFext_distr_halfwidth)-\
-                        dFext_distr*self.__delta1(l-l_Fext-Fext_distr_halfwidth+dFext_distr_halfwidth)-\
-                        dFext_distr*self.__delta1(l-l_Fext+Fext_distr_halfwidth-dFext_distr_halfwidth)+\
-                        dFext_distr*self.__delta1(l-l_Fext+Fext_distr_halfwidth+dFext_distr_halfwidth) )*\
-                        np.polyval(self.p[(j)],(l-self.Ldl[e])/self.Ldl[1])
+            def __Fextx_int(l,a,j):
+                    return np.sin(np.matmul(np.array([np.polyval(self.p[0],l/self.Ldl[1]),\
+                                                  np.polyval(self.p[1],l/self.Ldl[1]),\
+                            np.polyval(self.p[2],l/self.Ldl[1]),np.polyval(self.p[3],l/self.Ldl[1]),\
+                            np.polyval(self.p[4],l/self.Ldl[1]),np.polyval(self.p[5],l/self.Ldl[1])]),\
+                            a))*(self.Fext_distr*self.__delta1(l-self.l_Fext-self.Fext_distr_halfwidth)-\
+                            self.Fext_distr*self.__delta1(l-self.l_Fext+self.Fext_distr_halfwidth))*\
+                            np.polyval(self.p[(j)],l/self.Ldl[1])
+            def __Fexty_int(l,a,j):
+                    return np.cos(np.matmul(np.array([np.polyval(self.p[0],l/self.Ldl[1]),\
+                                                  np.polyval(self.p[1],l/self.Ldl[1]),\
+                            np.polyval(self.p[2],l/self.Ldl[1]),np.polyval(self.p[3],l/self.Ldl[1]),\
+                            np.polyval(self.p[4],l/self.Ldl[1]),np.polyval(self.p[5],l/self.Ldl[1])]),\
+                            a))*(self.Fext_distr*self.__delta1(l-self.l_Fext-self.Fext_distr_halfwidth)-\
+                            self.Fext_distr*self.__delta1(l-self.l_Fext+self.Fext_distr_halfwidth))*\
+                            np.polyval(self.p[(j)],l/self.Ldl[1])
             
             self.f3_last = np.zeros((1,6))[0]
             self.f3x_last = np.zeros((1,6))[0]
+            self.Fextx_last = np.zeros((1,6))[0]
+            self.Fexty_last = np.zeros((1,6))[0]
             def cost_one_element(a,e):
                 f3 = np.array([])
                 for j in range(6):
@@ -293,11 +301,22 @@ class Flex_beam(object):
                     f3y = np.append(f3y,sp.integrate.quad(__f3y_int,self.Ldl[e],self.Ldl[e+1],args=(a,j))[0] )
                 f3y += self.f3y_last
                 self.f3y_last = f3y
+                Fextx = np.array([])
+                for j in range(6):
+                    Fextx = np.append(Fextx,sp.integrate.quad(__Fextx_int,self.Ldl[e],self.Ldl[e+1],args=(a,j))[0] )
+                Fextx += self.Fextx_last
+                self.Fextx_last = Fextx
+                Fexty = np.array([])
+                for j in range(6):
+                    Fexty = np.append(Fexty,sp.integrate.quad(__Fexty_int,self.Ldl[e],self.Ldl[e+1],args=(a,j))[0] )
+                Fexty += self.Fexty_last
+                self.Fexty_last = Fexty
                 return np.concatenate([self.dFext[e] - self.EI*(np.matmul(self.F,a)+\
                                 (1/3)*(f3+np.array([a[1]**3,0,0,-a[4]**3,0,0]) )),\
-                                self.Fext[e] - self.EI*f3x,\
-                                self.Fext[e] + self.EI*f3y ])
+                                Fextx - self.EI*f3x,\
+                                Fexty + self.EI*f3y ])
             
+            cost = np.array([])
             for e in range(self.Ne):
                 cost = np.concatenate([cost, cost_one_element(a[i*6:i*6+6],e)  ]) # 6*Ne
             # cost = np.sum(np.power(cost,2))
@@ -375,6 +394,7 @@ class Flex_beam(object):
                         dw*self.__delta1(l-l_Fext+Fext_distr_halfwidth-dFext_distr_halfwidth)-\
                         dw*self.__delta1(l-l_Fext-Fext_distr_halfwidth+dFext_distr_halfwidth)+\
                         dw*self.__delta1(l-l_Fext-Fext_distr_halfwidth-dFext_distr_halfwidth) 
+                    
                 def __dFext_int(l,e,j,l_Fext,Fext_distr_halfwidth,dFext_distr_halfwidth,dFext_distr):
                     return (dFext_distr*self.__delta1(l-l_Fext-Fext_distr_halfwidth-dFext_distr_halfwidth)-\
                         dFext_distr*self.__delta1(l-l_Fext-Fext_distr_halfwidth+dFext_distr_halfwidth)-\
@@ -391,6 +411,9 @@ class Flex_beam(object):
                         self.dFext = np.vstack((self.dFext, dFext_one) )
                     else:
                         self.dFext = np.vstack((self.dFext, self.dFext[-1] + dFext_one) )
+
+                self.Fext_distr_halfwidth = Fext_distr_halfwidth
+                self.Fext_distr = Fext_distr
 
                 if disp:
                     # print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
