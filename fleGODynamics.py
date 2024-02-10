@@ -223,10 +223,6 @@ class Flex_beam(object):
             sinphiappr_ddphiappr = np.multiply(np.sin(phi_appr),ddphi_appr)
             cosphiappr_ddphiappr = np.multiply(np.cos(phi_appr),ddphi_appr)
 
-            f3 = np.array([]).reshape(self.N,0)
-            f3_repeat = np.multiply(dphi_appr_power3.reshape(self.N,1),self.dpsi_full_v)
-            for i in range(self.Ne):
-                f3 = np.hstack((f3,f3_repeat))
             f3x = np.array([]).reshape(self.N,0)
             f3x_repeat = np.multiply(sinphiappr_ddphiappr.reshape(self.N,1),self.dpsi_full_v)
             for i in range(self.Ne):
@@ -242,28 +238,38 @@ class Flex_beam(object):
             # except:
             #     print("error")
 
-            # def __f3_int(l,a):
-            #     ret = np.array([])
-            #     for j in range(6):
-            #         ret = np.append(ret, np.power( np.matmul(np.array([np.polyval(self.dp[0],l),np.polyval(self.dp[1],l),\
-            #             np.polyval(self.dp[2],l),np.polyval(self.dp[3],l),np.polyval(self.dp[4],l),np.polyval(self.dp[5],l)]),\
-            #             a) ,3)* )
-            #     return 
+            def __f3_int(l,a,j):
+                return np.power( np.matmul(np.array([np.polyval(self.dp[0],l/self.Ldl[1]),\
+                                                     np.polyval(self.dp[1],l/self.Ldl[1]),\
+                        np.polyval(self.dp[2],l/self.Ldl[1]),np.polyval(self.dp[3],l/self.Ldl[1]),\
+                        np.polyval(self.dp[4],l/self.Ldl[1]),np.polyval(self.dp[5],l/self.Ldl[1])]),\
+                        a) ,3)*np.polyval(self.dp[j],l/self.Ldl[1]) 
+            def __f3x_int(l,a,j):
+                return np.sin(np.matmul(np.array([np.polyval(self.p[0],l/self.Ldl[1]),\
+                                                  np.polyval(self.p[1],l/self.Ldl[1]),\
+                        np.polyval(self.p[2],l/self.Ldl[1]),np.polyval(self.p[3],l/self.Ldl[1]),\
+                        np.polyval(self.p[4],l/self.Ldl[1]),np.polyval(self.p[5],l/self.Ldl[1])]),\
+                        a))*np.matmul(np.array([np.polyval(self.ddp[0],l/self.Ldl[1]),\
+                                                  np.polyval(self.ddp[1],l/self.Ldl[1]),\
+                        np.polyval(self.ddp[2],l/self.Ldl[1]),np.polyval(self.ddp[3],l/self.Ldl[1]),\
+                        np.polyval(self.ddp[4],l/self.Ldl[1]),np.polyval(self.ddp[5],l/self.Ldl[1])]),\
+                        a)*np.polyval(self.dp[j],l/self.Ldl[1]) 
 
+            self.f3_last = np.zeros((1,6))[0]
             def cost_one_element(a,e):
-                f3 = sp.integrate.quad(__f3_int,0,1,args=(a))[0]
+                f3 = np.array([])
+                for j in range(6):
+                    f3 = np.append(f3,self.f3_last+sp.integrate.quad(__f3_int,0,self.Ldl[1],args=(a,j))[0] )
+                self.f3_last = f3
                 return np.concatenate([self.dFext[e] - self.EI*(np.matmul(self.F,a)+\
-                                (1/3)*(np.sum(f3*self.step,axis=0)-\
-                            dphi_appr_power3[int(self.N-1)]*self.psi_full_end + dphi_appr_power3[0]*self.psi_full_start)),\
-                                # [self.Fext[3]+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0)) ],\
+                                (1/3)*(f3+np.array([a[1]**3,0,0,-a[4]**3,0,0]) )),\
                                 self.Fext[e] + self.EI*(-np.sum(f3x*self.step,axis=0) +\
                             sinphiappr_ddphiappr[int(self.N-1)]*self.psi_full_end - sinphiappr_ddphiappr[0]*self.psi_full_start),\
-                                # [self.Fext[3]+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0))] ])
                                 self.Fext[e] + self.EI*(np.sum(f3y*self.step,axis=0) -\
                             cosphiappr_ddphiappr[int(self.N-1)]*self.psi_full_end + cosphiappr_ddphiappr[0]*self.psi_full_start) ])
             
             for e in range(self.Ne):
-                cost = np.concatenate([cost, cost_one_element(a[i*6:i*6+6],e)  ]) # 3*6*Ne
+                cost = np.concatenate([cost, cost_one_element(a[i*6:i*6+6],e)  ]) # 6*Ne
             # cost = np.sum(np.power(cost,2))
             print("iter={},cost={}".format(self.iteration_num,np.sum(np.power(cost,2))))
             # print("iter={}".format(self.iteration_num))
@@ -303,6 +309,10 @@ class Flex_beam(object):
             self.c1 = self.E*self.I/(self.rho*self.A)
             self.c3 = 1/(self.rho*self.A)
             self.EI = self.E*self.I
+
+            print(np.array([np.polyval(self.p[0],0),np.polyval(self.p[1],0),\
+                        np.polyval(self.p[2],0),np.polyval(self.p[3],0),\
+                        np.polyval(self.p[4],0),np.polyval(self.p[5],0)]))
 
             self.F = np.zeros((6,6))
             for j in range(6):
