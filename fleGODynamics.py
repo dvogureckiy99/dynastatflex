@@ -218,25 +218,32 @@ class Flex_beam(object):
             ddphi_appr = np.delete(ddphi_appr, self.index)
 
             dphi_appr_power3 =  np.power(phi_appr,3)  # [1,N]
-            # phi_appr = np.matmul(self.psi[:self.ind_N2],a)  # [1,N]
-            # ddphi_appr = np.matmul(self.ddpsi[:self.ind_N2],a)  # [1,N]
-            sinphiappr_ddphiappr = np.multiply(np.sin(phi_appr),ddphi_appr)
-            cosphiappr_ddphiappr = np.multiply(np.cos(phi_appr),ddphi_appr)
+            sinphiappr = np.sin(phi_appr)
+            cosphiappr = np.cos(phi_appr)
+            sinphiappr_ddphiappr = np.multiply(sinphiappr,ddphi_appr)
+            cosphiappr_ddphiappr = np.multiply(cosphiappr,ddphi_appr)
 
             f3 = np.array([]).reshape(self.N,0)
             f3_repeat = np.multiply(dphi_appr_power3.reshape(self.N,1),self.dpsi_full_v)
-            for i in range(self.Ne):
+            for e in range(self.Ne):
                 f3 = np.hstack((f3,f3_repeat))
             f3x = np.array([]).reshape(self.N,0)
             f3x_repeat = np.multiply(sinphiappr_ddphiappr.reshape(self.N,1),self.dpsi_full_v)
-            for i in range(self.Ne):
+            for e in range(self.Ne):
                 f3x = np.hstack((f3x,f3x_repeat))
             f3y = np.array([]).reshape(self.N,0)
             f3y_repeat = np.multiply(cosphiappr_ddphiappr.reshape(self.N,1),self.dpsi_full_v)
-            for i in range(self.Ne):
+            for e in range(self.Ne):
                 f3y = np.hstack((f3y,f3y_repeat))
             
-            
+            Fextx_one = -np.sum(np.multiply(sinphiappr.reshape(self.N,1),self.Fext)*self.step,axis=0) 
+            Fextx = np.array([])
+            for e in range(self.Ne):
+                Fextx = np.append(Fextx,Fextx_one)
+            Fexty_one = np.sum(np.multiply(cosphiappr.reshape(self.N,1),self.Fext)*self.step,axis=0) 
+            Fexty = np.array([])
+            for e in range(self.Ne):
+                Fexty = np.append(Fexty,Fexty_one)
             # try:
             #     print(np.shape(  np.sum(np.row_stack(np.hsplit(np.multiply(self.F_full_h,a),self.Ne)),axis=1)  ))
             # except:
@@ -246,13 +253,8 @@ class Flex_beam(object):
             cost = np.concatenate([ self.dFext-self.EI*(np.sum(np.row_stack(np.hsplit(np.multiply(self.F_full_h,a),self.Ne)),axis=1)+\
                                 (1/3)*(np.sum(f3*self.step,axis=0)-\
                             dphi_appr_power3[int(self.N-1)]*self.psi_full_end + dphi_appr_power3[0]*self.psi_full_start)),\
-                                # [self.Fext[3]+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0)) ],\
-                                self.Fext + self.EI*(-np.sum(f3x*self.step,axis=0) +\
-                            sinphiappr_ddphiappr[int(self.N-1)]*self.psi_full_end - sinphiappr_ddphiappr[0]*self.psi_full_start),\
-                                # [self.Fext[3]+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0))] ])
-                                self.Fext + self.EI*(np.sum(f3y*self.step,axis=0) -\
-                            cosphiappr_ddphiappr[int(self.N-1)]*self.psi_full_end + cosphiappr_ddphiappr[0]*self.psi_full_start),\
-                                 [np.cos(phi_appr[-1])], [np.sin(phi_appr[-1])] ]) # 3*6*Ne
+                                Fextx - self.EI*np.sum(f3x*self.step,axis=0),\
+                                Fexty + self.EI*np.sum(f3y*self.step,axis=0)  ]) # 3*6*Ne
             # cost = np.sum(np.power(cost,2))
             print("iter={},cost={}".format(self.iteration_num,np.sum(np.power(cost,2))))
             # print("iter={}".format(self.iteration_num))
@@ -455,10 +457,7 @@ class Flex_beam(object):
                 Fext[int(force_appl_point)-w_steps_num]=w/2
                 Fext[int(force_appl_point)+w_steps_num]=w/2
 
-                Fext_one = np.sum(np.multiply( Fext.reshape(self.N,1),self.psi_full_v)*self.step,axis=0) 
-                self.Fext = np.array([])
-                for i in range(self.Ne):
-                    self.Fext = np.append(self.Fext,Fext_one)
+                self.Fext = np.multiply( Fext.reshape(self.N,1),self.psi_full_v)
                 dFext_one = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi_full_v)*self.step,axis=0) 
                 self.dFext = np.array([])
                 for i in range(self.Ne):
