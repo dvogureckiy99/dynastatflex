@@ -384,16 +384,16 @@ class Flex_beam(object):
                 # force_appl_point = self.__search_index(self.l_all_true,l_Fext)
                 Fext = np.zeros((self.N,1))
                 for (l,i) in zip(self.l_all_true,range(self.N)):
-                    Fext[i] =  Fext_distr*self.__delta1(l-l_Fext+Fext_distr_halfwidth)-\
-                        w*self.__delta1(l-l_Fext-Fext_distr_halfwidth)
+                    Fext[i] =  Fext_distr*(self.__delta1(l-l_Fext+Fext_distr_halfwidth)-\
+                        self.__delta1(l-l_Fext-Fext_distr_halfwidth))
                 dFext_distr_halfwidth = width_mult*self.L*0.01/2
                 dFext_distr = Fext_distr/(2*dFext_distr_halfwidth) # distributed dforce
                 dFext = np.zeros((self.N,1))
                 for (l,i) in zip(self.l_all_true,range(self.N)):
-                    dFext[i] = dw*self.__delta1(l-l_Fext+Fext_distr_halfwidth+dFext_distr_halfwidth)-\
-                        dw*self.__delta1(l-l_Fext+Fext_distr_halfwidth-dFext_distr_halfwidth)-\
-                        dw*self.__delta1(l-l_Fext-Fext_distr_halfwidth+dFext_distr_halfwidth)+\
-                        dw*self.__delta1(l-l_Fext-Fext_distr_halfwidth-dFext_distr_halfwidth) 
+                    dFext[i] = dFext_distr*(self.__delta1(l-l_Fext+Fext_distr_halfwidth+dFext_distr_halfwidth)-\
+                        self.__delta1(l-l_Fext+Fext_distr_halfwidth-dFext_distr_halfwidth)-\
+                        self.__delta1(l-l_Fext-Fext_distr_halfwidth+dFext_distr_halfwidth)+\
+                        self.__delta1(l-l_Fext-Fext_distr_halfwidth-dFext_distr_halfwidth) )
                     
                 def __dFext_int(l,e,j,l_Fext,Fext_distr_halfwidth,dFext_distr_halfwidth,dFext_distr):
                     return (dFext_distr*self.__delta1(l-l_Fext-Fext_distr_halfwidth-dFext_distr_halfwidth)-\
@@ -431,7 +431,6 @@ class Flex_beam(object):
                     plt.show()
                     display(Math("\\bm{F}="+self.__bmatrix(self.F)))
                     display(Math("\\bm{M}="+self.__bmatrix(self.M)))
-                    display(Math("\\bm{F}_{ext}="+self.__bmatrix(self.Fext)))
                     display(Math("\\bm{F}^{'}_{ext}="+self.__bmatrix(self.dFext)))
             elif Fext_type=='triangle':
                 Fext_max = Fext
