@@ -264,24 +264,33 @@ class Flex_beam(object):
                         np.polyval(self.ddp[2],l/self.Ldl[1]),np.polyval(self.ddp[3],l/self.Ldl[1]),\
                         np.polyval(self.ddp[4],l/self.Ldl[1]),np.polyval(self.ddp[5],l/self.Ldl[1])]),\
                         a)*np.polyval(self.dp[j],l/self.Ldl[1]) 
-
+            def __Fextx_int(l,e,j):
+                    return (self.Fext_distr*(self.__delta1(l-self.l_Fext-self.Fext_distr_halfwidth)-\
+                        self.__delta1(l-self.l_Fext+self.Fext_distr_halfwidth)))*\
+                        np.polyval(self.p[(j)],(l-self.Ldl[e])/self.Ldl[1])
+            def __dFexty_int(l,e,j):
+                    return (self.dFext_distr*(self.__delta1(l-self.l_Fext-self.Fext_distr_halfwidth-self.dFext_distr_halfwidth)-\
+                        self.__delta1(l-self.l_Fext-self.Fext_distr_halfwidth+self.dFext_distr_halfwidth)-\
+                        self.__delta1(l-self.l_Fext+self.Fext_distr_halfwidth-self.dFext_distr_halfwidth)+\
+                        self.__delta1(l-self.l_Fext+self.Fext_distr_halfwidth+self.dFext_distr_halfwidth)) )*\
+                        np.polyval(self.p[(j)],(l-self.Ldl[e])/self.Ldl[1])
             
             self.f3_last = np.zeros((1,6))[0]
             self.f3x_last = np.zeros((1,6))[0]
             def cost_one_element(a,e):
                 f3 = np.array([])
                 for j in range(6):
-                    f3 = np.append(f3,sp.integrate.quad(__f3_int,self.Ldl[e],self.Ldl[e+1],args=(a,j))[0] )
+                    f3 = np.append(f3,sp.integrate.quad(__f3_int,0,self.Ldl[1],args=(a,j))[0] )
                 f3 += self.f3_last
                 self.f3_last = f3
                 f3x = np.array([])
                 for j in range(6):
-                    f3x = np.append(f3x,sp.integrate.quad(__f3x_int,self.Ldl[e],self.Ldl[e+1],args=(a,j))[0] )
+                    f3x = np.append(f3x,sp.integrate.quad(__f3x_int,0,self.Ldl[1],args=(a,j))[0] )
                 f3x += self.f3x_last
                 self.f3x_last = f3x
                 f3y = np.array([])
                 for j in range(6):
-                    f3y = np.append(f3y,sp.integrate.quad(__f3y_int,self.Ldl[e],self.Ldl[e+1],args=(a,j))[0] )
+                    f3y = np.append(f3y,sp.integrate.quad(__f3y_int,0,self.Ldl[1],args=(a,j))[0] )
                 f3y += self.f3y_last
                 self.f3y_last = f3y
                 return np.concatenate([self.dFext[e] - self.EI*(np.matmul(self.F,a)+\
@@ -322,7 +331,6 @@ class Flex_beam(object):
             except:
                 raise ValueError("Call Ldivide first!") from None
             self.Fext_point = Fext
-            self.l_Fext = l_Fext
             self.ind_N2 = self.__search_index(self.l_all_true,self.Ldl[2])+1
             self.Fext_type = Fext_type
             self.step4psi = self.step/self.Ldl[1]
@@ -347,54 +355,26 @@ class Flex_beam(object):
                 l_Fext = self.L/2
             else:
                 l_Fext = l_Fext * 1e3 * self.mult # point of application of force
+            self.l_Fext = l_Fext
 
             if Fext_type=='delta':
                 Fext_max = Fext
                 width_mult = 0.75
-                w_halfwidth = width_mult*self.L*0.1/2
-                w = Fext_max/(2*w_halfwidth) # distributed force
+                self.Fext_distr_halfwidth = width_mult*self.L*0.1/2
+                self.Fext_distr = Fext_max/(2*self.Fext_distr_halfwidth) # distributed force
                 # force_appl_point = self.__search_index(self.l_all_true,l_Fext)
                 Fext = np.zeros((self.N,1))
                 for (l,i) in zip(self.l_all_true,range(self.N)):
-                    Fext[i] =  w*self.__delta1(l-l_Fext+w_halfwidth)-\
-                        w*self.__delta1(l-l_Fext-w_halfwidth)
-                dw_halfwidth = width_mult*self.L*0.01/2
-                dw = w/(2*dw_halfwidth) # distributed dforce
+                    Fext[i] =  self.Fext_distr*self.__delta1(l-l_Fext+self.Fext_distr_halfwidth)-\
+                        w*self.__delta1(l-l_Fext-self.Fext_distr_halfwidth)
+                self.dFext_distr_halfwidth = width_mult*self.L*0.01/2
+                self.dFext_distr = self.Fext_distr/(2*self.dFext_distr_halfwidth) # distributed dforce
                 dFext = np.zeros((self.N,1))
                 for (l,i) in zip(self.l_all_true,range(self.N)):
-                    dFext[i] = dw*self.__delta1(l-l_Fext+w_halfwidth+dw_halfwidth)-\
-                        dw*self.__delta1(l-l_Fext+w_halfwidth-dw_halfwidth)-\
-                        dw*self.__delta1(l-l_Fext-w_halfwidth+dw_halfwidth)+\
-                        dw*self.__delta1(l-l_Fext-w_halfwidth-dw_halfwidth) 
-                def __Fext_int(l,e,j,l_Fext,w_halfwidth,w):
-                    return (w*self.__delta1(l-l_Fext-w_halfwidth)-\
-                        w*self.__delta1(l-l_Fext+w_halfwidth))*np.polyval(self.p[(j)],(l-self.Ldl[e])/self.Ldl[1])
-                self.Fext = np.array([]).reshape(0,6)
-                for e in range(self.Ne):
-                    Fext_one = np.array([])
-                    for j in range(6):
-                        Fext_one = np.append(Fext_one,sp.integrate.quad(__Fext_int,self.Ldl[e],self.Ldl[e+1],\
-                                                            args=(e,j,l_Fext,w_halfwidth,w))[0])
-                    if not e:
-                        self.Fext = np.vstack((self.Fext, Fext_one) )
-                    else:
-                        self.Fext = np.vstack((self.Fext, self.Fext[-1] + Fext_one) )
-                def __dFext_int(l,e,j,l_Fext,w_halfwidth,dw_halfwidth,dw):
-                    return (dw*self.__delta1(l-l_Fext-w_halfwidth-dw_halfwidth)-\
-                        dw*self.__delta1(l-l_Fext-w_halfwidth+dw_halfwidth)-\
-                        dw*self.__delta1(l-l_Fext+w_halfwidth-dw_halfwidth)+\
-                        dw*self.__delta1(l-l_Fext+w_halfwidth+dw_halfwidth) )*\
-                        np.polyval(self.p[(j)],(l-self.Ldl[e])/self.Ldl[1])
-                self.dFext = np.array([]).reshape(0,6)
-                for e in range(self.Ne):
-                    dFext_one = np.array([])
-                    for j in range(6):
-                        dFext_one = np.append(dFext_one,sp.integrate.quad(__dFext_int,self.Ldl[e],self.Ldl[e+1],\
-                                    args=(e,j,l_Fext,w_halfwidth,dw_halfwidth,dw),limit=2000)[0])
-                    if not e:
-                        self.dFext = np.vstack((self.dFext, dFext_one) )
-                    else:
-                        self.dFext = np.vstack((self.dFext, self.dFext[-1] + dFext_one) )
+                    dFext[i] = dw*self.__delta1(l-l_Fext+self.Fext_distr_halfwidth+self.dFext_distr_halfwidth)-\
+                        dw*self.__delta1(l-l_Fext+self.Fext_distr_halfwidth-self.dFext_distr_halfwidth)-\
+                        dw*self.__delta1(l-l_Fext-self.Fext_distr_halfwidth+self.dFext_distr_halfwidth)+\
+                        dw*self.__delta1(l-l_Fext-self.Fext_distr_halfwidth-self.dFext_distr_halfwidth) 
 
                 if disp:
                     # print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
