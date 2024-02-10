@@ -208,31 +208,7 @@ class Flex_beam(object):
                     a[6*(i+1):6*(i+1)+3] = a[6*(i+1)-3:6*(i+1)]
                     a[6*(i+1)+3:6*(i+2)] = a_diff[5+3*i:8+3*i]
             
-            self.iteration_num += 1   
-
-            phi_appr =  np.sum(np.row_stack(np.hsplit(np.multiply(self.psi_full_h,a),self.Ne)),axis=1)
-            dphi_appr =  np.sum(np.row_stack(np.hsplit(np.multiply(self.dpsi_full_h,a),self.Ne)),axis=1)
-            ddphi_appr =  np.sum(np.row_stack(np.hsplit(np.multiply(self.ddpsi_full_h,a),self.Ne)),axis=1) 
-            phi_appr = np.delete(phi_appr, self.index)
-            dphi_appr = np.delete(dphi_appr, self.index)
-            ddphi_appr = np.delete(ddphi_appr, self.index)
-
-            dphi_appr_power3 =  np.power(phi_appr,3)  # [1,N]
-            # phi_appr = np.matmul(self.psi[:self.ind_N2],a)  # [1,N]
-            # ddphi_appr = np.matmul(self.ddpsi[:self.ind_N2],a)  # [1,N]
-            sinphiappr_ddphiappr = np.multiply(np.sin(phi_appr),ddphi_appr)
-            cosphiappr_ddphiappr = np.multiply(np.cos(phi_appr),ddphi_appr)
-
-            f3x = np.array([]).reshape(self.N,0)
-            f3x_repeat = np.multiply(sinphiappr_ddphiappr.reshape(self.N,1),self.dpsi_full_v)
-            for i in range(self.Ne):
-                f3x = np.hstack((f3x,f3x_repeat))
-            f3y = np.array([]).reshape(self.N,0)
-            f3y_repeat = np.multiply(cosphiappr_ddphiappr.reshape(self.N,1),self.dpsi_full_v)
-            for i in range(self.Ne):
-                f3y = np.hstack((f3y,f3y_repeat))
-            
-            
+            self.iteration_num += 1               
             # try:
             #     print(np.shape(  np.sum(np.row_stack(np.hsplit(np.multiply(self.F_full_h,a),self.Ne)),axis=1)  ))
             # except:
@@ -530,7 +506,7 @@ class Flex_beam(object):
                 
                 start_time = time.time()
                 # res = sp.optimize.minimize(self.__fun_static_optim, a0,method='Nelder-Mead')
-                tol=1e-15
+                tol=1e-3
                 res = sp.optimize.least_squares(self.__fun_static_optim,a0,\
                                                 ftol=tol,gtol=tol,xtol=tol,max_nfev=1e6,method='trf')
                 end_time = time.time()-start_time
