@@ -323,7 +323,7 @@ class Flex_beam(object):
 
             if Fext_type=='delta':
                 Fext_max = Fext
-                width_mult = 1
+                width_mult = 0.75
                 w_halfwidth = width_mult*self.L*0.1/2
                 w = Fext_max/(2*w_halfwidth) # distributed force
                 # force_appl_point = self.__search_index(self.l_all_true,l_Fext)
@@ -363,7 +363,7 @@ class Flex_beam(object):
                     dFext_one = np.array([])
                     for j in range(6):
                         dFext_one = np.append(dFext_one,sp.integrate.quad(__dFext_int,self.Ldl[e],self.Ldl[e+1],\
-                                    args=(e,j,l_Fext,w_halfwidth,dw_halfwidth,dw),limit=1000)[0])
+                                    args=(e,j,l_Fext,w_halfwidth,dw_halfwidth,dw),limit=2000)[0])
                     if not e:
                         self.dFext = np.vstack((self.dFext, dFext_one) )
                     else:
