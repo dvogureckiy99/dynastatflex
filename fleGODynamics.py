@@ -242,20 +242,28 @@ class Flex_beam(object):
             # except:
             #     print("error")
 
-            # cost = np.concatenate([ self.EI*(np.matmul(self.F,a)+\
-            def cost_one_element(a):
-                return np.concatenate([self.dFext-self.EI*(np.matmul(self.F,a)+\
+            def __f3_int(l,a):
+                ret = np.array([])
+                for j in range(6):
+                    ret = np.append(ret, np.power( np.matmul(np.array([np.polyval(self.dp[0],l),np.polyval(self.dp[1],l),\
+                        np.polyval(self.dp[2],l),np.polyval(self.dp[3],l),np.polyval(self.dp[4],l),np.polyval(self.dp[5],l)]),\
+                        a) ,3)* )
+                return 
+
+            def cost_one_element(a,e):
+                f3 = sp.integrate.quad(__f3_int,0,1,args=(a))[0]
+                return np.concatenate([self.dFext[e] - self.EI*(np.matmul(self.F,a)+\
                                 (1/3)*(np.sum(f3*self.step,axis=0)-\
                             dphi_appr_power3[int(self.N-1)]*self.psi_full_end + dphi_appr_power3[0]*self.psi_full_start)),\
                                 # [self.Fext[3]+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0)) ],\
-                                self.Fext + self.EI*(-np.sum(f3x*self.step,axis=0) +\
+                                self.Fext[e] + self.EI*(-np.sum(f3x*self.step,axis=0) +\
                             sinphiappr_ddphiappr[int(self.N-1)]*self.psi_full_end - sinphiappr_ddphiappr[0]*self.psi_full_start),\
                                 # [self.Fext[3]+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0))] ])
-                                self.Fext + self.EI*(np.sum(f3y*self.step,axis=0) -\
+                                self.Fext[e] + self.EI*(np.sum(f3y*self.step,axis=0) -\
                             cosphiappr_ddphiappr[int(self.N-1)]*self.psi_full_end + cosphiappr_ddphiappr[0]*self.psi_full_start) ])
             
-            for i in range(self.Ne):
-                cost = np.concatenate([cost, cost_one_element(a[i*6:i*6+6])  ]) # 3*6*Ne
+            for e in range(self.Ne):
+                cost = np.concatenate([cost, cost_one_element(a[i*6:i*6+6],e)  ]) # 3*6*Ne
             # cost = np.sum(np.power(cost,2))
             print("iter={},cost={}".format(self.iteration_num,np.sum(np.power(cost,2))))
             # print("iter={}".format(self.iteration_num))
