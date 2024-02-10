@@ -339,7 +339,6 @@ class Flex_beam(object):
                         dw*self.__delta1(l-l_Fext+w_halfwidth-dw_halfwidth)-\
                         dw*self.__delta1(l-l_Fext-w_halfwidth+dw_halfwidth)+\
                         dw*self.__delta1(l-l_Fext-w_halfwidth-dw_halfwidth) 
-
                 def __Fext_int(l,e,j,l_Fext,w_halfwidth,w):
                     return (w*self.__delta1(l-l_Fext-w_halfwidth)-\
                         w*self.__delta1(l-l_Fext+w_halfwidth))*np.polyval(self.p[(j)],(l-self.Ldl[e])/self.Ldl[1])
