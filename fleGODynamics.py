@@ -243,8 +243,8 @@ class Flex_beam(object):
             #     print("error")
 
             # cost = np.concatenate([ self.EI*(np.matmul(self.F,a)+\
-            for i in range(self.Ne):
-                cost = np.concatenate([cost, self.dFext-self.EI*(np.matmul(self.F,a[i*6:i*6+6])+\
+            def cost_one_element(a):
+                return np.concatenate([self.dFext-self.EI*(np.matmul(self.F,a)+\
                                 (1/3)*(np.sum(f3*self.step,axis=0)-\
                             dphi_appr_power3[int(self.N-1)]*self.psi_full_end + dphi_appr_power3[0]*self.psi_full_start)),\
                                 # [self.Fext[3]+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0)) ],\
@@ -252,7 +252,10 @@ class Flex_beam(object):
                             sinphiappr_ddphiappr[int(self.N-1)]*self.psi_full_end - sinphiappr_ddphiappr[0]*self.psi_full_start),\
                                 # [self.Fext[3]+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0))] ])
                                 self.Fext + self.EI*(np.sum(f3y*self.step,axis=0) -\
-                            cosphiappr_ddphiappr[int(self.N-1)]*self.psi_full_end + cosphiappr_ddphiappr[0]*self.psi_full_start)  ]) # 3*6*Ne
+                            cosphiappr_ddphiappr[int(self.N-1)]*self.psi_full_end + cosphiappr_ddphiappr[0]*self.psi_full_start) ])
+            
+            for i in range(self.Ne):
+                cost = np.concatenate([cost, cost_one_element(a[i*6:i*6+6])  ]) # 3*6*Ne
             # cost = np.sum(np.power(cost,2))
             print("iter={},cost={}".format(self.iteration_num,np.sum(np.power(cost,2))))
             # print("iter={}".format(self.iteration_num))
