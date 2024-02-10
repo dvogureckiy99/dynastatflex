@@ -364,7 +364,7 @@ class Flex_beam(object):
                     dFext_one = np.array([])
                     for j in range(6):
                         dFext_one = np.append(dFext_one,sp.integrate.quad(__dFext_int,self.Ldl[e],self.Ldl[e+1],\
-                                    args=(e,j,l_Fext,w_halfwidth,dw_halfwidth,dw))[0])
+                                    args=(e,j,l_Fext,w_halfwidth,dw_halfwidth,dw),limit=1000)[0])
                     if not e:
                         self.dFext = np.vstack((self.dFext, dFext_one) )
                     else:
@@ -376,10 +376,12 @@ class Flex_beam(object):
                     plt.subplot(1,2,1)
                     plt.title("Fext - distributed force derivative [N/m]")
                     plt.plot(self.l_all_true,Fext)
+                    plt.plot(self.Ldl,np.zeros((len(self.Ldl),1)),"or")
                     plt.grid()
                     plt.subplot(1,2,2)
                     plt.title("dFext - distributed force derivative [N/m^2]")
                     plt.plot(self.l_all_true,dFext)
+                    plt.plot(self.Ldl,np.zeros((len(self.Ldl),1)),"or")
                     plt.grid()
                     plt.show()
                     display(Math("\\bm{F}="+self.__bmatrix(self.F)))
