@@ -369,17 +369,17 @@ class Flex_beam(object):
                 self.F = np.zeros((6,6))
                 for j in range(6):
                     for i in range(6):
-                        self.F[j][i] = sp.integrate.quad(self.__F_int,0,1,args=(i,j))[0] +\
+                        self.F[j][i] = sp.integrate.quad(self.__F_int,0,self.Ldl[1],args=(i,j))[0] +\
                             np.polyval(self.dddp[(i)],1)*np.polyval(self.p[(j)],1)-np.polyval(self.dddp[(i)],0)*np.polyval(self.p[(j)],0)-\
                             np.polyval(self.ddp[(i)],1)*np.polyval(self.dp[(j)],1)+np.polyval(self.ddp[(i)],0)*np.polyval(self.dp[(j)],0)
                 self.F_full_h = np.array([]).reshape(6,0)
-                for i in range(self.Ne):
+                for e in range(self.Ne):
                     self.F_full_h = np.hstack((self.F_full_h,self.F))
 
                 self.M = np.zeros((6,6))
                 for j in range(6):
                     for i in range(6):
-                        self.M[j][i] = sp.integrate.quad(self.__M_int,0,1,args=(i,j))[0]
+                        self.M[j][i] = sp.integrate.quad(self.__M_int,0,self.Ldl[1],args=(i,j))[0]
                 self.M_full_h = np.array([]).reshape(6,0)
                 for i in range(self.Ne):
                     self.M_full_h = np.hstack((self.M_full_h,self.M))
@@ -700,10 +700,10 @@ class Flex_beam(object):
             else:
                 return 0
         def __M_int(self,l,i,j):
-            return np.polyval(self.p[(i)],l)*np.polyval(self.p[(j)],l)
+            return np.polyval(self.p[(i)],l/self.Ldl[1])*np.polyval(self.p[(j)],l/self.Ldl[1])
 
         def __F_int(self,l,i,j):
-            return np.polyval(self.ddp[(i)],l)*np.polyval(self.ddp[(j)],l)
+            return np.polyval(self.ddp[(i)],l/self.Ldl[1])*np.polyval(self.ddp[(j)],l/self.Ldl[1])
 
         def __get_psi(self): # psi
             ret = np.array([]).reshape((0,6))
