@@ -242,13 +242,13 @@ class Flex_beam(object):
             # except:
             #     print("error")
 
-            def __f3_int(l,a):
-                ret = np.array([])
-                for j in range(6):
-                    ret = np.append(ret, np.power( np.matmul(np.array([np.polyval(self.dp[0],l),np.polyval(self.dp[1],l),\
-                        np.polyval(self.dp[2],l),np.polyval(self.dp[3],l),np.polyval(self.dp[4],l),np.polyval(self.dp[5],l)]),\
-                        a) ,3)* )
-                return 
+            # def __f3_int(l,a):
+            #     ret = np.array([])
+            #     for j in range(6):
+            #         ret = np.append(ret, np.power( np.matmul(np.array([np.polyval(self.dp[0],l),np.polyval(self.dp[1],l),\
+            #             np.polyval(self.dp[2],l),np.polyval(self.dp[3],l),np.polyval(self.dp[4],l),np.polyval(self.dp[5],l)]),\
+            #             a) ,3)* )
+            #     return 
 
             def cost_one_element(a,e):
                 f3 = sp.integrate.quad(__f3_int,0,1,args=(a))[0]
@@ -323,40 +323,63 @@ class Flex_beam(object):
 
             if Fext_type=='delta':
                 Fext_max = Fext
-                w_steps_num = int(self.N*1e-2/2) # wisth in steps of the area of application of force
-                w = Fext_max/(2*w_steps_num*self.step) # distributed force
-                force_appl_point = self.__search_index(self.l_all_true,l_Fext)
-                dFext = np.zeros((1,self.N))[0] 
-                dFext[int(force_appl_point)-w_steps_num]=w
-                dFext[int(force_appl_point)+w_steps_num]=-w
-                self.dFext = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi_full_v)*self.step,axis=0) 
-                Fext = np.zeros((1,self.N))[0] 
-                Fext[int(force_appl_point)-w_steps_num+1:int(force_appl_point)+w_steps_num+1]=w
-                Fext[int(force_appl_point)-w_steps_num]=w/2
-                Fext[int(force_appl_point)+w_steps_num]=w/2
-                self.Fext = np.sum(np.multiply( Fext.reshape(self.N,1),self.psi_full_v)*self.step,axis=0) 
+                w_steps_num = 2 # wisth in steps of the area of application of force
+                w_halfwidth = self.L*0.1/2
+                w = Fext_max/(2*w_halfwidth) # distributed force
+                # force_appl_point = self.__search_index(self.l_all_true,l_Fext)
+                Fext = np.zeros((self.N,1))
+                for (l,i) in zip(self.l_all_true,range(self.N)):
+                    Fext[i] =  w*self.__delta1(l-l_Fext+w_halfwidth)-\
+                        w*self.__delta1(l-l_Fext-w_halfwidth)
+                dw_halfwidth = self.L*0.01/2
+                dw = w/(2*dw_halfwidth) # distributed dforce
+                dFext = np.zeros((self.N,1))
+                for (l,i) in zip(self.l_all_true,range(self.N)):
+                    dFext[i] = dw*self.__delta1(l-l_Fext+w_halfwidth+dw_halfwidth)-\
+                        dw*self.__delta1(l-l_Fext+w_halfwidth-dw_halfwidth)-\
+                        dw*self.__delta1(l-l_Fext-w_halfwidth+dw_halfwidth)+\
+                        dw*self.__delta1(l-l_Fext-w_halfwidth-dw_halfwidth) 
+
+                def __Fext_int(l,e,j,l_Fext,w_halfwidth,w):
+                    return (w*self.__delta1(l-l_Fext-w_halfwidth)-\
+                        w*self.__delta1(l-l_Fext+w_halfwidth))*np.polyval(self.p[(j)],(l-self.Ldl[e])/self.Ldl[1])
+                self.Fext = np.array([]).reshape(0,6)
+                for e in range(self.Ne):
+                    Fext_one = np.array([])
+                    for j in range(6):
+                        Fext_one = np.append(Fext_one,sp.integrate.quad(__Fext_int,self.Ldl[e],self.Ldl[e+1],\
+                                                            args=(e,j,l_Fext,w_halfwidth,w))[0])
+                    self.Fext = np.vstack((self.Fext, Fext_one) )
+                def __dFext_int(l,e,j,l_Fext,w_halfwidth,dw_halfwidth,dw):
+                    return (dw*self.__delta1(l-l_Fext-w_halfwidth-dw_halfwidth)-\
+                        dw*self.__delta1(l-l_Fext-w_halfwidth+dw_halfwidth)-\
+                        dw*self.__delta1(l-l_Fext+w_halfwidth-dw_halfwidth)+\
+                        dw*self.__delta1(l-l_Fext+w_halfwidth+dw_halfwidth) )*\
+                        np.polyval(self.p[(j)],(l-self.Ldl[e])/self.Ldl[1])
+                self.dFext = np.array([]).reshape(0,6)
+                for e in range(self.Ne):
+                    dFext_one = np.array([])
+                    for j in range(6):
+                        dFext_one = np.append(dFext_one,sp.integrate.quad(__dFext_int,self.Ldl[e],self.Ldl[e+1],\
+                                    args=(e,j,l_Fext,w_halfwidth,dw_halfwidth,dw))[0])
+                    self.dFext = np.vstack((self.dFext, dFext_one) )
+
                 if disp:
                     # print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
-                    plt.figure(figsize = (20,8))
-                    plt.subplot(2,2,1)
+                    plt.figure(figsize = (20,4))
+                    plt.subplot(1,2,1)
+                    plt.title("Fext - distributed force derivative [N/m]")
                     plt.plot(self.l_all_true,Fext)
                     plt.grid()
-                    plt.subplot(2,2,2)
-                    plt.plot(self.l_all_true,Fext)
-                    plt.grid()
-                    plt.xlim([l_Fext-(w_steps_num+5)*self.step,l_Fext+(w_steps_num+5)*self.step])
+                    plt.subplot(1,2,2)
                     plt.title("dFext - distributed force derivative [N/m^2]")
-                    plt.subplot(2,2,3)
                     plt.plot(self.l_all_true,dFext)
                     plt.grid()
-                    plt.subplot(2,2,4)
-                    plt.plot(self.l_all_true,dFext)
-                    plt.grid()
-                    plt.xlim([l_Fext-(w_steps_num+5)*self.step,l_Fext+(w_steps_num+5)*self.step])
-                    plt.title("Fext - distributed force [N/m]")
                     plt.show()
                     display(Math("\\bm{F}="+self.__bmatrix(self.F)))
                     display(Math("\\bm{M}="+self.__bmatrix(self.M)))
+                    display(Math("\\bm{F}_{ext}="+self.__bmatrix(self.Fext)))
+                    display(Math("\\bm{F}^{'}_{ext}="+self.__bmatrix(self.dFext)))
             elif Fext_type=='triangle':
                 Fext_max = Fext
                 w = 2*Fext_max/self.L # distributed force
