@@ -254,7 +254,16 @@ class Flex_beam(object):
                         np.polyval(self.ddp[2],l/self.Ldl[1]),np.polyval(self.ddp[3],l/self.Ldl[1]),\
                         np.polyval(self.ddp[4],l/self.Ldl[1]),np.polyval(self.ddp[5],l/self.Ldl[1])]),\
                         a)*np.polyval(self.dp[j],l/self.Ldl[1]) 
-
+            def __f3y_int(l,a,j):
+                return np.cos(np.matmul(np.array([np.polyval(self.p[0],l/self.Ldl[1]),\
+                                                  np.polyval(self.p[1],l/self.Ldl[1]),\
+                        np.polyval(self.p[2],l/self.Ldl[1]),np.polyval(self.p[3],l/self.Ldl[1]),\
+                        np.polyval(self.p[4],l/self.Ldl[1]),np.polyval(self.p[5],l/self.Ldl[1])]),\
+                        a))*np.matmul(np.array([np.polyval(self.ddp[0],l/self.Ldl[1]),\
+                                                  np.polyval(self.ddp[1],l/self.Ldl[1]),\
+                        np.polyval(self.ddp[2],l/self.Ldl[1]),np.polyval(self.ddp[3],l/self.Ldl[1]),\
+                        np.polyval(self.ddp[4],l/self.Ldl[1]),np.polyval(self.ddp[5],l/self.Ldl[1])]),\
+                        a)*np.polyval(self.dp[j],l/self.Ldl[1]) 
 
             
             self.f3_last = np.zeros((1,6))[0]
@@ -270,6 +279,11 @@ class Flex_beam(object):
                     f3x = np.append(f3x,sp.integrate.quad(__f3x_int,self.Ldl[e],self.Ldl[e+1],args=(a,j))[0] )
                 f3x += self.f3x_last
                 self.f3x_last = f3x
+                f3y = np.array([])
+                for j in range(6):
+                    f3y = np.append(f3y,sp.integrate.quad(__f3y_int,self.Ldl[e],self.Ldl[e+1],args=(a,j))[0] )
+                f3y += self.f3y_last
+                self.f3y_last = f3y
                 return np.concatenate([self.dFext[e] - self.EI*(np.matmul(self.F,a)+\
                                 (1/3)*(f3+np.array([a[1]**3,0,0,-a[4]**3,0,0]) )),\
                                 self.Fext[e] - self.EI*f3x,\
@@ -316,25 +330,6 @@ class Flex_beam(object):
             self.c1 = self.E*self.I/(self.rho*self.A)
             self.c3 = 1/(self.rho*self.A)
             self.EI = self.E*self.I
-
-            # print(np.array([np.polyval(self.p[0],1),np.polyval(self.p[1],1),\
-            #                 np.polyval(self.p[2],1),np.polyval(self.p[3],1),\
-            #                 np.polyval(self.p[4],1),np.polyval(self.p[5],1)]))
-            # print(np.array([np.polyval(self.ddp[0],1),np.polyval(self.ddp[1],1),\
-            #                 np.polyval(self.ddp[2],1),np.polyval(self.ddp[3],1),\
-            #                 np.polyval(self.ddp[4],1),np.polyval(self.ddp[5],1)]))
-            # print(np.array([np.polyval(self.p[0],1),np.polyval(self.p[1],1),\
-            #                 np.polyval(self.p[2],1),np.polyval(self.p[3],1),\
-            #                 np.polyval(self.p[4],1),np.polyval(self.p[5],1)]))
-            # print(np.array([np.polyval(self.p[0],0),np.polyval(self.p[1],0),\
-            #                 np.polyval(self.p[2],0),np.polyval(self.p[3],0),\
-            #                 np.polyval(self.p[4],0),np.polyval(self.p[5],0)]))
-            # print(np.array([np.polyval(self.ddp[0],0),np.polyval(self.ddp[1],0),\
-            #                 np.polyval(self.ddp[2],0),np.polyval(self.ddp[3],0),\
-            #                 np.polyval(self.ddp[4],0),np.polyval(self.ddp[5],0)]))
-            # print(np.array([np.polyval(self.p[0],0),np.polyval(self.p[1],0),\
-            #                 np.polyval(self.p[2],0),np.polyval(self.p[3],0),\
-            #                 np.polyval(self.p[4],0),np.polyval(self.p[5],0)]))
 
             self.F = np.zeros((6,6))
             for j in range(6):
