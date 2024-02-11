@@ -218,45 +218,43 @@ class Flex_beam(object):
                 if l==self.Ldl[1]:
                     index = self.steps_per_fe
                 else:    
-                    index = self.__search_index(self.l_all_true,l) # 
+                    index = self.__search_index(self.l_all_true,l) 
                 return np.power( np.matmul(self.psi[index],\
                         a) ,3)*self.dpsi[index,j] 
             def __f3x_int(l,a,j):
-                return np.sin(np.matmul(np.array([np.polyval(self.p[0],l/self.Ldl[1]),\
-                                                  np.polyval(self.p[1],l/self.Ldl[1]),\
-                        np.polyval(self.p[2],l/self.Ldl[1]),np.polyval(self.p[3],l/self.Ldl[1]),\
-                        np.polyval(self.p[4],l/self.Ldl[1]),np.polyval(self.p[5],l/self.Ldl[1])]),\
-                        a))*np.matmul(np.array([np.polyval(self.ddp[0],l/self.Ldl[1]),\
-                                                  np.polyval(self.ddp[1],l/self.Ldl[1]),\
-                        np.polyval(self.ddp[2],l/self.Ldl[1]),np.polyval(self.ddp[3],l/self.Ldl[1]),\
-                        np.polyval(self.ddp[4],l/self.Ldl[1]),np.polyval(self.ddp[5],l/self.Ldl[1])]),\
-                        a)*np.polyval(self.dp[j],l/self.Ldl[1]) 
+                if l==self.Ldl[1]:
+                    index = self.steps_per_fe
+                else:    
+                    index = self.__search_index(self.l_all_true,l) 
+                return np.sin(np.matmul(self.psi[index],\
+                        a))*np.matmul(self.ddpsi[index],\
+                        a)*self.dpsi[index,j] 
             def __f3y_int(l,a,j):
-                return np.cos(np.matmul(np.array([np.polyval(self.p[0],l/self.Ldl[1]),\
-                                                  np.polyval(self.p[1],l/self.Ldl[1]),\
-                        np.polyval(self.p[2],l/self.Ldl[1]),np.polyval(self.p[3],l/self.Ldl[1]),\
-                        np.polyval(self.p[4],l/self.Ldl[1]),np.polyval(self.p[5],l/self.Ldl[1])]),\
-                        a))*np.matmul(np.array([np.polyval(self.ddp[0],l/self.Ldl[1]),\
-                                                  np.polyval(self.ddp[1],l/self.Ldl[1]),\
-                        np.polyval(self.ddp[2],l/self.Ldl[1]),np.polyval(self.ddp[3],l/self.Ldl[1]),\
-                        np.polyval(self.ddp[4],l/self.Ldl[1]),np.polyval(self.ddp[5],l/self.Ldl[1])]),\
-                        a)*np.polyval(self.dp[j],l/self.Ldl[1]) 
+                if l==self.Ldl[1]:
+                    index = self.steps_per_fe
+                else:    
+                    index = self.__search_index(self.l_all_true,l) 
+                return np.cos(np.matmul(self.psi[index],\
+                        a))*np.matmul(self.ddpsi[index],\
+                        a)*self.dpsi[index,j]
             def __Fextx_int(l,a,j):
-                return np.sin(np.matmul(np.array([np.polyval(self.p[0],l/self.Ldl[1]),\
-                                                  np.polyval(self.p[1],l/self.Ldl[1]),\
-                            np.polyval(self.p[2],l/self.Ldl[1]),np.polyval(self.p[3],l/self.Ldl[1]),\
-                            np.polyval(self.p[4],l/self.Ldl[1]),np.polyval(self.p[5],l/self.Ldl[1])]),\
+                if l==self.Ldl[1]:
+                    index = self.steps_per_fe
+                else:    
+                    index = self.__search_index(self.l_all_true,l) 
+                return np.sin(np.matmul(self.psi[index],\
                             a))*(self.Fext_distr*self.__delta1(l-self.l_Fext-self.Fext_distr_halfwidth)-\
                             self.Fext_distr*self.__delta1(l-self.l_Fext+self.Fext_distr_halfwidth))*\
-                            np.polyval(self.p[(j)],l/self.Ldl[1])
+                            self.psi[index,j]
             def __Fexty_int(l,a,j):
-                return np.cos(np.matmul(np.array([np.polyval(self.p[0],l/self.Ldl[1]),\
-                                                  np.polyval(self.p[1],l/self.Ldl[1]),\
-                            np.polyval(self.p[2],l/self.Ldl[1]),np.polyval(self.p[3],l/self.Ldl[1]),\
-                            np.polyval(self.p[4],l/self.Ldl[1]),np.polyval(self.p[5],l/self.Ldl[1])]),\
+                if l==self.Ldl[1]:
+                    index = self.steps_per_fe
+                else:    
+                    index = self.__search_index(self.l_all_true,l) 
+                return np.cos(np.matmul(self.psi[index],\
                             a))*(self.Fext_distr*self.__delta1(l-self.l_Fext-self.Fext_distr_halfwidth)-\
                             self.Fext_distr*self.__delta1(l-self.l_Fext+self.Fext_distr_halfwidth))*\
-                            np.polyval(self.p[(j)],l/self.Ldl[1])
+                            self.psi[index,j]
             
             self.f3_last = np.zeros((1,6))[0]
             self.f3x_last = np.zeros((1,6))[0]
