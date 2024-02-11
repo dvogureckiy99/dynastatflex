@@ -643,6 +643,12 @@ class Flex_beam(object):
                     ret[-6:]=ret[-6:]*self.__psi_choser(e,l)
                 return ret
 
+        def __M_int(self,l,i,j):
+            return np.polyval(self.p[(i)],l/self.Ldl[1])*np.polyval(self.p[(j)],l/self.Ldl[1])
+
+        def __F_int(self,l,i,j):
+            return np.polyval(self.ddp[(i)],l/self.Ldl[1])*np.polyval(self.ddp[(j)],l/self.Ldl[1])
+
         def show_one_element_approx(self,e=1):
             """
             Show one element phi's approximation together with base psi_i functions
