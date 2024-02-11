@@ -252,8 +252,8 @@ class Flex_beam(object):
             cost = np.concatenate([ self.dFext-self.EI*(np.sum(np.row_stack(np.hsplit(np.multiply(self.F_full_h,a),self.Ne)),axis=1)+\
                                 (1/3)*(np.sum(f3*self.step,axis=0)-\
                             dphi_appr_power3[int(self.N-1)]*self.psi_full_end + dphi_appr_power3[0]*self.psi_full_start)),\
-                                Fextx - self.EI*np.sum(f3x*self.step,axis=0),\
-                                Fexty + self.EI*np.sum(f3y*self.step,axis=0)  ]) # 3*6*Ne
+                                Fextx[0:12] - self.EI*np.sum(f3x*self.step,axis=0)[0:12],\
+                                Fexty[0:12] + self.EI*np.sum(f3y*self.step,axis=0)[0:12]  ]) # 3*6*Ne
             # cost = np.sum(np.power(cost,2))
             print("iter={},cost={}".format(self.iteration_num,np.sum(np.power(cost,2))))
             # print("iter={}".format(self.iteration_num))
