@@ -1050,6 +1050,7 @@ class Flex_beam(object):
             labels = ['$\\varphi_{true}$','$\\varphi_{approx}$']
             colours = ['b','r']
             plt.plot(self.l_all_true/self.mult,phi_appr,label=labels[1],color=colours[1])
+            plt.plot(self.l_all_true/self.mult,phi_appr,"og")
             if not flag_a_approx_is:
                 plt.plot(self.l_all_true/self.mult,self.phi_true,"--",label=labels[0],color=colours[0])
             plt.grid(True)
@@ -1064,6 +1065,7 @@ class Flex_beam(object):
             labels = ['$(x,y)_{true}$','$(x,y)_{approx}$']
             colours = ['b','r']
             plt.plot(x/self.mult,y/self.mult,label=labels[1],color=colours[1])
+            plt.plot(x/self.mult,y/self.mult,"og")
             if not flag_a_approx_is:
                 plt.plot(self.x_phi_true/self.mult,self.y_phi_true/self.mult,"--",label=labels[0],color=colours[0])
             plt.grid(True)
@@ -1080,6 +1082,7 @@ class Flex_beam(object):
             colours = ['b','r']
             if der_num == 1 or der_num == 2:
                 plt.plot(self.l_all_true,dphi_appr,label=labels[1],color=colours[1])
+                plt.plot(self.l_all_true,dphi_appr,"og")
                 if not flag_a_approx_is:
                     plt.plot(self.l_all_true,self.dphi_true,"--",label=labels[0],color=colours[0])
             plt.grid(True)
@@ -1095,6 +1098,7 @@ class Flex_beam(object):
             colours = ['b','r']
             if der_num == 2:
                 plt.plot(self.l_all_true/self.mult,ddphi_appr,label=labels[1],color=colours[1])
+                plt.plot(self.l_all_true/self.mult,ddphi_appr,"og")
                 if not flag_a_approx_is:
                     plt.plot(self.l_all_true/self.mult,self.ddphi_true,"--",label=labels[0],color=colours[0])
             plt.grid(True)
