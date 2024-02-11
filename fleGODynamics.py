@@ -337,6 +337,10 @@ class Flex_beam(object):
             self.c3 = 1/(self.rho*self.A)
             self.EI = self.E*self.I
 
+            self.psi = self.__get_psi()
+            self.dpsi = self.__get_dpsi()
+            self.ddpsi = self.__get_ddpsi()
+
             self.psi_full_h = np.array([]).reshape(np.shape(self.psi)[0],0)
             for i in range(self.Ne):
                 self.psi_full_h = np.hstack((self.psi_full_h,self.psi))
@@ -487,7 +491,7 @@ class Flex_beam(object):
                     Fext_type = npzfile['Fext_type']
                 del npzfile
 
-            if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl) or (not step==self.step) or (not c1==self.c1) or (not c3==self.c3) or (not EI==self.EI) or (not Fext_point==self.Fext_point) or (not l_Fext==self.l_Fext) or (not Fext_type==self.Fext_type) or flag_compute_a_anyway:
+            if (not flag_preparing_already_done) or (not Ne==self.Ne) or (not dl==self.dl) or (not c1==self.c1) or (not c3==self.c3) or (not EI==self.EI) or (not Fext_point==self.Fext_point) or (not l_Fext==self.l_Fext) or (not Fext_type==self.Fext_type) or flag_compute_a_anyway:
                 if flag_preparing_already_done:
                     print("Checking finished. We cannot use this a approx data as some parameters mismatch. Starting optimization:")
                 else:
