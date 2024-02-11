@@ -337,6 +337,16 @@ class Flex_beam(object):
             self.c3 = 1/(self.rho*self.A)
             self.EI = self.E*self.I
 
+            self.psi_full_h = np.array([]).reshape(np.shape(self.psi)[0],0)
+            for i in range(self.Ne):
+                self.psi_full_h = np.hstack((self.psi_full_h,self.psi))
+            self.dpsi_full_h = np.array([]).reshape(np.shape(self.psi)[0],0)
+            for i in range(self.Ne):
+                self.dpsi_full_h = np.hstack((self.dpsi_full_h,self.dpsi))
+            self.ddpsi_full_h = np.array([]).reshape(np.shape(self.psi)[0],0)
+            for i in range(self.Ne):
+                self.ddpsi_full_h = np.hstack((self.ddpsi_full_h,self.ddpsi))
+
             self.F = np.zeros((6,6))
             for j in range(6):
                 for i in range(6):
