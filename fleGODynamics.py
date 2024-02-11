@@ -445,7 +445,7 @@ class Flex_beam(object):
 
             if Fext_type=='delta':
                 Fext_max = Fext
-                w_steps_num = 2 # wisth in steps of the area of application of force
+                w_steps_num = 1 # wisth in steps of the area of application of force
                 w = Fext_max/(2*w_steps_num*self.step) # distributed force
                 force_appl_point = self.__search_index(self.l_all_true,l_Fext)
                 dFext = np.zeros((1,self.N))[0] 
@@ -453,8 +453,8 @@ class Flex_beam(object):
                 dFext[int(force_appl_point)+w_steps_num]=-w
                 Fext = np.zeros((1,self.N))[0] 
                 Fext[int(force_appl_point)-w_steps_num+1:int(force_appl_point)+w_steps_num+1]=w
-                Fext[int(force_appl_point)-w_steps_num]=w/2
-                Fext[int(force_appl_point)+w_steps_num]=w/2
+                Fext[int(force_appl_point)-w_steps_num]=w
+                Fext[int(force_appl_point)+w_steps_num]=w
 
                 self.Fext = np.multiply( Fext.reshape(self.N,1),self.psi_full_v)
 
@@ -467,21 +467,24 @@ class Flex_beam(object):
                     # print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
                     plt.figure(figsize = (20,8))
                     plt.subplot(2,2,1)
+                    plt.title("Fext - distributed force [N/m]")
                     plt.plot(self.l_all_true,Fext)
+                    plt.plot(self.Ldl,np.zeros((self.Ne+1,1)),"or")
                     plt.grid()
                     plt.subplot(2,2,2)
                     plt.plot(self.l_all_true,Fext)
                     plt.grid()
                     plt.xlim([l_Fext-(w_steps_num+5)*self.step,l_Fext+(w_steps_num+5)*self.step])
-                    plt.title("dFext - distributed force derivative [N/m^2]")
                     plt.subplot(2,2,3)
+                    plt.title("dFext - distributed force derivative [N/m^2]")
                     plt.plot(self.l_all_true,dFext)
+                    plt.plot(self.Ldl,np.zeros((self.Ne+1,1)),"or")
                     plt.grid()
                     plt.subplot(2,2,4)
                     plt.plot(self.l_all_true,dFext)
                     plt.grid()
                     plt.xlim([l_Fext-(w_steps_num+5)*self.step,l_Fext+(w_steps_num+5)*self.step])
-                    plt.title("Fext - distributed force [N/m]")
+                    
                     plt.show()
                     display(Math("\\bm{F}="+self.__bmatrix(self.F)))
                     display(Math("\\bm{M}="+self.__bmatrix(self.M)))
@@ -572,7 +575,7 @@ class Flex_beam(object):
                 
                 start_time = time.time()
                 # res = sp.optimize.minimize(self.__fun_static_optim, a0,method='Nelder-Mead')
-                tol=1e-15
+                tol=1e-3
                 res = sp.optimize.least_squares(self.__fun_static_optim,a0,\
                                                 ftol=tol,gtol=tol,xtol=tol,max_nfev=1e6,method='trf')
                 end_time = time.time()-start_time
