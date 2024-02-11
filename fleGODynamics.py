@@ -249,7 +249,6 @@ class Flex_beam(object):
             # except:
             #     print("error")
 
-            # cost = np.concatenate([ self.EI*(np.matmul(self.F,a)+\
             cost = np.concatenate([ self.dFext-self.EI*(np.sum(np.row_stack(np.hsplit(np.multiply(self.F_full_h,a),self.Ne)),axis=1)+\
                                 (1/3)*(np.sum(f3*self.step,axis=0)-\
                             dphi_appr_power3[int(self.N-1)]*self.psi_full_end + dphi_appr_power3[0]*self.psi_full_start)),\
@@ -458,9 +457,10 @@ class Flex_beam(object):
                 Fext[int(force_appl_point)+w_steps_num]=w/2
 
                 self.Fext = np.multiply( Fext.reshape(self.N,1),self.psi_full_v)
+
                 dFext_one = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi_full_v)*self.step,axis=0) 
                 self.dFext = np.array([])
-                for i in range(self.Ne):
+                for e in range(self.Ne):
                     self.dFext = np.append(self.dFext,dFext_one)
 
                 if disp:
