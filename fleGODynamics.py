@@ -297,9 +297,10 @@ class Flex_beam(object):
             for e in range(self.Ne):
                 cost = np.concatenate([cost, cost_one_element(a[e*6:e*6+6],e)  ]) # 6*Ne
             # cost = np.sum(np.power(cost,2))
+            print(a)
             print("iter={},cost={}".format(self.iteration_num,np.sum(np.power(cost,2))))
             # print("iter={}".format(self.iteration_num))
-            display(Math(self.__bmatrix(a)))
+            
             return cost
             
         def __delta1(self,l):
@@ -508,7 +509,7 @@ class Flex_beam(object):
                 
                 start_time = time.time()
                 # res = sp.optimize.minimize(self.__fun_static_optim, a0,method='Nelder-Mead')
-                tol=1e-3
+                tol=1e-15
                 res = sp.optimize.least_squares(self.__fun_static_optim,a0,\
                                                 ftol=tol,gtol=tol,xtol=tol,max_nfev=1e6,method='trf')
                 end_time = time.time()-start_time
