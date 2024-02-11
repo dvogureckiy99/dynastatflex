@@ -349,37 +349,29 @@ class Flex_beam(object):
 
             if Fext_type=='delta':
                 Fext_max = Fext
-                w_steps_num = int(self.N*1e-2/2) # wisth in steps of the area of application of force
-                w = Fext_max/(2*w_steps_num*self.step) # distributed force
+                # w_steps_num = int(self.N*1e-2/2) # wisth in steps of the area of application of force
+                w = Fext_max/(self.step) # distributed force
+                dw = w/(self.step)
                 force_appl_point = self.__search_index(self.l_all_true,l_Fext)
                 dFext = np.zeros((1,self.N))[0] 
-                dFext[int(force_appl_point)-w_steps_num]=w
-                dFext[int(force_appl_point)+w_steps_num]=-w
+                dFext[int(force_appl_point)]=dw
                 self.dFext = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi)*self.step,axis=0) 
                 Fext = np.zeros((1,self.N))[0] 
-                Fext[int(force_appl_point)-w_steps_num+1:int(force_appl_point)+w_steps_num+1]=w
-                Fext[int(force_appl_point)-w_steps_num]=w/2
-                Fext[int(force_appl_point)+w_steps_num]=w/2
+                Fext[int(force_appl_point)]=w
                 self.Fext = np.sum(np.multiply( Fext.reshape(self.N,1),self.psi)*self.step,axis=0) 
                 if disp:
                     print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
-                    plt.figure(figsize = (20,8))
-                    plt.subplot(2,2,1)
+                    plt.figure(figsize = (20,4))
+                    plt.subplot(1,2,1)
                     plt.plot(self.l_all_true,Fext)
+                    plt.plot(self.Ldl,np.zeros((1,self.Ne+1))[0],"og")
                     plt.grid()
-                    plt.subplot(2,2,2)
-                    plt.plot(self.l_all_true,Fext)
-                    plt.grid()
-                    plt.xlim([l_Fext-(w_steps_num+5)*self.step,l_Fext+(w_steps_num+5)*self.step])
-                    plt.title("dFext - distributed force derivative [N/m^2]")
-                    plt.subplot(2,2,3)
+                    plt.title("Fext - distributed force derivative [N/m]")
+                    plt.subplot(1,2,2)
                     plt.plot(self.l_all_true,dFext)
+                    plt.plot(self.Ldl,np.zeros((1,self.Ne+1))[0],"og")
                     plt.grid()
-                    plt.subplot(2,2,4)
-                    plt.plot(self.l_all_true,dFext)
-                    plt.grid()
-                    plt.xlim([l_Fext-(w_steps_num+5)*self.step,l_Fext+(w_steps_num+5)*self.step])
-                    plt.title("Fext - distributed force [N/m]")
+                    plt.title("dFext - distributed force [N/m^2]")
                     plt.show()
                     display(Math("\\bm{F}="+self.__bmatrix(self.F)))
                     display(Math("\\bm{M}="+self.__bmatrix(self.M)))
@@ -522,7 +514,7 @@ class Flex_beam(object):
             disp: bool, optional
                 Display data
             """
-            self.step = self.L*step_mult*1e-3
+            self.step = self.dl#self.L*step_mult*1e-3
             self.l_all_true = np.arange(0,self.L+self.step/2,self.step)
             self.N = len(self.l_all_true)
             if disp:
@@ -911,9 +903,10 @@ class Flex_beam(object):
             plt.subplot(221)
             labels = ['$\\varphi_{true}$','$\\varphi_{approx}$']
             colours = ['b','r']
-            plt.plot(self.l_all_true/self.mult,phi_appr,label=labels[1],color=colours[1])
+            plt.plot(self.l_all_true/self.mult,np.rad2deg(phi_appr),label=labels[1],color=colours[1])
+            plt.plot(self.l_all_true/self.mult,np.rad2deg(phi_appr),"og")
             if not flag_a_approx_is:
-                plt.plot(self.l_all_true/self.mult,self.phi_true,"--",label=labels[0],color=colours[0])
+                plt.plot(self.l_all_true/self.mult,np.rad2deg(self.phi_true),"--",label=labels[0],color=colours[0])
             plt.grid(True)
             plt.xlabel("$l$ [mm]")
             plt.ylabel("$\\varphi(l,t=0)$")
@@ -926,6 +919,7 @@ class Flex_beam(object):
             labels = ['$(x,y)_{true}$','$(x,y)_{approx}$']
             colours = ['b','r']
             plt.plot(x/self.mult,y/self.mult,label=labels[1],color=colours[1])
+            plt.plot(x/self.mult,y/self.mult,"og")
             if not flag_a_approx_is:
                 plt.plot(self.x_phi_true/self.mult,self.y_phi_true/self.mult,"--",label=labels[0],color=colours[0])
             plt.grid(True)
@@ -942,6 +936,7 @@ class Flex_beam(object):
             colours = ['b','r']
             if der_num == 1 or der_num == 2:
                 plt.plot(self.l_all_true,dphi_appr,label=labels[1],color=colours[1])
+                plt.plot(self.l_all_true,dphi_appr,"og")
                 if not flag_a_approx_is:
                     plt.plot(self.l_all_true,self.dphi_true,"--",label=labels[0],color=colours[0])
             plt.grid(True)
@@ -957,6 +952,7 @@ class Flex_beam(object):
             colours = ['b','r']
             if der_num == 2:
                 plt.plot(self.l_all_true/self.mult,ddphi_appr,label=labels[1],color=colours[1])
+                plt.plot(self.l_all_true/self.mult,ddphi_appr,"og")
                 if not flag_a_approx_is:
                     plt.plot(self.l_all_true/self.mult,self.ddphi_true,"--",label=labels[0],color=colours[0])
             plt.grid(True)
