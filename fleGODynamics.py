@@ -215,15 +215,12 @@ class Flex_beam(object):
             #     print("error")
 
             def __f3_int(l,a,j):
-                if l==self.L:
-                    index = self.N-1
+                if l==self.Ldl[1]:
+                    index = self.steps_per_fe
                 else:    
-                    index = self.__search_index(self.l_all_true,l) # self.psi
-                return np.power( np.matmul(np.array([np.polyval(self.dp[0],l/self.Ldl[1]),\
-                                                     np.polyval(self.dp[1],l/self.Ldl[1]),\
-                        np.polyval(self.dp[2],l/self.Ldl[1]),np.polyval(self.dp[3],l/self.Ldl[1]),\
-                        np.polyval(self.dp[4],l/self.Ldl[1]),np.polyval(self.dp[5],l/self.Ldl[1])]),\
-                        a) ,3)*np.polyval(self.dp[j],l/self.Ldl[1]) 
+                    index = self.__search_index(self.l_all_true,l) # 
+                return np.power( np.matmul(self.psi[index],\
+                        a) ,3)*self.dpsi[index,j] 
             def __f3x_int(l,a,j):
                 return np.sin(np.matmul(np.array([np.polyval(self.p[0],l/self.Ldl[1]),\
                                                   np.polyval(self.p[1],l/self.Ldl[1]),\
