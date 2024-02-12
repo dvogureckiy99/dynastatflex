@@ -221,11 +221,8 @@ class Flex_beam(object):
                                 (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
                             dphi_appr_power3[int(self.N-1)]*self.psi[int(self.N-1)]+dphi_appr_power3[0]*self.psi[0])),\
                                 [self.Fext[3]+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0)) ],\
-                                # self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)+\
-                            # sinphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]-sinphiappr_ddphiappr[0]*self.psi[0]),\
                                 [self.Fext[3]+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0))] ])
-                                # self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
-                            # cosphiappr_ddphiappr[int(self.N-1)]*self.psi[int(self.N-1)]+cosphiappr_ddphiappr[0]*self.psi[0]) ]) # 3*6*Ne
+                                # 3*6*Ne
             # cost = np.sum(np.power(cost,2))
             print("iter={},cost= {}".format(self.iteration_num,cost[0]))
             # print("iter={}".format(self.iteration_num))
