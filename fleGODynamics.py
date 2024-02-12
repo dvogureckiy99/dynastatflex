@@ -12,42 +12,7 @@ import os
 
 """
 Release 1.0.2
-Idea:
-1. add saving files with parameters with different names _1,_2,_3 e.c. with checking
- if this number file_name already exist.
-2. when loading: open in sequence files until file with appropriate FEM and Ldivide parameters will be found.
-    2.1 discover all files in root folder and finding with right name
-    2.2 checking all files with different names _1,_2,_3 e.c. until file 
-    with appropriate FEM and Ldivide parameters will be found
-Problems:ы
-1. Problem with E,I,L=1
-2. Decrease dim0 of psi to Ne instead of N and see what'll happen
-3. When decreasing Fext beam bend in minus angle WHy?
-4. Sign of Fext doesn't influence on simulation. 
-    4.1 Trying solve it: change manually sign of Fexts in both f3 and F ---> nothing
-    4.2 Trying solve it: change manually sign of Fexts in F only ---> nothing
-    4.3 Trying solve it: change manually sign of Fexts in f3 only ---> nothing
-    4.4 Trying solve it: delete Fext at all ---> very bad, even angle wrong. Fext is very important.
-    4.5 Trying solve it: delete dFext at all ---> nothing. Think as dFext very small and doesn't influence.
-    4.6 Trying change the way of Fext setup. Try tryangle Fext. ---> something changed. First derivative became look like
-    exactly second derivative should. There is error somewhere.
-        4.6.1 Trying solve it: delete dFext at all ---> nothing special, just a little warse cause of high freq in dphi.
-        It is seen that now dFext plays a role.
-        4.6.2 Trying solve it: delete Fext at all ---> although a little bit worser, but now so warse as in 4.4
-        4.6.3 With large force something goes wrong.
-        4.6.4 with different sign something goes wrong
-    4.7 Size of f3 reduced to the form as in the article exactly.
-        4.7.1 now sign of Fext change the direction of bending                                          ^^^^^^^^^^^11111^^^^ 
-        4.7.2 tolerance doesn't affect
-        4.7.3 step size reduced Ne=20,step_mult=0.05 ---> res cost doesn't decrease, visually quality of line doesn't improved
-        4.7.4 Ne increased: Ne=40,step_mult=0.05 ---> res cost decreased a little in 2 times =4394, visually quality of line improved  
-        4.7.4 Ne increased: Ne=80,step_mult=0.2 ---> res cost decreased a little in 2 times =2198, i.e. res cost depends mostly on Ne not on step_mult
-          visually quality of line improved 
-            4.7.4.1 sign change this led to not only a change in the bending direction, but also a qualitatively different bend 
-        4.7.5 f3 made exactly as in article with j=3. ---> res cost =31, visually quality of beam improved very much
-            4.7.5.1 now when chenging sign of Fext beam bend exactly symmetrically
-5. Try making like in the article
-    5.1 Made opportunity to choose type of Fext: triangle, delta function approximation. delta work bad. 
+1. With very high Ne accurate angle. 
 """
 
 class Flex_beam(object):
@@ -219,7 +184,7 @@ class Flex_beam(object):
         # def __get_ddy_approx(self,l):
         #     return self.ddy_sum[self.__search_index(self.l_all_true,l)]
 
-        def __fun_static_optim(self,a_diff,disp=0):
+        def __fun_static_optim(self,a_diff,disp):
             # preparing a vector for each FE, cause a_diff contain only unique values 
             a = np.zeros((1,6*self.Ne))[0]
             a[0] = 0
@@ -340,7 +305,7 @@ class Flex_beam(object):
             if Fext_type=='delta':
                 Fext_max = Fext
                 # w_steps_num = int(self.N*1e-2/2) # wisth in steps of the area of application of force
-                w = Fext_max/(self.step_optim) # distributed force
+                w = Fext_max # force at some point
                 dw = w/(self.step_optim)
                 force_appl_point = self.__search_index(self.l_all_optim,l_Fext)
                 
@@ -455,7 +420,8 @@ class Flex_beam(object):
                 # res = sp.optimize.minimize(self.__fun_static_optim, a0,method='Nelder-Mead')
                 tol=1e-3
                 res = sp.optimize.least_squares(self.__fun_static_optim,a0,\
-                                                ftol=tol,gtol=tol,xtol=tol,max_nfev=1e6,method='trf')
+                                                ftol=tol,gtol=tol,xtol=tol,max_nfev=1e6,method='trf',\
+                                                    args=(disp,))
                 if disp:
                     end_time = time.time()-start_time
                     print("status: %s"%(res.message))
