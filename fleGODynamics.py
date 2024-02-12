@@ -255,7 +255,7 @@ class Flex_beam(object):
                                                                self.step_optim,axis=0))] ])
                                 # 3*6*Ne
             # cost = np.sum(np.power(cost,2))
-            print("iter={},cost= {}".format(self.iteration_num,cost[0]))
+            print("iter={},cost= {}".format(self.iteration_num,np.sum(np.power(cost,2))))
             # print("iter={}".format(self.iteration_num))
             return cost
             
