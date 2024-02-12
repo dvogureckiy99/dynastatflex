@@ -219,7 +219,7 @@ class Flex_beam(object):
         # def __get_ddy_approx(self,l):
         #     return self.ddy_sum[self.__search_index(self.l_all_true,l)]
 
-        def __fun_static_optim(self,a_diff):
+        def __fun_static_optim(self,a_diff,disp=0):
             # preparing a vector for each FE, cause a_diff contain only unique values 
             a = np.zeros((1,6*self.Ne))[0]
             a[0] = 0
@@ -255,7 +255,9 @@ class Flex_beam(object):
                                                                self.step_optim,axis=0))] ])
                                 # 3*6*Ne
             # cost = np.sum(np.power(cost,2))
-            print("iter={},cost= {}".format(self.iteration_num,np.sum(np.power(cost,2))))
+            self.phi_end = np.matmul(self.psi,a)[-1]
+            if disp:
+                print("iter={},cost={}".format(self.iteration_num,np.sum(np.power(cost,2))))
             # print("iter={}".format(self.iteration_num))
             return cost
             
@@ -291,8 +293,9 @@ class Flex_beam(object):
             self.c1 = self.E*self.I/(self.rho*self.A)
             self.c3 = 1/(self.rho*self.A)
             self.EI = self.E*self.I
-            start_time = time.time_ns()
-            time.sleep(0.000001) # sleep 1 us
+            if disp:
+                start_time = time.time_ns()
+                time.sleep(0.000001) # sleep 1 us
             # preparing for fast computation next
             
             self.F = np.zeros((6,6))
@@ -308,8 +311,9 @@ class Flex_beam(object):
                     self.M[j][i] = sp.integrate.quad(self.__M_int,0,self.Ldl[1],args=(i,j))[0]
             self.M = self.__diag_mat(self.M,self.Ne,1)
 
-            time_end = time.time_ns()-start_time-1*1e3
-            print("Preparing time: %s s" % (round(time_end*1e-9,3)))
+            if disp:
+                time_end = time.time_ns()-start_time-1*1e3
+                print("Preparing time: %s s" % (round(time_end*1e-9,3)))
             
             self.ind_N2 = self.__search_index(self.l_all_optim,self.Ldl[2])
 
@@ -393,13 +397,14 @@ class Flex_beam(object):
                     display(Math("\\bm{F}="+self.__bmatrix(self.F)))
                     display(Math("\\bm{M}="+self.__bmatrix(self.M)))
 
-        def static(self,a0=[1,2],flag_compute_a_anyway=1):
+        def static(self,disp=True,a0=[1,2],flag_compute_a_anyway=1):
             flag_preparing_already_done = 0
             if os.path.isfile('a.npz'):
                 flag_preparing_already_done = 1
 
             if flag_preparing_already_done:
-                print("Found numpy zip archive with a approx data. Checking if we can use it!")
+                if disp:
+                    print("Found numpy zip archive with a approx data. Checking if we can use it!")
                 with np.load('a.npz') as npzfile: # for closign after using it
                     self.a_approx = npzfile['a']
                     Fext_point = npzfile['Fext_point']
@@ -416,9 +421,11 @@ class Flex_beam(object):
 
             if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl) or (not step==self.step) or (not c1==self.c1) or (not c3==self.c3) or (not EI==self.EI) or (not Fext_point==self.Fext_point) or (not l_Fext==self.l_Fext) or (not Fext_type==self.Fext_type) or flag_compute_a_anyway:
                 if flag_preparing_already_done:
-                    print("Checking finished. We cannot use this a approx data as some parameters mismatch. Starting optimization:")
+                    if disp:
+                        print("Checking finished. We cannot use this a approx data as some parameters mismatch. Starting optimization:")
                 else:
-                    print("Starting optimization:")
+                    if disp:
+                        print("Starting optimization:")
 
                 self.iteration_num = 0
                 if np.shape(a0)[0]<3:
@@ -443,18 +450,19 @@ class Flex_beam(object):
                 bound_min[-1]=-np.pi
                 bound_max[-1]=np.pi
                 """
-                
-                start_time = time.time()
+                if disp:
+                    start_time = time.time()
                 # res = sp.optimize.minimize(self.__fun_static_optim, a0,method='Nelder-Mead')
                 tol=1e-3
                 res = sp.optimize.least_squares(self.__fun_static_optim,a0,\
                                                 ftol=tol,gtol=tol,xtol=tol,max_nfev=1e6,method='trf')
-                end_time = time.time()-start_time
-                print("status: %s"%(res.message))
-                print("status: %s"%(res.status))
-                print("evaluation time:%s s" % (round(end_time,0)))
-                print("time on 1 iter:%s ms" % (round(1e3*end_time/self.iteration_num,0)))  
-                print("iteration number:%s" % (self.iteration_num))
+                if disp:
+                    end_time = time.time()-start_time
+                    print("status: %s"%(res.message))
+                    print("status: %s"%(res.status))
+                    print("evaluation time:%s s" % (round(end_time,0)))
+                    print("time on 1 iter:%s ms" % (round(1e3*end_time/self.iteration_num,0)))  
+                    print("iteration number:%s" % (self.iteration_num))
 
                 self.a_diff = np.ones((1,6+3*(self.Ne-1)-1-2))[0]
                 for i in range(6+3*(self.Ne-1)-1-2):
@@ -470,7 +478,8 @@ class Flex_beam(object):
                     else:
                         self.a_approx[6*(i+1):6*(i+1)+3] = self.a_approx[6*(i+1)-3:6*(i+1)]
                         self.a_approx[6*(i+1)+3:6*(i+2)] = self.a_diff[5+3*i:8+3*i]
-                print("res cost = {}".format(res.cost))  
+                if disp:
+                    print("res cost = {}".format(res.cost))  
                 
                 """
                 'L-BFGS-B' work long
@@ -484,7 +493,8 @@ class Flex_beam(object):
                         l_Fext=self.l_Fext,Fext_type=self.Fext_type)
             else:
                 if flag_preparing_already_done:
-                    print("Checking finished. Using loaded a_approx data!")
+                    if disp:
+                        print("Checking finished. Using loaded a_approx data!")
 
         def __search_index(self,v,x):
             return bisect.bisect(v, x) - 1 
@@ -820,7 +830,7 @@ class Flex_beam(object):
                 if flag_preparing_already_done:
                     print("Checking finished. Using loaded data")
                 
-        def phi_approx(self,disp_time=True,der_num=0):
+        def phi_approx(self,disp=True,der_num=0):
             """
             Phi function approximation. Opportunity to approximate dphi and ddphi functions.
             # Parameters
@@ -845,7 +855,8 @@ class Flex_beam(object):
                 except:
                     raise ValueError("Call create_a first!") from None
             else:
-                print("Found an approximation. Will use it!")
+                if disp:
+                    print("Found an approximation. Will use it!")
                 self.psi = self.__get_psi(self.step)
                 self.dpsi = self.__get_dpsi(self.step)
                 self.ddpsi = self.__get_ddpsi(self.step)
@@ -884,8 +895,9 @@ class Flex_beam(object):
                 
             if der_num == 2:
                 #evaluation
-                start_time = time.time_ns()
-                time.sleep(0.000001) # sleep 1 us
+                if disp:
+                    start_time = time.time_ns()
+                    time.sleep(0.000001) # sleep 1 us
                 phi_appr = np.matmul(self.psi,self.a)
                 dphi_appr = np.matmul(self.dpsi,self.a)
                 ddphi_appr = np.matmul(self.ddpsi,self.a)
@@ -896,6 +908,7 @@ class Flex_beam(object):
                 y = np.cumsum(sin_phi_appr)*self.step
 
                 phi_appr_dl = np.matmul(self.psi_dl,self.a)
+                self.phi_end = phi_appr_dl[-1]  
                 dphi_appr_dl = np.matmul(self.dpsi_dl,self.a)
                 ddphi_appr_dl = np.matmul(self.ddpsi_dl,self.a)
                 dddphi_appr_dl = np.matmul(self.dddpsi_dl,self.a)
@@ -909,12 +922,13 @@ class Flex_beam(object):
                         index = np.append(index,self.__search_index(self.l_all_true,l))
                 x_dl = x[index]
                 y_dl = y[index]
-                end_time = time.time_ns()-start_time-1*1e3
-                if end_time==0:
-                    print("evaluation time is less then 1 ns")
-                else:
-                    print("evaluation time: %s ms" % (round(end_time*1e-6,3)))
-                    print("time for 1 step: %s us" % (round(1e-3*end_time/self.N,3)))
+                if disp:
+                    end_time = time.time_ns()-start_time-1*1e3
+                    if end_time==0:
+                        print("evaluation time is less then 1 ns")
+                    else:
+                        print("evaluation time: %s ms" % (round(end_time*1e-6,3)))
+                        print("time for 1 step: %s us" % (round(1e-3*end_time/self.N,3)))
             elif der_num == 1:
                 #evaluation
                 start_time = time.time_ns()
