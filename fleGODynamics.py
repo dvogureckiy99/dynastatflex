@@ -186,7 +186,6 @@ class Flex_beam(object):
             size1 = np.shape(A)[0]
             size2 = np.shape(A)[1]
             B = np.array([]).reshape((0,diag_num*size2))
-            print(np.shape(B))
             for d_e in range(diag_num):
                 row = np.array([]).reshape((size1,0))
                 for i in range(diag_num):
@@ -274,7 +273,6 @@ class Flex_beam(object):
                 raise ValueError("Call Ldivide first!") from None
             self.Fext_point = Fext
             self.l_Fext = l_Fext
-            self.ind_N2 = self.__search_index(self.l_all_true,self.Ldl[2])
             self.Fext_type = Fext_type
 
             self.c1 = self.E*self.I/(self.rho*self.A)
@@ -303,12 +301,21 @@ class Flex_beam(object):
             self.l_all_true = np.linspace(0,self.L,self.Ne+1)
             self.N = self.Ne+1
             self.step = self.l_all_true[1] - self.l_all_true[0]
+            self.ind_N2 = self.__search_index(self.l_all_true,self.Ldl[2])
+
             self.psi = self.__get_psi()
             self.dpsi = self.__get_dpsi()
             self.ddpsi = self.__get_ddpsi()
             self.psi = self.__diag_mat(self.psi,self.Ne)
             self.dpsi = self.__diag_mat(self.dpsi,self.Ne)
             self.ddpsi = self.__diag_mat(self.ddpsi,self.Ne)
+            self.index = np.array([])
+            for i in range(self.Ne-1):
+                self.index = np.append(self.index,2+(2)*i) 
+            self.index = np.int16(self.index)
+            self.psi = np.delete(self.psi, self.index,axis=0)
+            self.dpsi = np.delete(self.dpsi, self.index,axis=0)
+            self.ddpsi = np.delete(self.ddpsi, self.index,axis=0)
 
             # preparing ddFext
             if l_Fext==None:
@@ -348,11 +355,7 @@ class Flex_beam(object):
                     plt.title("dFext - distributed force [N/m^2]")
                     plt.show()
                     display(Math("\\bm{F}="+self.__bmatrix(self.F[0:6,0:6])))
-                    display(Math("\\bm{F}="+self.__bmatrix(self.F[6:12,6:12])))
-                    # display(Math("\\bm{F}="+self.__bmatrix(self.F)))
                     display(Math("\\bm{M}="+self.__bmatrix(self.M[0:6,0:6])))
-                    display(Math("\\bm{M}="+self.__bmatrix(self.M[6:12,6:12])))
-                    # display(Math("\\bm{M}="+self.__bmatrix(self.M)))
                     # display(Math("\\bm{F}_{ext}^{'}="+self.__bmatrix(self.dFext)))
             elif Fext_type=='triangle':
                 Fext_max = Fext
@@ -788,13 +791,15 @@ class Flex_beam(object):
                 self.EI = self.E*self.I
                 start_time = time.time_ns()
                 time.sleep(0.000001) # sleep 1 us
-                self.psi = np.zeros((self.N,6*self.Ne))
-                self.dpsi = np.zeros((self.N,6*self.Ne))
-                self.ddpsi = np.zeros((self.N,6*self.Ne))
-                for (l,i) in zip(self.l_all_true,range(self.N)):  
-                    self.psi[i] = self.__get_psi(l)
-                    self.dpsi[i] = self.__get_dpsi(l)
-                    self.ddpsi[i] =self.__get_ddpsi(l)
+                self.psi = self.__get_psi()
+                self.dpsi = self.__get_dpsi()
+                self.ddpsi = self.__get_ddpsi()
+                self.psi = self.__diag_mat(self.psi,self.Ne)
+                self.dpsi = self.__diag_mat(self.dpsi,self.Ne)
+                self.ddpsi = self.__diag_mat(self.ddpsi,self.Ne)
+                self.psi = np.delete(self.psi, self.index,axis=0)
+                self.dpsi = np.delete(self.dpsi, self.index,axis=0)
+                self.ddpsi = np.delete(self.ddpsi, self.index,axis=0)
                 time_end = time.time_ns()-start_time-1*1e3
                 print("Preparing time: %s s" % (round(time_end*1e-9,3)))
 
