@@ -213,15 +213,20 @@ class Flex_beam(object):
             dphi_appr_power3 =  np.power(np.matmul(self.dpsi,a),3)  # [1,N]
             phi_appr = np.matmul(self.psi[:self.ind_N2],a)  # [1,N]
             ddphi_appr = np.matmul(self.ddpsi[:self.ind_N2],a)  # [1,N]
-            sinphiappr_ddphiappr = np.multiply(np.sin(phi_appr),ddphi_appr)
-            cosphiappr_ddphiappr = np.multiply(np.cos(phi_appr),ddphi_appr)
+            sinphiappr = np.sin(phi_appr)
+            cosphiappr = np.cos(phi_appr)
+            sinphiappr_ddphiappr = np.multiply(sinphiappr,ddphi_appr)
+            cosphiappr_ddphiappr = np.multiply(cosphiappr,ddphi_appr)
+
+            self.Fextx = -np.sum(np.multiply( sinphiappr.reshape(self.ind_N2,1),self.Fext[:self.ind_N2])*self.step,axis=0) 
+            self.Fexty = np.sum(np.multiply( cosphiappr.reshape(self.ind_N2,1),self.Fext[:self.ind_N2])*self.step,axis=0) 
 
             # cost = np.concatenate([ self.EI*(np.matmul(self.F,a)+\
             cost = np.concatenate([ self.dFext-self.EI*(np.matmul(self.F,a)+\
                                 (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
                             dphi_appr_power3[int(self.N-1)]*self.psi[int(self.N-1)]+dphi_appr_power3[0]*self.psi[0])),\
-                                [self.Fext[3]+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0)) ],\
-                                [self.Fext[3]+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0))] ])
+                                [self.Fextx[3]+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0)) ],\
+                                [self.Fexty[3]+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0))] ])
                                 # 3*6*Ne
             # cost = np.sum(np.power(cost,2))
             print("iter={},cost= {}".format(self.iteration_num,cost[0]))
@@ -255,7 +260,7 @@ class Flex_beam(object):
                 raise ValueError("Call Ldivide first!") from None
             self.Fext_point = Fext
             self.l_Fext = l_Fext
-            self.ind_N2 = self.__search_index(self.l_all_true,self.Ldl[2])+1
+            self.ind_N2 = self.__search_index(self.l_all_true,self.Ldl[2])
             self.Fext_type = Fext_type
 
             flag_preparing_already_done = 0
@@ -303,9 +308,9 @@ class Flex_beam(object):
                     self.ddpsi[i] =self.__get_ddpsi(l)
                     self.dddpsi[i] =self.__get_dddpsi(l)
                     self.ddddpsi[i] =self.__get_ddddpsi(l)
-                    if not i%(int(self.N/10)):
-                        time_psi_calc = time.time_ns()-start_time-1*1e3
-                        print("Psi calculation time: {} s; iters: {}; left: {}%".format(round(time_psi_calc*1e-9,3),i,round(i*100/self.N,2))) 
+                    # if not i%(int(self.N/10)):
+                    #     time_psi_calc = time.time_ns()-start_time-1*1e3
+                    #     print("Psi calculation time: {} s; iters: {}; left: {}%".format(round(time_psi_calc*1e-9,3),i,round(i*100/self.N,2))) 
 
                 
                 time_psi_calc = time.time_ns()-start_time-1*1e3
@@ -355,7 +360,21 @@ class Flex_beam(object):
                 self.dFext = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi)*self.step,axis=0) 
                 Fext = np.zeros((1,self.N))[0] 
                 Fext[int(force_appl_point)]=w
-                self.Fext = np.sum(np.multiply( Fext.reshape(self.N,1),self.psi)*self.step,axis=0) 
+
+                l_all_true = np.linspace(0,self.L,self.Ne+1)
+                self.psi = np.zeros((self.N,6*self.Ne))
+                self.dpsi = np.zeros((self.N,6*self.Ne))
+                self.ddpsi = np.zeros((self.N,6*self.Ne))
+                self.dddpsi = np.zeros((self.N,6*self.Ne))
+                self.ddddpsi = np.zeros((self.N,6*self.Ne))
+                for (l,i) in zip(l_all_true,range(self.Ne+1)):  
+                    self.psi[i] = self.__get_psi(l)
+                    self.dpsi[i] = self.__get_dpsi(l)
+                    self.ddpsi[i] =self.__get_ddpsi(l)
+                    self.dddpsi[i] =self.__get_dddpsi(l)
+                    self.ddddpsi[i] =self.__get_ddddpsi(l)
+
+                self.Fext = np.multiply( Fext.reshape(self.N,1),self.psi) 
                 if disp:
                     print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
                     plt.figure(figsize = (20,4))
