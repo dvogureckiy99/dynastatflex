@@ -182,7 +182,7 @@ class Flex_beam(object):
             rv +=  [r'\end{bmatrix}']
             return '\n'.join(rv)
 
-        def __diag_mat(self,A,diag_num):
+        def __diag_mat(self,A,diag_num,flag_with_int=0):
             size1 = np.shape(A)[0]
             size2 = np.shape(A)[1]
             B = np.array([]).reshape((0,diag_num*size2))
@@ -190,10 +190,21 @@ class Flex_beam(object):
                 row = np.array([]).reshape((size1,0))
                 for i in range(diag_num):
                     if i==d_e:
-                        row = np.hstack((row, A))
+                        if not flag_with_int:
+                            row = np.hstack((row, A))
+                        else:
+                            if not d_e:
+                                row = np.hstack((row, A))
+                                A_one = A
+                                A_last = A
+                            else:
+                                A = A_last + A_one
+                                row = np.hstack((row,A))
+                                A_last = A
                     else:
                         row = np.hstack((row, np.zeros((size1,size2))))
                 B = np.vstack((B,row))
+                    
             return B
         # def __get_x_approx(self,l):
         #     return self.int_cumsum_x[self.__search_index(self.l_all_true,l)]
@@ -224,13 +235,13 @@ class Flex_beam(object):
             self.iteration_num += 1   
 
             dphi_appr_power3 =  np.power(np.matmul(self.dpsi,a),3)  # [1,N]
+
             phi_appr = np.matmul(self.psi[:self.ind_N2],a)  # [1,N]
             ddphi_appr = np.matmul(self.ddpsi[:self.ind_N2],a)  # [1,N]
             sinphiappr = np.sin(phi_appr)
             cosphiappr = np.cos(phi_appr)
             sinphiappr_ddphiappr = np.multiply(sinphiappr,ddphi_appr)
             cosphiappr_ddphiappr = np.multiply(cosphiappr,ddphi_appr)
-
             self.Fextx = -np.sum(np.multiply( sinphiappr.reshape(self.ind_N2,1),self.Fext[:self.ind_N2])*self.step,axis=0) 
             self.Fexty = np.sum(np.multiply( cosphiappr.reshape(self.ind_N2,1),self.Fext[:self.ind_N2])*self.step,axis=0) 
 
@@ -288,12 +299,12 @@ class Flex_beam(object):
                     self.F[j][i] = sp.integrate.quad(self.__F_int,0,self.Ldl[1],args=(i,j))[0] +\
                         np.polyval(self.dddp[(i)],1)*np.polyval(self.p[(j)],1)-np.polyval(self.dddp[(i)],0)*np.polyval(self.p[(j)],0)-\
                         np.polyval(self.ddp[(i)],1)*np.polyval(self.dp[(j)],1)+np.polyval(self.ddp[(i)],0)*np.polyval(self.dp[(j)],0)
-            self.F = self.__diag_mat(self.F,self.Ne)
+            self.F = self.__diag_mat(self.F,self.Ne,1)
             self.M = np.zeros((6,6))
             for j in range(6):
                 for i in range(6):
                     self.M[j][i] = sp.integrate.quad(self.__M_int,0,self.Ldl[1],args=(i,j))[0]
-            self.M = self.__diag_mat(self.M,self.Ne)
+            self.M = self.__diag_mat(self.M,self.Ne,1)
 
             time_end = time.time_ns()-start_time-1*1e3
             print("Preparing time: %s s" % (round(time_end*1e-9,3)))
@@ -330,8 +341,6 @@ class Flex_beam(object):
                 dw = w/(self.step)
                 force_appl_point = self.__search_index(self.l_all_true,l_Fext)
                 
-                l_all_true = self.l_all_true
-                
                 force_appl_point = self.__search_index(self.l_all_true,l_Fext)
                 Fext = np.zeros((1,self.N))[0] 
                 Fext[int(force_appl_point)]=w
@@ -349,7 +358,7 @@ class Flex_beam(object):
                     plt.grid()
                     plt.title("Fext - distributed force derivative [N/m]")
                     plt.subplot(1,2,2)
-                    plt.plot(l_all_true,dFext)
+                    plt.plot(self.l_all_true,dFext)
                     plt.plot(self.Ldl,np.zeros((1,self.Ne+1))[0],"og")
                     plt.grid()
                     plt.title("dFext - distributed force [N/m^2]")
