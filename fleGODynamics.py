@@ -612,59 +612,56 @@ class Flex_beam(object):
                 return 1
             else:
                 return 0
-        def __get_psi(self,l): # psi
-            ret = np.array([])
-            if l==self.L:
-                ret = np.zeros((1,self.Ne*6-6))[0]
+        def __get_psi(self): # psi
+            ret = np.array([]).reshape((0,6))
+            L = np.arange(0,self.Ldl[1]+self.step/2,self.step)
+            L /= self.Ldl[1]
+            for l in L:
+                l_line = np.array([])
                 for i in range(6):
-                    ret=np.append(ret,np.polyval(self.p[(i)],(l-self.Ldl[self.Ne-1])/self.dl))
-                return ret
-            else:
-                for e in range(self.Ne):
-                    for i in range(6):
-                        ret = np.append(ret,np.polyval(self.p[(i)],(l-self.Ldl[e])/self.dl))
-                    ret[-6:]=ret[-6:]*self.__psi_choser(e,l)
-                return ret  
-        def __get_dpsi(self,l): # d^1psi/dlambda^1
-            if l==self.L:
-                return np.zeros((1,self.Ne*6))[0]
-            else:
-                ret = np.array([])
-                for e in range(self.Ne):
-                    for i in range(6):
-                        ret = np.append(ret,np.polyval(self.dp[(i)],(l-self.Ldl[e])/self.dl))
-                    ret[-6:]=ret[-6:]*self.__psi_choser(e,l)
-                return ret
-        def __get_ddpsi(self,l): # d^2psi/dlambda^2
-            if l==self.L:
-                return np.zeros((1,self.Ne*6))[0]
-            else:
-                ret = np.array([])
-                for e in range(self.Ne):
-                    for i in range(6):
-                        ret = np.append(ret,np.polyval(self.ddp[(i)],(l-self.Ldl[e])/self.dl))
-                    ret[-6:]=ret[-6:]*self.__psi_choser(e,l)
-                return ret
-        def __get_dddpsi(self,l): # d^3psi/dlambda^3
-            if l==self.L:
-                return np.zeros((1,self.Ne*6))[0]
-            else:
-                ret = np.array([])
-                for e in range(self.Ne):
-                    for i in range(6):
-                        ret = np.append(ret,np.polyval(self.dddp[(i)],(l-self.Ldl[e])/self.dl))
-                    ret[-6:]=ret[-6:]*self.__psi_choser(e,l)
-                return ret
-        def __get_ddddpsi(self,l): # d^4psi/dlambda^4
-            if l==self.L:
-                return np.zeros((1,self.Ne*6))[0]
-            else:
-                ret = np.array([])
-                for e in range(self.Ne):
-                    for i in range(6):
-                        ret = np.append(ret,np.polyval(self.ddddp[(i)],(l-self.Ldl[e])/self.dl))
-                    ret[-6:]=ret[-6:]*self.__psi_choser(e,l)
-                return ret
+                    l_line = np.append(l_line,np.polyval(self.p[(i)],l))
+                ret = np.vstack((ret, l_line))
+            return ret
+        def __get_dpsi(self): # dpsi
+            ret = np.array([]).reshape((0,6))
+            L = np.arange(0,self.Ldl[1]+self.step/2,self.step)
+            L /= self.Ldl[1]
+            for l in L:
+                l_line = np.array([])
+                for i in range(6):
+                    l_line = np.append(l_line,np.polyval(self.dp[(i)],l))
+                ret = np.vstack((ret, l_line))
+            return ret
+        def __get_ddpsi(self): # ddpsi
+            ret = np.array([]).reshape((0,6))
+            L = np.arange(0,self.Ldl[1]+self.step/2,self.step)
+            L /= self.Ldl[1]
+            for l in L:
+                l_line = np.array([])
+                for i in range(6):
+                    l_line = np.append(l_line,np.polyval(self.ddp[(i)],l))
+                ret = np.vstack((ret, l_line))
+            return ret
+        def __get_dddpsi(self): # dddpsi
+            ret = np.array([]).reshape((0,6))
+            L = np.arange(0,self.Ldl[1]+self.step/2,self.step)
+            L /= self.Ldl[1]
+            for l in L:
+                l_line = np.array([])
+                for i in range(6):
+                    l_line = np.append(l_line,np.polyval(self.dddp[(i)],l))
+                ret = np.vstack((ret, l_line))
+            return ret
+        def __get_ddddpsi(self): # psi
+            ret = np.array([]).reshape((0,6))
+            L = np.arange(0,self.Ldl[1]+self.step/2,self.step)
+            L /= self.Ldl[1] 
+            for l in L:
+                l_line = np.array([])
+                for i in range(6):
+                    l_line = np.append(l_line,np.polyval(self.ddddp[(i)],l))
+                ret = np.vstack((ret, l_line))
+            return ret
 
         def __M_int(self,l,i,j):
             return np.polyval(self.p[(i)],l/self.Ldl[1])*np.polyval(self.p[(j)],l/self.Ldl[1])
