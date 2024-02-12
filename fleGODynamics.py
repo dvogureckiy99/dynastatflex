@@ -183,15 +183,17 @@ class Flex_beam(object):
             return '\n'.join(rv)
 
         def __diag_mat(self,A,diag_num):
-            size = len(A)
-            B = np.array([]).reshape((0,diag_num*size))
+            size1 = np.shape(A)[0]
+            size2 = np.shape(A)[1]
+            B = np.array([]).reshape((0,diag_num*size2))
+            print(np.shape(B))
             for d_e in range(diag_num):
-                row = np.array([]).reshape((size,0))
+                row = np.array([]).reshape((size1,0))
                 for i in range(diag_num):
                     if i==d_e:
                         row = np.hstack((row, A))
                     else:
-                        row = np.hstack((row, np.zeros((size,size))))
+                        row = np.hstack((row, np.zeros((size1,size2))))
                 B = np.vstack((B,row))
             return B
         # def __get_x_approx(self,l):
@@ -298,6 +300,16 @@ class Flex_beam(object):
             time_end = time.time_ns()-start_time-1*1e3
             print("Preparing time: %s s" % (round(time_end*1e-9,3)))
             
+            self.l_all_true = np.linspace(0,self.L,self.Ne+1)
+            self.N = self.Ne+1
+            self.step = self.l_all_true[1] - self.l_all_true[0]
+            self.psi = self.__get_psi()
+            self.dpsi = self.__get_dpsi()
+            self.ddpsi = self.__get_ddpsi()
+            self.psi = self.__diag_mat(self.psi,self.Ne)
+            self.dpsi = self.__diag_mat(self.dpsi,self.Ne)
+            self.ddpsi = self.__diag_mat(self.ddpsi,self.Ne)
+
             # preparing ddFext
             if l_Fext==None:
                 l_Fext = self.L/2
@@ -310,25 +322,16 @@ class Flex_beam(object):
                 w = Fext_max/(self.step) # distributed force
                 dw = w/(self.step)
                 force_appl_point = self.__search_index(self.l_all_true,l_Fext)
-                dFext = np.zeros((1,self.N))[0] 
-                dFext[int(force_appl_point)]=dw
-                self.dFext = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi)*self.step,axis=0) 
+                
                 l_all_true = self.l_all_true
                 
-                self.l_all_true = np.linspace(0,self.L,self.Ne+1)
-                self.N = self.Ne+1
-                self.step = self.l_all_true[1] - self.l_all_true[0]
-                self.psi = self.__get_psi()
-                self.dpsi = self.__get_dpsi()
-                self.ddpsi = self.__get_ddpsi()
-                self.psi = self.__diag_mat(self.psi,self.Ne)
-                self.dpsi = self.__diag_mat(self.dpsi,self.Ne)
-                self.ddpsi = self.__diag_mat(self.ddpsi,self.Ne)
-
                 force_appl_point = self.__search_index(self.l_all_true,l_Fext)
                 Fext = np.zeros((1,self.N))[0] 
                 Fext[int(force_appl_point)]=w
                 self.Fext = np.multiply( Fext.reshape(self.N,1),self.psi) 
+                dFext = np.zeros((1,self.N))[0] 
+                dFext[int(force_appl_point)]=dw
+                self.dFext = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi)*self.step,axis=0) 
 
                 if disp:
                     print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
