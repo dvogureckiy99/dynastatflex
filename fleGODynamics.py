@@ -358,23 +358,27 @@ class Flex_beam(object):
                 dFext = np.zeros((1,self.N))[0] 
                 dFext[int(force_appl_point)]=dw
                 self.dFext = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi)*self.step,axis=0) 
-                Fext = np.zeros((1,self.N))[0] 
-                Fext[int(force_appl_point)]=w
-
-                l_all_true = np.linspace(0,self.L,self.Ne+1)
+                l_all_true = self.l_all_true
+                
+                self.l_all_true = np.linspace(0,self.L,self.Ne+1)
+                self.N = self.Ne+1
                 self.psi = np.zeros((self.N,6*self.Ne))
                 self.dpsi = np.zeros((self.N,6*self.Ne))
                 self.ddpsi = np.zeros((self.N,6*self.Ne))
                 self.dddpsi = np.zeros((self.N,6*self.Ne))
                 self.ddddpsi = np.zeros((self.N,6*self.Ne))
-                for (l,i) in zip(l_all_true,range(self.Ne+1)):  
+                for (l,i) in zip(self.l_all_true,range(self.N)):  
                     self.psi[i] = self.__get_psi(l)
                     self.dpsi[i] = self.__get_dpsi(l)
                     self.ddpsi[i] =self.__get_ddpsi(l)
                     self.dddpsi[i] =self.__get_dddpsi(l)
                     self.ddddpsi[i] =self.__get_ddddpsi(l)
 
+                force_appl_point = self.__search_index(self.l_all_true,l_Fext)
+                Fext = np.zeros((1,self.N))[0] 
+                Fext[int(force_appl_point)]=w
                 self.Fext = np.multiply( Fext.reshape(self.N,1),self.psi) 
+
                 if disp:
                     print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
                     plt.figure(figsize = (20,4))
@@ -384,13 +388,15 @@ class Flex_beam(object):
                     plt.grid()
                     plt.title("Fext - distributed force derivative [N/m]")
                     plt.subplot(1,2,2)
-                    plt.plot(self.l_all_true,dFext)
+                    plt.plot(l_all_true,dFext)
                     plt.plot(self.Ldl,np.zeros((1,self.Ne+1))[0],"og")
                     plt.grid()
                     plt.title("dFext - distributed force [N/m^2]")
                     plt.show()
-                    display(Math("\\bm{F}="+self.__bmatrix(self.F)))
+                    display(Math("\\bm{F}="+self.__bmatrix(self.F[0:6,0:6])))
+                    display(Math("\\bm{F}="+self.__bmatrix(self.F[6:12,6:12])))
                     display(Math("\\bm{M}="+self.__bmatrix(self.M)))
+                    # display(Math("\\bm{F}_{ext}^{'}="+self.__bmatrix(self.dFext)))
             elif Fext_type=='triangle':
                 Fext_max = Fext
                 w = 2*Fext_max/self.L # distributed force
