@@ -242,15 +242,17 @@ class Flex_beam(object):
             cosphiappr = np.cos(phi_appr)
             sinphiappr_ddphiappr = np.multiply(sinphiappr,ddphi_appr)
             cosphiappr_ddphiappr = np.multiply(cosphiappr,ddphi_appr)
-            self.Fextx = -np.sum(np.multiply( sinphiappr.reshape(self.ind_N2,1),self.Fext[:self.ind_N2])*self.step,axis=0) 
-            self.Fexty = np.sum(np.multiply( cosphiappr.reshape(self.ind_N2,1),self.Fext[:self.ind_N2])*self.step,axis=0) 
+            self.Fextx = -np.sum(np.multiply( sinphiappr.reshape(self.ind_N2,1),self.Fext[:self.ind_N2])*self.step_optim,axis=0) 
+            self.Fexty = np.sum(np.multiply( cosphiappr.reshape(self.ind_N2,1),self.Fext[:self.ind_N2])*self.step_optim,axis=0) 
 
             # cost = np.concatenate([ self.EI*(np.matmul(self.F,a)+\
             cost = np.concatenate([ self.dFext-self.EI*(np.matmul(self.F,a)+\
-                                (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N,1),self.dpsi)*self.step,axis=0)-\
-                            dphi_appr_power3[int(self.N-1)]*self.psi[int(self.N-1)]+dphi_appr_power3[0]*self.psi[0])),\
-                                [self.Fextx[3]+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0)) ],\
-                                [self.Fexty[3]+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*self.step,axis=0))] ])
+                                (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N_optim,1),self.dpsi)*self.step_optim,axis=0)-\
+                            dphi_appr_power3[int(self.N_optim-1)]*self.psi[int(self.N_optim-1)]+dphi_appr_power3[0]*self.psi[0])),\
+                                [self.Fextx[3]+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*\
+                                                                self.step_optim,axis=0)) ],\
+                                [self.Fexty[3]+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*\
+                                                               self.step_optim,axis=0))] ])
                                 # 3*6*Ne
             # cost = np.sum(np.power(cost,2))
             print("iter={},cost= {}".format(self.iteration_num,cost[0]))
@@ -309,14 +311,11 @@ class Flex_beam(object):
             time_end = time.time_ns()-start_time-1*1e3
             print("Preparing time: %s s" % (round(time_end*1e-9,3)))
             
-            self.l_all_true = np.linspace(0,self.L,self.Ne+1)
-            self.N = self.Ne+1
-            self.step = self.l_all_true[1] - self.l_all_true[0]
-            self.ind_N2 = self.__search_index(self.l_all_true,self.Ldl[2])
+            self.ind_N2 = self.__search_index(self.l_all_optim,self.Ldl[2])
 
-            self.psi = self.__get_psi()
-            self.dpsi = self.__get_dpsi()
-            self.ddpsi = self.__get_ddpsi()
+            self.psi = self.__get_psi(self.step_optim)
+            self.dpsi = self.__get_dpsi(self.step_optim)
+            self.ddpsi = self.__get_ddpsi(self.step_optim)
             self.psi = self.__diag_mat(self.psi,self.Ne)
             self.dpsi = self.__diag_mat(self.dpsi,self.Ne)
             self.ddpsi = self.__diag_mat(self.ddpsi,self.Ne)
@@ -337,28 +336,28 @@ class Flex_beam(object):
             if Fext_type=='delta':
                 Fext_max = Fext
                 # w_steps_num = int(self.N*1e-2/2) # wisth in steps of the area of application of force
-                w = Fext_max/(self.step) # distributed force
-                dw = w/(self.step)
-                force_appl_point = self.__search_index(self.l_all_true,l_Fext)
+                w = Fext_max/(self.step_optim) # distributed force
+                dw = w/(self.step_optim)
+                force_appl_point = self.__search_index(self.l_all_optim,l_Fext)
                 
-                force_appl_point = self.__search_index(self.l_all_true,l_Fext)
-                Fext = np.zeros((1,self.N))[0] 
+                force_appl_point = self.__search_index(self.l_all_optim,l_Fext)
+                Fext = np.zeros((1,self.N_optim))[0] 
                 Fext[int(force_appl_point)]=w
-                self.Fext = np.multiply( Fext.reshape(self.N,1),self.psi) 
-                dFext = np.zeros((1,self.N))[0] 
+                self.Fext = np.multiply( Fext.reshape(self.N_optim,1),self.psi) 
+                dFext = np.zeros((1,self.N_optim))[0] 
                 dFext[int(force_appl_point)]=dw
-                self.dFext = np.sum(np.multiply( dFext.reshape(self.N,1),self.psi)*self.step,axis=0) 
+                self.dFext = np.sum(np.multiply( dFext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
 
                 if disp:
-                    print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
+                    print("distributed integral integral error =%e"%(np.sum(Fext*self.step_optim)-Fext_max))
                     plt.figure(figsize = (20,4))
                     plt.subplot(1,2,1)
-                    plt.plot(self.l_all_true,Fext)
+                    plt.plot(self.l_all_optim,Fext)
                     plt.plot(self.Ldl,np.zeros((1,self.Ne+1))[0],"og")
                     plt.grid()
                     plt.title("Fext - distributed force derivative [N/m]")
                     plt.subplot(1,2,2)
-                    plt.plot(self.l_all_true,dFext)
+                    plt.plot(self.l_all_optim,dFext)
                     plt.plot(self.Ldl,np.zeros((1,self.Ne+1))[0],"og")
                     plt.grid()
                     plt.title("dFext - distributed force [N/m^2]")
@@ -509,6 +508,9 @@ class Flex_beam(object):
             self.l_all_true = np.linspace(0,self.L,self.Ne*steps_per_fe+1)
             self.step = self.l_all_true[1] - self.l_all_true[0]
             self.N = len(self.l_all_true)
+            self.l_all_optim = np.linspace(0,self.L,self.Ne+1)
+            self.N_optim = self.Ne+1
+            self.step_optim = self.l_all_optim[1] - self.l_all_optim[0]
             if disp:
                 display(Math("\\text{number of steps in simulation=}"+np.str_(self.N)))   
 
@@ -581,9 +583,9 @@ class Flex_beam(object):
                 return 1
             else:
                 return 0
-        def __get_psi(self): # psi
+        def __get_psi(self,step): # psi
             ret = np.array([]).reshape((0,6))
-            L = np.arange(0,self.Ldl[1]+self.step/2,self.step)
+            L = np.arange(0,self.Ldl[1]+step/2,step)
             L /= self.Ldl[1]
             for l in L:
                 l_line = np.array([])
@@ -591,9 +593,9 @@ class Flex_beam(object):
                     l_line = np.append(l_line,np.polyval(self.p[(i)],l))
                 ret = np.vstack((ret, l_line))
             return ret
-        def __get_dpsi(self): # dpsi
+        def __get_dpsi(self,step): # dpsi
             ret = np.array([]).reshape((0,6))
-            L = np.arange(0,self.Ldl[1]+self.step/2,self.step)
+            L = np.arange(0,self.Ldl[1]+step/2,step)
             L /= self.Ldl[1]
             for l in L:
                 l_line = np.array([])
@@ -601,9 +603,9 @@ class Flex_beam(object):
                     l_line = np.append(l_line,np.polyval(self.dp[(i)],l))
                 ret = np.vstack((ret, l_line))
             return ret
-        def __get_ddpsi(self): # ddpsi
+        def __get_ddpsi(self,step): # ddpsi
             ret = np.array([]).reshape((0,6))
-            L = np.arange(0,self.Ldl[1]+self.step/2,self.step)
+            L = np.arange(0,self.Ldl[1]+step/2,step)
             L /= self.Ldl[1]
             for l in L:
                 l_line = np.array([])
@@ -611,9 +613,9 @@ class Flex_beam(object):
                     l_line = np.append(l_line,np.polyval(self.ddp[(i)],l))
                 ret = np.vstack((ret, l_line))
             return ret
-        def __get_dddpsi(self): # dddpsi
+        def __get_dddpsi(self,step): # dddpsi
             ret = np.array([]).reshape((0,6))
-            L = np.arange(0,self.Ldl[1]+self.step/2,self.step)
+            L = np.arange(0,self.Ldl[1]+step/2,step)
             L /= self.Ldl[1]
             for l in L:
                 l_line = np.array([])
@@ -621,9 +623,9 @@ class Flex_beam(object):
                     l_line = np.append(l_line,np.polyval(self.dddp[(i)],l))
                 ret = np.vstack((ret, l_line))
             return ret
-        def __get_ddddpsi(self): # psi
+        def __get_ddddpsi(self,step): # psi
             ret = np.array([]).reshape((0,6))
-            L = np.arange(0,self.Ldl[1]+self.step/2,self.step)
+            L = np.arange(0,self.Ldl[1]+step/2,step)
             L /= self.Ldl[1] 
             for l in L:
                 l_line = np.array([])
@@ -800,9 +802,9 @@ class Flex_beam(object):
                 self.EI = self.E*self.I
                 start_time = time.time_ns()
                 time.sleep(0.000001) # sleep 1 us
-                self.psi = self.__get_psi()
-                self.dpsi = self.__get_dpsi()
-                self.ddpsi = self.__get_ddpsi()
+                self.psi = self.__get_psi(self.step)
+                self.dpsi = self.__get_dpsi(self.step)
+                self.ddpsi = self.__get_ddpsi(self.step)
                 self.psi = self.__diag_mat(self.psi,self.Ne)
                 self.dpsi = self.__diag_mat(self.dpsi,self.Ne)
                 self.ddpsi = self.__diag_mat(self.ddpsi,self.Ne)
@@ -844,6 +846,33 @@ class Flex_beam(object):
                     raise ValueError("Call create_a first!") from None
             else:
                 print("Found an approximation. Will use it!")
+                self.psi = self.__get_psi(self.step)
+                self.dpsi = self.__get_dpsi(self.step)
+                self.ddpsi = self.__get_ddpsi(self.step)
+                self.psi = self.__diag_mat(self.psi,self.Ne)
+                self.dpsi = self.__diag_mat(self.dpsi,self.Ne)
+                self.ddpsi = self.__diag_mat(self.ddpsi,self.Ne)
+                self.index = np.array([])
+                for i in range(self.Ne-1):
+                    self.index = np.append(self.index,self.steps_per_fe+1+(self.steps_per_fe+1)*i) 
+                self.index = np.int16(self.index)
+                self.psi = np.delete(self.psi, self.index,axis=0)
+                self.dpsi = np.delete(self.dpsi, self.index,axis=0)
+                self.ddpsi = np.delete(self.ddpsi, self.index,axis=0)
+
+                self.psi_dl = self.__get_psi(self.step_optim)
+                self.dpsi_dl = self.__get_dpsi(self.step_optim)
+                self.ddpsi_dl = self.__get_ddpsi(self.step_optim)
+                self.psi_dl = self.__diag_mat(self.psi_dl,self.Ne)
+                self.dpsi_dl = self.__diag_mat(self.dpsi_dl,self.Ne)
+                self.ddpsi_dl = self.__diag_mat(self.ddpsi_dl,self.Ne)
+                self.index = np.array([])
+                for i in range(self.Ne-1):
+                    self.index = np.append(self.index,2+(2)*i) 
+                self.index = np.int16(self.index)
+                self.psi_dl = np.delete(self.psi_dl, self.index,axis=0)
+                self.dpsi_dl = np.delete(self.dpsi_dl, self.index,axis=0)
+                self.ddpsi_dl = np.delete(self.ddpsi_dl, self.index,axis=0)
                 self.a = self.a_approx
                 flag_a_approx_is = 1
                 
@@ -858,6 +887,20 @@ class Flex_beam(object):
                 sin_phi_appr = np.sin(phi_appr)
                 x = -self.step+np.cumsum(cos_phi_appr)*self.step
                 y = np.cumsum(sin_phi_appr)*self.step
+
+                phi_appr_dl = np.matmul(self.psi_dl,self.a)
+                dphi_appr_dl = np.matmul(self.dpsi_dl,self.a)
+                ddphi_appr_dl = np.matmul(self.ddpsi_dl,self.a)
+                index = np.int16(np.array([]))
+                for l in self.Ldl:
+                    if l==0:
+                        index = np.append(index,0)
+                    elif l==self.L:
+                        index = np.append(index,self.N-1)
+                    else:
+                        index = np.append(index,self.__search_index(self.l_all_true,l))
+                x_dl = x[index]
+                y_dl = y[index]
                 end_time = time.time_ns()-start_time-1*1e3
                 if end_time==0:
                     print("evaluation time is less then 1 ns")
@@ -901,7 +944,7 @@ class Flex_beam(object):
             labels = ['$\\varphi_{true}$','$\\varphi_{approx}$']
             colours = ['b','r']
             plt.plot(self.l_all_true/self.mult,np.rad2deg(phi_appr),label=labels[1],color=colours[1])
-            plt.plot(self.l_all_true/self.mult,np.rad2deg(phi_appr),"og")
+            plt.plot(self.Ldl/self.mult,np.rad2deg(phi_appr_dl),"og")
             if not flag_a_approx_is:
                 plt.plot(self.l_all_true/self.mult,np.rad2deg(self.phi_true),"--",label=labels[0],color=colours[0])
             plt.grid(True)
@@ -916,7 +959,7 @@ class Flex_beam(object):
             labels = ['$(x,y)_{true}$','$(x,y)_{approx}$']
             colours = ['b','r']
             plt.plot(x/self.mult,y/self.mult,label=labels[1],color=colours[1])
-            plt.plot(x/self.mult,y/self.mult,"og")
+            plt.plot(x_dl/self.mult,y_dl/self.mult,"og")
             if not flag_a_approx_is:
                 plt.plot(self.x_phi_true/self.mult,self.y_phi_true/self.mult,"--",label=labels[0],color=colours[0])
             plt.grid(True)
@@ -933,7 +976,7 @@ class Flex_beam(object):
             colours = ['b','r']
             if der_num == 1 or der_num == 2:
                 plt.plot(self.l_all_true,dphi_appr,label=labels[1],color=colours[1])
-                plt.plot(self.l_all_true,dphi_appr,"og")
+                plt.plot(self.Ldl,dphi_appr_dl,"og")
                 if not flag_a_approx_is:
                     plt.plot(self.l_all_true,self.dphi_true,"--",label=labels[0],color=colours[0])
             plt.grid(True)
@@ -949,7 +992,7 @@ class Flex_beam(object):
             colours = ['b','r']
             if der_num == 2:
                 plt.plot(self.l_all_true/self.mult,ddphi_appr,label=labels[1],color=colours[1])
-                plt.plot(self.l_all_true/self.mult,ddphi_appr,"og")
+                plt.plot(self.Ldl/self.mult,ddphi_appr_dl,"og")
                 if not flag_a_approx_is:
                     plt.plot(self.l_all_true/self.mult,self.ddphi_true,"--",label=labels[0],color=colours[0])
             plt.grid(True)
