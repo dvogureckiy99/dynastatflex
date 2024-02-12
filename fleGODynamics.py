@@ -849,9 +849,11 @@ class Flex_beam(object):
                 self.psi = self.__get_psi(self.step)
                 self.dpsi = self.__get_dpsi(self.step)
                 self.ddpsi = self.__get_ddpsi(self.step)
+                self.dddpsi = self.__get_dddpsi(self.step)
                 self.psi = self.__diag_mat(self.psi,self.Ne)
                 self.dpsi = self.__diag_mat(self.dpsi,self.Ne)
                 self.ddpsi = self.__diag_mat(self.ddpsi,self.Ne)
+                self.dddpsi = self.__diag_mat(self.dddpsi,self.Ne)
                 self.index = np.array([])
                 for i in range(self.Ne-1):
                     self.index = np.append(self.index,self.steps_per_fe+1+(self.steps_per_fe+1)*i) 
@@ -859,13 +861,16 @@ class Flex_beam(object):
                 self.psi = np.delete(self.psi, self.index,axis=0)
                 self.dpsi = np.delete(self.dpsi, self.index,axis=0)
                 self.ddpsi = np.delete(self.ddpsi, self.index,axis=0)
+                self.dddpsi = np.delete(self.dddpsi, self.index,axis=0)
 
                 self.psi_dl = self.__get_psi(self.step_optim)
                 self.dpsi_dl = self.__get_dpsi(self.step_optim)
                 self.ddpsi_dl = self.__get_ddpsi(self.step_optim)
+                self.dddpsi_dl = self.__get_dddpsi(self.step_optim)
                 self.psi_dl = self.__diag_mat(self.psi_dl,self.Ne)
                 self.dpsi_dl = self.__diag_mat(self.dpsi_dl,self.Ne)
                 self.ddpsi_dl = self.__diag_mat(self.ddpsi_dl,self.Ne)
+                self.dddpsi_dl = self.__diag_mat(self.dddpsi_dl,self.Ne)
                 self.index = np.array([])
                 for i in range(self.Ne-1):
                     self.index = np.append(self.index,2+(2)*i) 
@@ -873,6 +878,7 @@ class Flex_beam(object):
                 self.psi_dl = np.delete(self.psi_dl, self.index,axis=0)
                 self.dpsi_dl = np.delete(self.dpsi_dl, self.index,axis=0)
                 self.ddpsi_dl = np.delete(self.ddpsi_dl, self.index,axis=0)
+                self.dddpsi_dl = np.delete(self.dddpsi_dl, self.index,axis=0)
                 self.a = self.a_approx
                 flag_a_approx_is = 1
                 
@@ -883,6 +889,7 @@ class Flex_beam(object):
                 phi_appr = np.matmul(self.psi,self.a)
                 dphi_appr = np.matmul(self.dpsi,self.a)
                 ddphi_appr = np.matmul(self.ddpsi,self.a)
+                dddphi_appr = np.matmul(self.dddpsi,self.a)
                 cos_phi_appr = np.cos(phi_appr)
                 sin_phi_appr = np.sin(phi_appr)
                 x = -self.step+np.cumsum(cos_phi_appr)*self.step
@@ -891,6 +898,7 @@ class Flex_beam(object):
                 phi_appr_dl = np.matmul(self.psi_dl,self.a)
                 dphi_appr_dl = np.matmul(self.dpsi_dl,self.a)
                 ddphi_appr_dl = np.matmul(self.ddpsi_dl,self.a)
+                dddphi_appr_dl = np.matmul(self.dddpsi_dl,self.a)
                 index = np.int16(np.array([]))
                 for l in self.Ldl:
                     if l==0:
@@ -939,8 +947,8 @@ class Flex_beam(object):
                     print("evaluation time: %s ms" % (round(end_time*1e-6,3)))
                     print("time for 1 step: %s us" % (round(1e-3*end_time/self.N,3)))
 
-            plt.subplots(2,2,figsize = (20,8))
-            plt.subplot(221)
+            plt.subplots(3,2,figsize = (20,12))
+            plt.subplot(321)
             labels = ['$\\varphi_{true}$','$\\varphi_{approx}$']
             colours = ['b','r']
             plt.plot(self.l_all_true/self.mult,np.rad2deg(phi_appr),label=labels[1],color=colours[1])
@@ -955,7 +963,7 @@ class Flex_beam(object):
                 plt.title("phi approx")
             else:
                 plt.title("phi approx and true")
-            plt.subplot(222)
+            plt.subplot(322)
             labels = ['$(x,y)_{true}$','$(x,y)_{approx}$']
             colours = ['b','r']
             plt.plot(x/self.mult,y/self.mult,label=labels[1],color=colours[1])
@@ -971,7 +979,7 @@ class Flex_beam(object):
                 plt.title("x,y approx")
             else:
                 plt.title("x,y approx and true")
-            plt.subplot(223)
+            plt.subplot(323)
             labels = ['$\\frac{\partial \\varphi_{true} }{\partial l}$','$\\frac{\partial\\varphi_{approx}}{\partial l}$']
             colours = ['b','r']
             if der_num == 1 or der_num == 2:
@@ -987,7 +995,7 @@ class Flex_beam(object):
                 plt.title("dphi approx")
             else:
                 plt.title("dphi approx and true")
-            plt.subplot(224)
+            plt.subplot(324)
             labels = ['$\\frac{\partial\\varphi^2_{true}}{\partial l^2}$','$\\frac{\partial\\varphi^2_{approx}}{\partial l^2}$']
             colours = ['b','r']
             if der_num == 2:
@@ -1003,5 +1011,21 @@ class Flex_beam(object):
                 plt.title("ddphi approx")
             else:
                 plt.title("ddphi approx and true")
+            plt.subplot(325)
+            labels = ['$\\frac{\partial\\varphi^3_{true}}{\partial l^3}$','$\\frac{\partial\\varphi^3_{approx}}{\partial l^3}$']
+            colours = ['b','r']
+            if der_num == 2:
+                plt.plot(self.l_all_true/self.mult,dddphi_appr,label=labels[1],color=colours[1])
+                plt.plot(self.Ldl/self.mult,dddphi_appr_dl,"og")
+                if not flag_a_approx_is:
+                    plt.plot(self.l_all_true/self.mult,self.dddphi_true,"--",label=labels[0],color=colours[0])
+            plt.grid(True)
+            plt.xlabel("$l$ [mm]")
+            plt.ylabel("$\\frac{\partial\\varphi^3(l,t=0)}{\partial l^3}$")
+            plt.legend(fontsize="15",loc='best')
+            if flag_a_approx_is:
+                plt.title("dddphi approx")
+            else:
+                plt.title("dddphi approx and true")
             plt.tight_layout()
             plt.show()
