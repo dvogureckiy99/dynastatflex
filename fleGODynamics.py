@@ -504,7 +504,7 @@ class Flex_beam(object):
             self.dl = dl
             self.Ldl = Ldl
             
-        def Ldivide(self,step_mult=1,disp=False):
+        def Ldivide(self,steps_per_fe=1,disp=False):
             """
             Discretize beam length on piecies with some step
             # Parameters
@@ -514,8 +514,9 @@ class Flex_beam(object):
             disp: bool, optional
                 Display data
             """
-            self.step = self.dl#self.L*step_mult*1e-3
-            self.l_all_true = np.arange(0,self.L+self.step/2,self.step)
+            self.steps_per_fe = steps_per_fe
+            self.l_all_true = np.linspace(0,self.L,self.Ne*steps_per_fe+1)
+            self.step = self.l_all_true[1] - self.l_all_true[0]
             self.N = len(self.l_all_true)
             if disp:
                 display(Math("\\text{number of steps in simulation=}"+np.str_(self.N)))   
