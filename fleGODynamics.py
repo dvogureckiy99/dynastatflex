@@ -236,23 +236,22 @@ class Flex_beam(object):
 
             dphi_appr_power3 =  np.power(np.matmul(self.dpsi,a),3)  # [1,N]
 
-            phi_appr = np.matmul(self.psi[:self.ind_N2],a)  # [1,N]
-            ddphi_appr = np.matmul(self.ddpsi[:self.ind_N2],a)  # [1,N]
+            phi_appr = np.matmul(self.psi,a)  # [1,N]
+            ddphi_appr = np.matmul(self.ddpsi,a)  # [1,N]
             sinphiappr = np.sin(phi_appr)
             cosphiappr = np.cos(phi_appr)
             sinphiappr_ddphiappr = np.multiply(sinphiappr,ddphi_appr)
             cosphiappr_ddphiappr = np.multiply(cosphiappr,ddphi_appr)
-            self.Fextx = -np.sum(np.multiply( sinphiappr.reshape(self.ind_N2,1),self.Fext[:self.ind_N2])*self.step_optim,axis=0) 
-            self.Fexty = np.sum(np.multiply( cosphiappr.reshape(self.ind_N2,1),self.Fext[:self.ind_N2])*self.step_optim,axis=0) 
+            self.Fextx = -np.sum(np.multiply( sinphiappr.reshape(self.N_optim,1),self.Fext)*self.step_optim,axis=0) 
+            self.Fexty =  np.sum(np.multiply( cosphiappr.reshape(self.N_optim,1),self.Fext)*self.step_optim,axis=0) 
 
-            # cost = np.concatenate([ self.EI*(np.matmul(self.F,a)+\
             cost = np.concatenate([ self.dFext-self.EI*(np.matmul(self.F,a)+\
                                 (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N_optim,1),self.dpsi)*self.step_optim,axis=0)-\
                             dphi_appr_power3[int(self.N_optim-1)]*self.psi[int(self.N_optim-1)]+dphi_appr_power3[0]*self.psi[0])),\
-                                [self.Fextx[3]+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*\
-                                                                self.step_optim,axis=0)) ],\
-                                [self.Fexty[3]+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*\
-                                                               self.step_optim,axis=0))] ])
+                                self.Fextx+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr.reshape(self.N_optim,1),self.dpsi)*\
+                                                                self.step_optim,axis=0)) ,\
+                                self.Fexty+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr.reshape(self.N_optim,1),self.dpsi)*\
+                                                                self.step_optim,axis=0)) ])
                                 # 3*6*Ne
             # cost = np.sum(np.power(cost,2))
             print("iter={},cost= {}".format(self.iteration_num,np.sum(np.power(cost,2))))
