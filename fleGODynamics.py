@@ -290,7 +290,7 @@ class Flex_beam(object):
             self.ddpsi = self.__diag_mat(self.ddpsi,self.Ne)
             self.index = np.array([])
             for i in range(self.Ne-1):
-                self.index = np.append(self.index,2+(2)*i) 
+                self.index = np.append(self.index,(self.steps_per_fe4optim+1)+(self.steps_per_fe4optim+1)*i) 
             self.index = np.int16(self.index)
             self.psi = np.delete(self.psi, self.index,axis=0)
             self.dpsi = np.delete(self.dpsi, self.index,axis=0)
@@ -306,19 +306,23 @@ class Flex_beam(object):
                 Fext_max = Fext
                 # w_steps_num = int(self.N*1e-2/2) # wisth in steps of the area of application of force
                 w = Fext_max # force at some point
-                dw = w/(self.step_optim)
-                force_appl_point = self.__search_index(self.l_all_optim,l_Fext)
-                
+                dw = w/(self.step_optim*self.steps_per_fe4optim)
                 force_appl_point = self.__search_index(self.l_all_optim,l_Fext)
                 Fext = np.zeros((1,self.N_optim))[0] 
                 Fext[int(force_appl_point)]=w
+                for p in range(self.steps_per_fe4optim-1):
+                    Fext[int(force_appl_point)+p+1]=w*(1-(p+1)/self.steps_per_fe4optim)
+                    Fext[int(force_appl_point)-p-1]=w*(1-(p+1)/self.steps_per_fe4optim)
                 self.Fext = np.multiply( Fext.reshape(self.N_optim,1),self.psi) 
                 dFext = np.zeros((1,self.N_optim))[0] 
                 dFext[int(force_appl_point)]=dw
+                for p in range(self.steps_per_fe4optim-1):
+                    dFext[int(force_appl_point)+p+1]=dw*(1-(p+1)/self.steps_per_fe4optim)
+                    dFext[int(force_appl_point)-p-1]=dw*(1-(p+1)/self.steps_per_fe4optim)
                 self.dFext = np.sum(np.multiply( dFext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
 
                 if disp:
-                    print("distributed integral integral error =%e"%(np.sum(Fext*self.step_optim)-Fext_max))
+                    # print("distributed integral error =%e"%(np.sum(Fext*self.step_optim*self.steps_per_fe4optim)-Fext_max))
                     plt.figure(figsize = (20,4))
                     plt.subplot(1,2,1)
                     plt.plot(self.l_all_optim,Fext)
@@ -470,7 +474,7 @@ class Flex_beam(object):
             self.dl = dl
             self.Ldl = Ldl
             
-        def Ldivide(self,steps_per_fe=1,disp=False):
+        def Ldivide(self,steps_per_fe=1,steps_per_fe4optim=1,disp=False):
             """
             Discretize beam length on piecies with some step
             # Parameters
@@ -484,12 +488,16 @@ class Flex_beam(object):
             self.l_all_true = np.linspace(0,self.L,self.Ne*steps_per_fe+1)
             self.step = self.l_all_true[1] - self.l_all_true[0]
             self.N = len(self.l_all_true)
-            self.l_all_optim = np.linspace(0,self.L,self.Ne+1)
-            self.N_optim = self.Ne+1
+
+            self.steps_per_fe4optim = steps_per_fe4optim
+            self.l_all_optim = np.linspace(0,self.L,self.Ne*steps_per_fe4optim+1)
+            self.N_optim = len(self.l_all_optim)
             self.step_optim = self.l_all_optim[1] - self.l_all_optim[0]
+
             self.l_all_dl = np.linspace(0,self.L,self.Ne+1)
             self.N_dl = self.Ne+1
             self.step_dl = self.l_all_dl[1] - self.l_all_dl[0]
+
             if disp:
                 display(Math("\\text{number of steps in simulation=}"+np.str_(self.N)))   
 
