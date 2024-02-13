@@ -499,7 +499,9 @@ class Flex_beam(object):
             self.step_dl = self.l_all_dl[1] - self.l_all_dl[0]
 
             if disp:
-                display(Math("\\text{number of steps in simulation=}"+np.str_(self.N)))   
+                display(Math("\\text{number of steps in optimization=}"+np.str_(self.N_optim)))  
+                display(Math("\\text{number of steps in graphic constructino=}"+np.str_(self.N)))  
+                display(Math("\\text{number of points in FEM=}"+np.str_(self.Ne+1)))   
 
         def create_a(self,disp=False):
             """
