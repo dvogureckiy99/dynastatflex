@@ -487,6 +487,9 @@ class Flex_beam(object):
             self.l_all_optim = np.linspace(0,self.L,self.Ne+1)
             self.N_optim = self.Ne+1
             self.step_optim = self.l_all_optim[1] - self.l_all_optim[0]
+            self.l_all_dl = np.linspace(0,self.L,self.Ne+1)
+            self.N_dl = self.Ne+1
+            self.step_dl = self.l_all_dl[1] - self.l_all_dl[0]
             if disp:
                 display(Math("\\text{number of steps in simulation=}"+np.str_(self.N)))   
 
@@ -840,10 +843,10 @@ class Flex_beam(object):
                 self.ddpsi = np.delete(self.ddpsi, self.index,axis=0)
                 self.dddpsi = np.delete(self.dddpsi, self.index,axis=0)
 
-                self.psi_dl = self.__get_psi(self.step_optim)
-                self.dpsi_dl = self.__get_dpsi(self.step_optim)
-                self.ddpsi_dl = self.__get_ddpsi(self.step_optim)
-                self.dddpsi_dl = self.__get_dddpsi(self.step_optim)
+                self.psi_dl = self.__get_psi(self.step_dl)
+                self.dpsi_dl = self.__get_dpsi(self.step_dl)
+                self.ddpsi_dl = self.__get_ddpsi(self.step_dl)
+                self.dddpsi_dl = self.__get_dddpsi(self.step_dl)
                 self.psi_dl = self.__diag_mat(self.psi_dl,self.Ne)
                 self.dpsi_dl = self.__diag_mat(self.dpsi_dl,self.Ne)
                 self.ddpsi_dl = self.__diag_mat(self.ddpsi_dl,self.Ne)
