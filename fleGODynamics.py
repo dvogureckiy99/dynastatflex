@@ -210,7 +210,6 @@ class Flex_beam(object):
             self.Fextx = -np.sum(np.multiply( sinphiappr.reshape(self.ind_N2,1),self.Fext[:self.ind_N2])*self.step_optim,axis=0) 
             self.Fexty = np.sum(np.multiply( cosphiappr.reshape(self.ind_N2,1),self.Fext[:self.ind_N2])*self.step_optim,axis=0) 
 
-            # cost = np.concatenate([ self.EI*(np.matmul(self.F,a)+\
             cost = np.concatenate([ self.dFext-self.EI*(np.matmul(self.F,a)+\
                                 (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N_optim,1),self.dpsi)*self.step_optim,axis=0)-\
                             dphi_appr_power3[int(self.N_optim-1)]*self.psi[int(self.N_optim-1)]+dphi_appr_power3[0]*self.psi[0])),\
