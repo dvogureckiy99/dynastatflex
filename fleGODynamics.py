@@ -338,6 +338,54 @@ class Flex_beam(object):
                     display(Math("\\bm{F}="+self.__bmatrix(self.F[0:6,0:6])))
                     display(Math("\\bm{M}="+self.__bmatrix(self.M[0:6,0:6])))
                     # display(Math("\\bm{F}_{ext}^{'}="+self.__bmatrix(self.dFext)))
+            elif Fext_type=='const':
+                Fext_max = Fext
+                # w_steps_num = int(self.N*1e-2/2) # wisth in steps of the area of application of force
+                w = Fext_max # force at some point
+
+                dw1 = 2*w/(self.step_optim)
+                dw2 = w/(self.step_optim)
+                force_appl_point = self.__search_index(self.l_all_optim,l_Fext)
+                Fext = np.zeros((1,self.N_optim))[0] 
+                Fext[0:int(force_appl_point)+1]=w
+                self.Fext = np.multiply( Fext.reshape(self.N_optim,1),self.psi) 
+                dFext = np.zeros((1,self.N_optim))[0]
+                dFext[0]=dw1 
+                dFext[int(force_appl_point)]=-dw2
+                self.dFext = np.sum(np.multiply( dFext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
+
+                # dw1 = 2*w/(self.dl)
+                # dw2 = w/(self.dl)
+                # force_appl_point = self.__search_index(self.l_all_optim,l_Fext)
+                # Fext = np.zeros((1,self.N_optim))[0] 
+                # Fext[0:int(force_appl_point)+1]=w
+                # self.Fext = np.multiply( Fext.reshape(self.N_optim,1),self.psi) 
+                # dFext = np.zeros((1,self.N_optim))[0] 
+                # for p in range(self.steps_per_fe4optim-1):
+                #     dFext[0+p+1]=dw1*(1-(p+1)/self.steps_per_fe4optim)
+                # dFext[int(force_appl_point)]=-dw2
+                # for p in range(self.steps_per_fe4optim-1):
+                #     dFext[int(force_appl_point)+p+1]=-dw2*(1-(p+1)/self.steps_per_fe4optim)
+                #     dFext[int(force_appl_point)-p-1]=-dw2*(1-(p+1)/self.steps_per_fe4optim)
+                # self.dFext = np.sum(np.multiply( dFext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
+
+                if disp:
+                    # print("distributed integral error =%e"%(np.sum(Fext*self.step_optim*self.steps_per_fe4optim)-Fext_max))
+                    plt.figure(figsize = (20,4))
+                    plt.subplot(1,2,1)
+                    plt.plot(self.l_all_optim,Fext)
+                    plt.plot(self.Ldl,np.zeros((1,self.Ne+1))[0],"og")
+                    plt.grid()
+                    plt.title("Fext - distributed force derivative [N/m]")
+                    plt.subplot(1,2,2)
+                    plt.plot(self.l_all_optim,dFext)
+                    plt.plot(self.Ldl,np.zeros((1,self.Ne+1))[0],"og")
+                    plt.grid()
+                    plt.title("dFext - distributed force [N/m^2]")
+                    plt.show()
+                    display(Math("\\bm{F}="+self.__bmatrix(self.F[0:6,0:6])))
+                    display(Math("\\bm{M}="+self.__bmatrix(self.M[0:6,0:6])))
+                    # display(Math("\\bm{F}_{ext}^{'}="+self.__bmatrix(self.dFext)))
             elif Fext_type=='triangle':
                 Fext_max = Fext
                 w = Fext_max # point force at the center
