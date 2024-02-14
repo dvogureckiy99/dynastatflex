@@ -363,14 +363,15 @@ class Flex_beam(object):
                     Fext[int(force_appl_point)+p+1]=w*(1-(p+1)/self.steps_per_fe4optim)
                     Fext[int(force_appl_point)-p-1]=w*(1-(p+1)/self.steps_per_fe4optim)
                 # self.Fext = np.multiply( Fext.reshape(self.N_optim,1),self.psi)
-                self.Fext_int = np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0)  
+                self.Fext_int = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0)+\
+                    Fext[-1]*self.dpsi[-1]-Fext[0]*self.dpsi[0]  
                 self.Fext = np.multiply( Fext.reshape(self.N_optim,1),self.psi)
                 dFext = np.zeros((1,self.N_optim))[0] 
-                dFext[int(force_appl_point)]=dw
-                for p in range(self.steps_per_fe4optim-1):
-                    dFext[int(force_appl_point)+p+1]=dw*(1-(p+1)/self.steps_per_fe4optim)
-                    dFext[int(force_appl_point)-p-1]=dw*(1-(p+1)/self.steps_per_fe4optim)
-                self.dFext = np.sum(np.multiply( dFext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
+                # dFext[int(force_appl_point)]=dw
+                # for p in range(self.steps_per_fe4optim-1):
+                #     dFext[int(force_appl_point)+p+1]=dw*(1-(p+1)/self.steps_per_fe4optim)
+                #     dFext[int(force_appl_point)-p-1]=dw*(1-(p+1)/self.steps_per_fe4optim)
+                # self.dFext = np.sum(np.multiply( dFext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
 
                 if disp:
                     # print("distributed integral error =%e"%(np.sum(Fext*self.step_optim*self.steps_per_fe4optim)-Fext_max))
