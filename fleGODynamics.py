@@ -924,22 +924,13 @@ class Flex_beam(object):
                 self.ddpsi = np.delete(self.ddpsi, self.index,axis=0)
                 self.dddpsi = np.delete(self.dddpsi, self.index,axis=0)
 
-                self.psi_dl = self.__get_psi(self.step_dl)
-                self.dpsi_dl = self.__get_dpsi(self.step_dl)
-                self.ddpsi_dl = self.__get_ddpsi(self.step_dl)
-                self.dddpsi_dl = self.__get_dddpsi(self.step_dl)
-                self.psi_dl = self.__diag_mat(self.psi_dl,self.Ne)
-                self.dpsi_dl = self.__diag_mat(self.dpsi_dl,self.Ne)
-                self.ddpsi_dl = self.__diag_mat(self.ddpsi_dl,self.Ne)
-                self.dddpsi_dl = self.__diag_mat(self.dddpsi_dl,self.Ne)
-                self.index = np.array([])
-                for i in range(self.Ne-1):
-                    self.index = np.append(self.index,2+(2)*i) 
-                self.index = np.int16(self.index)
-                self.psi_dl = np.delete(self.psi_dl, self.index,axis=0)
-                self.dpsi_dl = np.delete(self.dpsi_dl, self.index,axis=0)
-                self.ddpsi_dl = np.delete(self.ddpsi_dl, self.index,axis=0)
-                self.dddpsi_dl = np.delete(self.dddpsi_dl, self.index,axis=0)
+                self.index_dl = np.int16(np.array([]))
+                for l in self.l_all_dl:
+                    self.index_dl = np.append(self.index_dl,self.__search_index(self.l_all_true,l))
+                self.psi_dl = self.psi[self.index_dl]
+                self.dpsi_dl = self.dpsi[self.index_dl]
+                self.ddpsi_dl = self.ddpsi[self.index_dl]
+                self.dddpsi_dl = self.dddpsi[self.index_dl]
 
                 if disp:
                     time_end = time.time_ns()-start_time-1*1e3
