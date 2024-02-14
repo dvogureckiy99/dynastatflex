@@ -213,13 +213,12 @@ class Flex_beam(object):
             a[0] = 0 
             a[1:self.a_size] = a_diff[:self.a_size-1]
             for i in range(self.Ne-1):
-                if i==self.Ne-2:
+                if i==self.Ne-2 and self.last_zeros:
                     a[self.a_size*(i+1):self.a_size*(i+1)+self.a_halfsize] =\
                         a[self.a_size*(i+1)-self.a_halfsize:self.a_size*(i+1)]
                     a[self.a_size*(i+1)+self.a_halfsize:self.a_size*(i+2)] =\
                         np.concatenate([a_diff[(self.a_size-1)+self.a_halfsize*i:],\
                                         np.zeros((1,self.last_zeros))[0] ])
-                    
                 else:
                     a[self.a_size*(i+1):self.a_size*(i+1)+self.a_halfsize] =\
                         a[self.a_size*(i+1)-self.a_halfsize:self.a_size*(i+1)]
@@ -257,11 +256,17 @@ class Flex_beam(object):
                     [self.Fextx[3]+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
                                                     self.step_optim,axis=0)) ],\
                     [self.Fexty[3]+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
-                                                    self.step_optim,axis=0))] ])
+                                                    self.step_optim,axis=0))],\
+                                                    [1-cosphiappr[0]] ])
             # cost = np.sum(np.power(cost,2))
             self.phi_end = np.matmul(self.psi,a)[-1]
-            if disp:
-                print("iter={},cost={}".format(self.iteration_num,np.sum(np.power(cost,2))))
+            if self.optim_alg == 'Nelder-Mead':
+                cost = np.sum(np.power(cost,2))
+                if disp:
+                    print("iter={},cost={}".format(self.iteration_num,cost))
+            elif self.optim_alg == 'least_squares':
+                if disp:
+                    print("iter={},cost={}".format(self.iteration_num,np.sum(np.power(cost,2))))
             # print("iter={}".format(self.iteration_num))
             return cost
             
@@ -466,7 +471,7 @@ class Flex_beam(object):
                     display(Math("\\bm{F}="+self.__bmatrix(self.F[0:self.a_size,0:self.a_size])))
                     display(Math("\\bm{M}="+self.__bmatrix(self.M[0:self.a_size,0:self.a_size])))
 
-        def static(self,disp=True,a0=[1,2],flag_compute_a_anyway=1):
+        def static(self,disp=True,a0=[1,2],flag_compute_a_anyway=1,optim_alg=0):
             flag_preparing_already_done = 0
             if os.path.isfile('a.npz'):
                 flag_preparing_already_done = 1
@@ -526,11 +531,16 @@ class Flex_beam(object):
                 """
                 if disp:
                     start_time = time.time()
-                # res = sp.optimize.minimize(self.__fun_static_optim, a0,method='Nelder-Mead')
-                tol=1e-3
-                res = sp.optimize.least_squares(self.__fun_static_optim,self.a_diff,\
-                                                ftol=tol,gtol=tol,xtol=tol,max_nfev=1e6,method='trf',\
-                                                    args=(disp,))
+                if optim_alg:
+                    self.optim_alg = 'Nelder-Mead'
+                    res = sp.optimize.minimize(self.__fun_static_optim,self.a_diff,method='Nelder-Mead',args=(disp,),\
+                                           options={'maxiter':int(1e6)})
+                elif optim_alg==0:
+                    self.optim_alg = 'least_squares'
+                    tol=1e-3
+                    res = sp.optimize.least_squares(self.__fun_static_optim,self.a_diff,\
+                                                    ftol=tol,gtol=tol,xtol=tol,max_nfev=1e6,method='trf',\
+                                                        args=(disp,))
                 if disp:
                     end_time = time.time()-start_time
                     print("status: %s"%(res.message))
@@ -538,6 +548,8 @@ class Flex_beam(object):
                     print("evaluation time:%s ms" % (round(1e3*end_time,3)))
                     print("time on 1 iter:%s ms" % (round(1e3*end_time/self.iteration_num,0)))  
                     print("iteration number:%s" % (self.iteration_num))
+                    if self.optim_alg == 'least_squares':
+                        print("res cost = {}".format(res.cost))  
 
                 for i in range(self.a_size+self.a_halfsize*(self.Ne-1)-1-self.last_zeros):
                     self.a_diff[i] = res.x[i]
@@ -546,7 +558,7 @@ class Flex_beam(object):
                 self.a_approx[0] = 0 
                 self.a_approx[1:self.a_size] = self.a_diff[:self.a_size-1]
                 for i in range(self.Ne-1):
-                    if i==self.Ne-2:
+                    if i==self.Ne-2 and self.last_zeros:
                         self.a_approx[self.a_size*(i+1):self.a_size*(i+1)+self.a_halfsize] =\
                             self.a_approx[self.a_size*(i+1)-self.a_halfsize:self.a_size*(i+1)]
                         self.a_approx[self.a_size*(i+1)+self.a_halfsize:self.a_size*(i+2)] =\
@@ -558,8 +570,6 @@ class Flex_beam(object):
                         self.a_approx[self.a_size*(i+1)+self.a_halfsize:self.a_size*(i+2)] =\
                             self.a_diff[(self.a_size-1)+self.a_halfsize*i:\
                                 (self.a_size-1+self.a_halfsize)+self.a_halfsize*i]
-                if disp:
-                    print("res cost = {}".format(res.cost))  
                 
                 """
                 'L-BFGS-B' work long
