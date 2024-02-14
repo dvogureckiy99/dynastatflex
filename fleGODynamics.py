@@ -253,11 +253,12 @@ class Flex_beam(object):
             cost = np.concatenate([ self.Fext_int-self.EI*(np.matmul(self.F,a)+\
                     (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N_optim,1),self.dpsi)*self.step_optim,axis=0)-\
                 dphi_appr_power3[int(self.N_optim-1)]*self.psi[int(self.N_optim-1)]+dphi_appr_power3[0]*self.psi[0])),\
+                    # [(-np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
                     [self.Fextx[3]+self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
                                                     self.step_optim,axis=0)) ],\
+                    # [(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
                     [self.Fexty[3]+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
-                                                    self.step_optim,axis=0))],\
-                                                    [1-cosphiappr[0]] ])
+                                                    self.step_optim,axis=0))]  ])
             # cost = np.sum(np.power(cost,2))
             self.phi_end = np.matmul(self.psi,a)[-1]
             if self.optim_alg == 'Nelder-Mead':
@@ -451,9 +452,11 @@ class Flex_beam(object):
                 dFext = np.zeros((1,self.N_optim))[0] 
                 for (l,i) in zip(self.l_all_optim,range(self.N_optim)):
                     Fext[i]=dw*l-2*self.__delta1(l-l_Fext)*(l-l_Fext)*dw
-                    dFext[i]=dw-2*self.__delta1(l-l_Fext)*dw
-                self.Fext = np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
-                self.dFext = np.sum(np.multiply( dFext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
+                    # dFext[i]=dw-2*self.__delta1(l-l_Fext)*dw
+                self.Fext = np.multiply( Fext.reshape(self.N_optim,1),self.psi)
+                self.Fext_int = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0)+\
+                    Fext[-1]*self.dpsi[-1]-Fext[0]*self.dpsi[0]
+                # self.dFext_int = np.sum(np.multiply( dFext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
 
                 if disp:
                     # print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
