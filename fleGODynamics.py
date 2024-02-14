@@ -1028,7 +1028,7 @@ class Flex_beam(object):
             else:
                 plt.title("phi approx and true")
 
-            plt.subplot(323)
+            plt.subplot(322)
             labels = ['$\\varphi_{l}^{true}$','$\\varphi_{l}^{approx}$']
             colours = ['b','r']
             if der_num == 1 or der_num == 2:
@@ -1045,7 +1045,7 @@ class Flex_beam(object):
             else:
                 plt.title("dphi approx and true")
 
-            plt.subplot(322)
+            plt.subplot(323)
             labels = ['$\\varphi_{ll}^{true}$','$\\varphi_{ll}^{approx}$']
             colours = ['b','r']
             if der_num == 2:
