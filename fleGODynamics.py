@@ -589,17 +589,15 @@ class Flex_beam(object):
             except:
                 raise ValueError("Call set_phi first. You should provide test phi function!") from None  
             self.a = np.array([])
-            for m in range(6*self.Ne):
+            for m in range(self.a_size*self.Ne):
                 self.a = np.append(self.a,self.__get_a(m)) 
             if disp:
-                print("a = {}".format(self.a))       
+                display(Math("a="+self.__bmatrix(self.a))) 
 
         def set_a_diff(self,a_diff):
             self.a_diff = a_diff
-
         def set_a_approx(self,a_approx):
             self.a_approx = a_approx
-
         def get_a_diff(self):
             try:
                 self.a_diff
@@ -607,7 +605,6 @@ class Flex_beam(object):
                 raise ValueError("Optimization wasn't. Don't have an approximation!") from None
             else:
                 return self.a_diff
-
         def get_a_approx(self):
             try:
                 self.a_approx
@@ -615,21 +612,30 @@ class Flex_beam(object):
                 raise ValueError("Optimization wasn't. Don't have an approximation!") from None
             else:
                 return self.a_approx
-
         def __get_a(self,m):
             # there m from 0 to 6*Ne-1
-            if m%6 == 0:
-                return self.fun_phi(self.Ldl[(m)//6])
-            if m%6 == 1:
-                return self.fun_dphi(self.Ldl[(m)//6])
-            if m%6 == 2:
-                return self.fun_ddphi(self.Ldl[(m)//6])
-            if m%6 == 3:
-                return self.fun_phi(self.Ldl[(m)//6+1])
-            if m%6 == 4:
-                return self.fun_dphi(self.Ldl[(m)//6+1])
-            if m%6 == 5:
-                return self.fun_ddphi(self.Ldl[(m)//6+1])
+            if self.a_size==6:
+                if m%self.a_size == 0:
+                    return self.fun_phi(self.Ldl[(m)//self.a_size])
+                if m%self.a_size == 1:
+                    return self.fun_dphi(self.Ldl[(m)//self.a_size])
+                if m%self.a_size == 2:
+                    return self.fun_ddphi(self.Ldl[(m)//self.a_size])
+                if m%self.a_size == 3:
+                    return self.fun_phi(self.Ldl[(m)//self.a_size+1])
+                if m%self.a_size == 4:
+                    return self.fun_dphi(self.Ldl[(m)//self.a_size+1])
+                if m%self.a_size == 5:
+                    return self.fun_ddphi(self.Ldl[(m)//self.a_size+1])
+            elif self.a_size==4:
+                if m%self.a_size == 0:
+                    return self.fun_phi(self.Ldl[(m)//self.a_size])
+                if m%self.a_size == 1:
+                    return self.fun_dphi(self.Ldl[(m)//self.a_size])
+                if m%self.a_size == 2:
+                    return self.fun_phi(self.Ldl[(m)//self.a_size+1])
+                if m%self.a_size == 3:
+                    return self.fun_dphi(self.Ldl[(m)//self.a_size+1])
 
         def __psi_choser(self,e,l):
             # e from 0 to Ne-1
@@ -637,54 +643,44 @@ class Flex_beam(object):
                 return 1
             else:
                 return 0
-        def __get_psi(self,step): # psi
-            ret = np.array([]).reshape((0,6))
+        def __get_psi(self,step): # psi  
+            ret = np.array([]).reshape((0,self.a_size))
             L = np.arange(0,self.Ldl[1]+step/2,step)
             L /= self.Ldl[1]
             for l in L:
                 l_line = np.array([])
-                for i in range(6):
+                for i in range(self.a_size):
                     l_line = np.append(l_line,np.polyval(self.p[(i)],l))
                 ret = np.vstack((ret, l_line))
             return ret
         def __get_dpsi(self,step): # dpsi
-            ret = np.array([]).reshape((0,6))
+            ret = np.array([]).reshape((0,self.a_size))
             L = np.arange(0,self.Ldl[1]+step/2,step)
             L /= self.Ldl[1]
             for l in L:
                 l_line = np.array([])
-                for i in range(6):
+                for i in range(self.a_size):
                     l_line = np.append(l_line,np.polyval(self.dp[(i)],l))
                 ret = np.vstack((ret, l_line))
             return ret
         def __get_ddpsi(self,step): # ddpsi
-            ret = np.array([]).reshape((0,6))
+            ret = np.array([]).reshape((0,self.a_size))
             L = np.arange(0,self.Ldl[1]+step/2,step)
             L /= self.Ldl[1]
             for l in L:
                 l_line = np.array([])
-                for i in range(6):
+                for i in range(self.a_size):
                     l_line = np.append(l_line,np.polyval(self.ddp[(i)],l))
                 ret = np.vstack((ret, l_line))
             return ret
         def __get_dddpsi(self,step): # dddpsi
-            ret = np.array([]).reshape((0,6))
+            ret = np.array([]).reshape((0,self.a_size))
             L = np.arange(0,self.Ldl[1]+step/2,step)
             L /= self.Ldl[1]
             for l in L:
                 l_line = np.array([])
-                for i in range(6):
+                for i in range(self.a_size):
                     l_line = np.append(l_line,np.polyval(self.dddp[(i)],l))
-                ret = np.vstack((ret, l_line))
-            return ret
-        def __get_ddddpsi(self,step): # psi
-            ret = np.array([]).reshape((0,6))
-            L = np.arange(0,self.Ldl[1]+step/2,step)
-            L /= self.Ldl[1] 
-            for l in L:
-                l_line = np.array([])
-                for i in range(6):
-                    l_line = np.append(l_line,np.polyval(self.ddddp[(i)],l))
                 ret = np.vstack((ret, l_line))
             return ret
 
@@ -773,6 +769,9 @@ class Flex_beam(object):
             ddphi = sm.diff(dphi,l)
             self.fun_ddphi = sm.lambdify(l, ddphi, modules='numpy')
             self.ddphi_true = self.fun_ddphi(self.l_all_true)
+            dddphi = sm.diff(ddphi,l)
+            self.fun_dddphi = sm.lambdify(l, dddphi, modules='numpy')
+            self.dddphi_true = self.fun_dddphi(self.l_all_true)
 
             self.x_phi_true = np.array([0])
             self.y_phi_true = np.array([0])
@@ -819,7 +818,7 @@ class Flex_beam(object):
                 plt.tight_layout()
                 plt.show()
 
-        def phi_approx_preparing(self):
+        def phi_approx_preparing(self,disp):
             # preparing for fast computation next
             try:
                 self.Ne
@@ -839,11 +838,17 @@ class Flex_beam(object):
                 flag_preparing_already_done = 1
 
             if flag_preparing_already_done:
-                print("Found numpy zip archive with preparing data: psi vectors. Checking if we can use it!")
+                if disp:
+                    print("Found numpy zip archive with preparing data: psi vectors. Checking if we can use it!")
                 with np.load('psi_vectors.npz') as npzfile: # for closign after using it
                     self.psi = npzfile['psi']
                     self.dpsi = npzfile['dpsi']
                     self.ddpsi = npzfile['ddpsi']
+                    self.dddpsi = npzfile['dddpsi']
+                    self.psi_dl = npzfile['psi_dl']
+                    self.dpsi_dl = npzfile['dpsi_dl']
+                    self.ddpsi_dl = npzfile['ddpsi_dl']
+                    self.dddpsi_dl = npzfile['dddpsi_dl']
                     N = npzfile['N']
                     Ne = npzfile['Ne']
                     dl = npzfile['dl']
@@ -852,56 +857,14 @@ class Flex_beam(object):
             
             if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl) or (not step==self.step):
                 if flag_preparing_already_done:
-                    print("Checking finished. We cannot use this data as FEM or/and Ldivide parameters mismatch. Creating new one:")
+                    if disp:
+                        print("Checking finished. We cannot use this data as FEM or/and Ldivide parameters mismatch. Creating new one:")
                 self.c1 = self.E*self.I/(self.rho*self.A)
                 self.EI = self.E*self.I
-                start_time = time.time_ns()
-                time.sleep(0.000001) # sleep 1 us
-                self.psi = self.__get_psi(self.step)
-                self.dpsi = self.__get_dpsi(self.step)
-                self.ddpsi = self.__get_ddpsi(self.step)
-                self.psi = self.__diag_mat(self.psi,self.Ne)
-                self.dpsi = self.__diag_mat(self.dpsi,self.Ne)
-                self.ddpsi = self.__diag_mat(self.ddpsi,self.Ne)
-                self.psi = np.delete(self.psi, self.index,axis=0)
-                self.dpsi = np.delete(self.dpsi, self.index,axis=0)
-                self.ddpsi = np.delete(self.ddpsi, self.index,axis=0)
-                time_end = time.time_ns()-start_time-1*1e3
-                print("Preparing time: %s s" % (round(time_end*1e-9,3)))
-
-                np.savez('psi_vectors.npz',psi=self.psi,dpsi=self.dpsi,\
-                     ddpsi=self.ddpsi,N=self.N,Ne=self.Ne,step=self.step,dl=self.dl)
-            else:
-                if flag_preparing_already_done:
-                    print("Checking finished. Using loaded data")
-                
-        def phi_approx(self,disp=True,der_num=0):
-            """
-            Phi function approximation. Opportunity to approximate dphi and ddphi functions.
-            # Parameters
-            ---------- 
-            disp_time: bool, optional
-                Display evaluation time of for cycle and one iteration 
-            der_num: int, optional
-                Number of phi derivative need to compute (from 0 to 2)
-            # Note: 
-            ----------
-                - approximation work only when L>>1. It's very important
-                - for convergence to only phi without dphi and ddphi need 6 FE for anough quality and 20 FE for excellent quality
-                - for convergence to phi,dphi,ddphi need 20 FE for excellent quality
-            """
-            try:
-                self.a_approx
-            except:
-                print("Optimization wasn't. Don't have an approximation!We will use a created by create_a fun!")
-                flag_a_approx_is = 0
-                try:
-                    self.a
-                except:
-                    raise ValueError("Call create_a first!") from None
-            else:
                 if disp:
-                    print("Found an approximation. Will use it!")
+                    start_time = time.time_ns()
+                    time.sleep(0.000001) # sleep 1 us
+
                 self.psi = self.__get_psi(self.step)
                 self.dpsi = self.__get_dpsi(self.step)
                 self.ddpsi = self.__get_ddpsi(self.step)
@@ -935,6 +898,48 @@ class Flex_beam(object):
                 self.dpsi_dl = np.delete(self.dpsi_dl, self.index,axis=0)
                 self.ddpsi_dl = np.delete(self.ddpsi_dl, self.index,axis=0)
                 self.dddpsi_dl = np.delete(self.dddpsi_dl, self.index,axis=0)
+
+                if disp:
+                    time_end = time.time_ns()-start_time-1*1e3
+                    print("Preparing time: %s s" % (round(time_end*1e-9,3)))
+
+                np.savez('psi_vectors.npz',psi=self.psi,dpsi=self.dpsi,\
+                    ddpsi=self.ddpsi,dddpsi=self.dddpsi,N=self.N,Ne=self.Ne,step=self.step,dl=self.dl,\
+                    psi_dl=self.psi_dl,dpsi_dl=self.dpsi_dl,ddpsi_dl=self.ddpsi_dl,dddpsi_dl=self.dddpsi_dl)
+            else:
+                if flag_preparing_already_done:
+                    if disp:
+                        print("Checking finished. Using loaded data")
+                
+        def phi_approx(self,disp=True,der_num=0):
+            """
+            Phi function approximation. Opportunity to approximate dphi and ddphi functions.
+            # Parameters
+            ---------- 
+            disp_time: bool, optional
+                Display evaluation time of for cycle and one iteration 
+            der_num: int, optional
+                Number of phi derivative need to compute (from 0 to 2)
+            # Note: 
+            ----------
+                - approximation work only when L>>1. It's very important
+                - for convergence to only phi without dphi and ddphi need 6 FE for anough quality and 20 FE for excellent quality
+                - for convergence to phi,dphi,ddphi need 20 FE for excellent quality
+            """
+            try:
+                self.a_approx
+            except:
+                if disp:
+                    print("Optimization wasn't. Don't have an approximation!We will use a created by create_a fun!")
+                flag_a_approx_is = 0
+                try:
+                    self.a
+                except:
+                    raise ValueError("Call create_a first!") from None
+                self.phi_approx_preparing(disp)
+            else:
+                if disp:
+                    print("Found an approximation. Will use it!")
                 self.a = self.a_approx
                 flag_a_approx_is = 1
                 
@@ -1007,8 +1012,8 @@ class Flex_beam(object):
                     print("time for 1 step: %s us" % (round(1e-3*end_time/self.N,3)))
 
             plt.subplots(3,2,figsize = (20,12))
-            plt.subplot(321)
-            labels = ['$\\varphi_{true}$','$\\varphi_{approx}$']
+            plt.subplot(3,2,1)
+            labels = ['$\\varphi^{true}$','$\\varphi^{approx}$']
             colours = ['b','r']
             plt.plot(self.l_all_true/self.mult,np.rad2deg(phi_appr),label=labels[1],color=colours[1])
             plt.plot(self.Ldl/self.mult,np.rad2deg(phi_appr_dl),"og")
@@ -1022,24 +1027,9 @@ class Flex_beam(object):
                 plt.title("phi approx")
             else:
                 plt.title("phi approx and true")
-            plt.subplot(322)
-            labels = ['$(x,y)_{true}$','$(x,y)_{approx}$']
-            colours = ['b','r']
-            plt.plot(x/self.mult,y/self.mult,label=labels[1],color=colours[1])
-            plt.plot(x_dl/self.mult,y_dl/self.mult,"og")
-            if not flag_a_approx_is:
-                plt.plot(self.x_phi_true/self.mult,self.y_phi_true/self.mult,"--",label=labels[0],color=colours[0])
-            plt.grid(True)
-            plt.xlabel("$x$ [mm]")
-            plt.ylabel("$y$ [mm]")
-            plt.axis('equal')
-            plt.legend(fontsize="15",loc='best')
-            if flag_a_approx_is:
-                plt.title("x,y approx")
-            else:
-                plt.title("x,y approx and true")
+
             plt.subplot(323)
-            labels = ['$\\frac{\partial \\varphi_{true} }{\partial l}$','$\\frac{\partial\\varphi_{approx}}{\partial l}$']
+            labels = ['$\\varphi_{l}^{true}$','$\\varphi_{l}^{approx}$']
             colours = ['b','r']
             if der_num == 1 or der_num == 2:
                 plt.plot(self.l_all_true,dphi_appr,label=labels[1],color=colours[1])
@@ -1048,14 +1038,15 @@ class Flex_beam(object):
                     plt.plot(self.l_all_true,self.dphi_true,"--",label=labels[0],color=colours[0])
             plt.grid(True)
             plt.xlabel("$l$ [mm]")
-            plt.ylabel("$\\frac{\partial\\varphi(l,t=0)}{\partial l}$")
+            plt.ylabel("$\\varphi_{l}(l,t=0)$",fontsize=15)
             plt.legend(fontsize="15",loc='best')
             if flag_a_approx_is:
                 plt.title("dphi approx")
             else:
                 plt.title("dphi approx and true")
-            plt.subplot(324)
-            labels = ['$\\frac{\partial\\varphi^2_{true}}{\partial l^2}$','$\\frac{\partial\\varphi^2_{approx}}{\partial l^2}$']
+
+            plt.subplot(322)
+            labels = ['$\\varphi_{ll}^{true}$','$\\varphi_{ll}^{approx}$']
             colours = ['b','r']
             if der_num == 2:
                 plt.plot(self.l_all_true/self.mult,ddphi_appr,label=labels[1],color=colours[1])
@@ -1064,14 +1055,15 @@ class Flex_beam(object):
                     plt.plot(self.l_all_true/self.mult,self.ddphi_true,"--",label=labels[0],color=colours[0])
             plt.grid(True)
             plt.xlabel("$l$ [mm]")
-            plt.ylabel("$\\frac{\partial\\varphi^2(l,t=0)}{\partial l^2}$")
+            plt.ylabel("$\\varphi_{ll}(l,t=0)$",fontsize=15)
             plt.legend(fontsize="15",loc='best')
             if flag_a_approx_is:
                 plt.title("ddphi approx")
             else:
                 plt.title("ddphi approx and true")
+
             plt.subplot(325)
-            labels = ['$\\frac{\partial\\varphi^3_{true}}{\partial l^3}$','$\\frac{\partial\\varphi^3_{approx}}{\partial l^3}$']
+            labels = ['$\\varphi_{lll}^{true}$','$\\varphi_{lll}^{approx}$']
             colours = ['b','r']
             if der_num == 2:
                 plt.plot(self.l_all_true/self.mult,dddphi_appr,label=labels[1],color=colours[1])
@@ -1080,11 +1072,34 @@ class Flex_beam(object):
                     plt.plot(self.l_all_true/self.mult,self.dddphi_true,"--",label=labels[0],color=colours[0])
             plt.grid(True)
             plt.xlabel("$l$ [mm]")
-            plt.ylabel("$\\frac{\partial\\varphi^3(l,t=0)}{\partial l^3}$")
+            plt.ylabel("$\\varphi_{lll}(l,t=0)$",fontsize=15)
             plt.legend(fontsize="15",loc='best')
             if flag_a_approx_is:
                 plt.title("dddphi approx")
             else:
                 plt.title("dddphi approx and true")
+
+            plt.subplot(324)
+            plt.axis("off")
+            plt.subplot(326)
+            plt.axis("off")
+
+            plt.subplot(3,2,(4,6))
+            labels = ['$(x,y)^{true}$','$(x,y)^{approx}$']
+            colours = ['b','r']
+            plt.plot(x/self.mult,y/self.mult,label=labels[1],color=colours[1])
+            plt.plot(x_dl/self.mult,y_dl/self.mult,"og")
+            if not flag_a_approx_is:
+                plt.plot(self.x_phi_true/self.mult,self.y_phi_true/self.mult,"--",label=labels[0],color=colours[0])
+            plt.grid(True)
+            plt.xlabel("$x$ [mm]")
+            plt.ylabel("$y$ [mm]")
+            plt.legend(fontsize="15",loc='best')
+            plt.axis('equal') 
+            if flag_a_approx_is:
+                plt.title("x,y approx")
+            else:
+                plt.title("x,y approx and true")
+
             plt.tight_layout()
             plt.show()
