@@ -354,14 +354,14 @@ class Flex_beam(object):
             if Fext_type=='delta':
                 Fext_max = Fext
                 # w_steps_num = int(self.N*1e-2/2) # wisth in steps of the area of application of force
-                w = Fext_max # force at some point
+                w = 2*Fext_max/(self.step_optim) # force at some point
                 dw = w/(self.step_optim*self.steps_per_fe4optim)
                 force_appl_point = self.__search_index(self.l_all_optim,l_Fext)
                 Fext = np.zeros((1,self.N_optim))[0] 
                 Fext[int(force_appl_point)]=w
-                for p in range(self.steps_per_fe4optim-1):
-                    Fext[int(force_appl_point)+p+1]=w*(1-(p+1)/self.steps_per_fe4optim)
-                    Fext[int(force_appl_point)-p-1]=w*(1-(p+1)/self.steps_per_fe4optim)
+                # for p in range(self.steps_per_fe4optim-1):
+                #     Fext[int(force_appl_point)+p+1]=w*(1-(p+1)/self.steps_per_fe4optim)
+                #     Fext[int(force_appl_point)-p-1]=w*(1-(p+1)/self.steps_per_fe4optim)
                 # self.Fext = np.multiply( Fext.reshape(self.N_optim,1),self.psi)
                 self.Fext_int = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0)+\
                     Fext[-1]*self.dpsi[-1]-Fext[0]*self.dpsi[0]  
