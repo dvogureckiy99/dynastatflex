@@ -214,7 +214,8 @@ class Flex_beam(object):
             a[1:self.a_size] = a_diff[:self.a_size-1]
             for i in range(self.Ne-1):
                 if i==self.Ne-2:
-                    a[self.a_size*(i+1):self.a_size*(i+1)+self.a_halfsize] = a[6*(i+1)-3:6*(i+1)]
+                    a[self.a_size*(i+1):self.a_size*(i+1)+self.a_halfsize] =\
+                        a[self.a_size*(i+1)-self.a_halfsize:self.a_size*(i+1)]
                     a[self.a_size*(i+1)+self.a_halfsize:self.a_size*(i+2)] =\
                         np.concatenate([a_diff[(self.a_size-1)+self.a_halfsize*i:],\
                                         np.zeros((1,self.last_zeros))[0] ])
@@ -223,8 +224,20 @@ class Flex_beam(object):
                     a[self.a_size*(i+1):self.a_size*(i+1)+self.a_halfsize] =\
                         a[self.a_size*(i+1)-self.a_halfsize:self.a_size*(i+1)]
                     a[self.a_size*(i+1)+self.a_halfsize:self.a_size*(i+2)] =\
-                        a_diff[(self.a_size-1)+self.a_halfsize*i:(self.a_size-1+self.a_halfsize)+3*i]
-            
+                        a_diff[(self.a_size-1)+self.a_halfsize*i:\
+                            (self.a_size-1+self.a_halfsize)+self.a_halfsize*i]
+            # a = np.zeros((1,6*self.Ne))[0]
+            # a[0] = 0
+            # a[1:6] = a_diff[:5]
+            # for i in range(self.Ne-1):
+            #     if i==self.Ne-2:
+            #         a[6*(i+1):6*(i+1)+3] = a[6*(i+1)-3:6*(i+1)]
+            #         a[6*(i+1)+3:6*(i+2)] = np.concatenate([a_diff[5+3*i:],np.array([0,0])])
+            #     else:
+            #         a[6*(i+1):6*(i+1)+3] = a[6*(i+1)-3:6*(i+1)]
+            #         a[6*(i+1)+3:6*(i+2)] = a_diff[5+3*i:8+3*i]
+
+
             self.iteration_num += 1   
 
             dphi_appr_power3 =  np.power(np.matmul(self.dpsi,a),3)  # [1,N]
@@ -519,7 +532,7 @@ class Flex_beam(object):
                     end_time = time.time()-start_time
                     print("status: %s"%(res.message))
                     print("status: %s"%(res.status))
-                    print("evaluation time:%s s" % (round(end_time,0)))
+                    print("evaluation time:%s ms" % (round(1e3*end_time,3)))
                     print("time on 1 iter:%s ms" % (round(1e3*end_time/self.iteration_num,0)))  
                     print("iteration number:%s" % (self.iteration_num))
 
@@ -532,7 +545,7 @@ class Flex_beam(object):
                 for i in range(self.Ne-1):
                     if i==self.Ne-2:
                         self.a_approx[self.a_size*(i+1):self.a_size*(i+1)+self.a_halfsize] =\
-                            self.a_approx[6*(i+1)-3:6*(i+1)]
+                            self.a_approx[self.a_size*(i+1)-self.a_halfsize:self.a_size*(i+1)]
                         self.a_approx[self.a_size*(i+1)+self.a_halfsize:self.a_size*(i+2)] =\
                             np.concatenate([self.a_diff[(self.a_size-1)+self.a_halfsize*i:],\
                                             np.zeros((1,self.last_zeros))[0] ])
@@ -540,7 +553,8 @@ class Flex_beam(object):
                         self.a_approx[self.a_size*(i+1):self.a_size*(i+1)+self.a_halfsize] =\
                             self.a_approx[self.a_size*(i+1)-self.a_halfsize:self.a_size*(i+1)]
                         self.a_approx[self.a_size*(i+1)+self.a_halfsize:self.a_size*(i+2)] =\
-                            self.a_diff[(self.a_size-1)+self.a_halfsize*i:(self.a_size-1+self.a_halfsize)+3*i]
+                            self.a_diff[(self.a_size-1)+self.a_halfsize*i:\
+                                (self.a_size-1+self.a_halfsize)+self.a_halfsize*i]
                 if disp:
                     print("res cost = {}".format(res.cost))  
                 
@@ -872,13 +886,15 @@ class Flex_beam(object):
                     self.dpsi_dl = npzfile['dpsi_dl']
                     self.ddpsi_dl = npzfile['ddpsi_dl']
                     self.dddpsi_dl = npzfile['dddpsi_dl']
+                    a_size = npzfile['a_size']
                     N = npzfile['N']
                     Ne = npzfile['Ne']
                     dl = npzfile['dl']
                     step = npzfile['step']
                 del npzfile
             
-            if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl) or (not step==self.step):
+            if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or\
+                  (not dl==self.dl) or (not step==self.step) or (not self.a_size==a_size):
                 if flag_preparing_already_done:
                     if disp:
                         print("Checking finished. We cannot use this data as FEM or/and Ldivide parameters mismatch. Creating new one:")
@@ -928,7 +944,9 @@ class Flex_beam(object):
 
                 np.savez('psi_vectors.npz',psi=self.psi,dpsi=self.dpsi,\
                     ddpsi=self.ddpsi,dddpsi=self.dddpsi,N=self.N,Ne=self.Ne,step=self.step,dl=self.dl,\
-                    psi_dl=self.psi_dl,dpsi_dl=self.dpsi_dl,ddpsi_dl=self.ddpsi_dl,dddpsi_dl=self.dddpsi_dl)
+                    psi_dl=self.psi_dl,dpsi_dl=self.dpsi_dl,\
+                    ddpsi_dl=self.ddpsi_dl,dddpsi_dl=self.dddpsi_dl,\
+                    a_size=self.a_size)
             else:
                 if flag_preparing_already_done:
                     if disp:
