@@ -1047,6 +1047,16 @@ class Flex_beam(object):
                     print("evaluation time: %s ms" % (round(end_time*1e-6,3)))
                     print("time for 1 step: %s us" % (round(1e-3*end_time/self.N,3)))
 
+            if not flag_a_approx_is:
+                error = np.sum(np.power(phi_appr-self.phi_true,2))/self.N
+                derror = np.sum(np.power(dphi_appr-self.dphi_true,2))/self.N
+                dderror = np.sum(np.power(ddphi_appr-self.ddphi_true,2))/self.N
+                ddderror = np.sum(np.power(dddphi_appr-self.dddphi_true,2))/self.N
+                print("error of phi approx={}".format( error ))
+                print("error of dphi approx={}".format( derror ))
+                print("error of ddphi approx={}".format( dderror ))
+                print("error of dddphi approx={}".format( ddderror ))
+
             plt.subplots(3,2,figsize = (20,12))
             plt.subplot(3,2,1)
             labels = ['$\\varphi^{true}$','$\\varphi^{approx}$']
