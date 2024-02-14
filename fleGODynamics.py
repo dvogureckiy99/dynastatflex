@@ -80,6 +80,11 @@ class Flex_beam(object):
             self.dl = dl
             self.Ldl = Ldl
             self.a_size = polynom_deg + 1  
+            self.a_halfsize = int(self.a_size/2)
+            if self.a_size==6:
+                self.last_zeros = 2
+            elif self.a_size==4:
+                self.last_zeros = 1
             if self.a_size==6:
                 C_val = np.array([[-6,15,-10,0,0,1],[-3,8,-6,0,1,0],[-0.5,1.5,-1.5,0.5,0,0],
                     [6,-15,10,0,0,0],[-3,7,-4,0,0,0],[0.5,-1,0.5,0,0,0]])
@@ -204,16 +209,21 @@ class Flex_beam(object):
 
         def __fun_static_optim(self,a_diff,disp):
             # preparing a vector for each FE, cause a_diff contain only unique values 
-            a = np.zeros((1,6*self.Ne))[0]
-            a[0] = 0
-            a[1:6] = a_diff[:5]
+            a = np.zeros((1,self.a_size*self.Ne))[0]
+            a[0] = 0 
+            a[1:self.a_size] = a_diff[:self.a_size-1]
             for i in range(self.Ne-1):
                 if i==self.Ne-2:
-                    a[6*(i+1):6*(i+1)+3] = a[6*(i+1)-3:6*(i+1)]
-                    a[6*(i+1)+3:6*(i+2)] = np.concatenate([a_diff[5+3*i:],np.array([0,0])])
+                    a[self.a_size*(i+1):self.a_size*(i+1)+self.a_halfsize] = a[6*(i+1)-3:6*(i+1)]
+                    a[self.a_size*(i+1)+self.a_halfsize:self.a_size*(i+2)] =\
+                        np.concatenate([a_diff[(self.a_size-1)+self.a_halfsize*i:],\
+                                        np.zeros((1,self.last_zeros))[0] ])
+                    
                 else:
-                    a[6*(i+1):6*(i+1)+3] = a[6*(i+1)-3:6*(i+1)]
-                    a[6*(i+1)+3:6*(i+2)] = a_diff[5+3*i:8+3*i]
+                    a[self.a_size*(i+1):self.a_size*(i+1)+self.a_halfsize] =\
+                        a[self.a_size*(i+1)-self.a_halfsize:self.a_size*(i+1)]
+                    a[self.a_size*(i+1)+self.a_halfsize:self.a_size*(i+2)] =\
+                        a_diff[(self.a_size-1)+self.a_halfsize*i:(self.a_size-1+self.a_halfsize)+3*i]
             
             self.iteration_num += 1   
 
@@ -229,13 +239,12 @@ class Flex_beam(object):
             # self.Fexty = np.sum(np.multiply( cosphiappr.reshape(self.ind_N2,1),self.Fext[:self.ind_N2])*self.step_optim,axis=0) 
 
             cost = np.concatenate([ -self.EI*(self.Fext+np.matmul(self.F,a)+\
-                                (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N_optim,1),self.dpsi)*self.step_optim,axis=0)-\
-                            dphi_appr_power3[int(self.N_optim-1)]*self.psi[int(self.N_optim-1)]+dphi_appr_power3[0]*self.psi[0])),\
-                                [self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*\
-                                                                self.step_optim,axis=0)) ],\
-                                [self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,3])*\
-                                                               self.step_optim,axis=0))] ])
-                                # 3*6*Ne
+                    (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N_optim,1),self.dpsi)*self.step_optim,axis=0)-\
+                dphi_appr_power3[int(self.N_optim-1)]*self.psi[int(self.N_optim-1)]+dphi_appr_power3[0]*self.psi[0])),\
+                    [self.EI*(-np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
+                                                    self.step_optim,axis=0)) ],\
+                    [self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
+                                                    self.step_optim,axis=0))] ])
             # cost = np.sum(np.power(cost,2))
             self.phi_end = np.matmul(self.psi,a)[-1]
             if disp:
@@ -280,16 +289,18 @@ class Flex_beam(object):
                 time.sleep(0.000001) # sleep 1 us
             # preparing for fast computation next
             
-            self.F = np.zeros((6,6))
-            for j in range(6):
-                for i in range(6):
+            self.F = np.zeros((self.a_size,self.a_size))
+            for j in range(self.a_size):
+                for i in range(self.a_size):
                     self.F[j][i] = sp.integrate.quad(self.__F_int,0,self.Ldl[1],args=(i,j))[0] +\
-                        np.polyval(self.dddp[(i)],1)*np.polyval(self.p[(j)],1)-np.polyval(self.dddp[(i)],0)*np.polyval(self.p[(j)],0)-\
-                        np.polyval(self.ddp[(i)],1)*np.polyval(self.dp[(j)],1)+np.polyval(self.ddp[(i)],0)*np.polyval(self.dp[(j)],0)
+                        np.polyval(self.dddp[(i)],1)*np.polyval(self.p[(j)],1)-\
+                            np.polyval(self.dddp[(i)],0)*np.polyval(self.p[(j)],0)-\
+                        np.polyval(self.ddp[(i)],1)*np.polyval(self.dp[(j)],1)+\
+                            np.polyval(self.ddp[(i)],0)*np.polyval(self.dp[(j)],0)
             self.F = self.__diag_mat(self.F,self.Ne,1)
-            self.M = np.zeros((6,6))
-            for j in range(6):
-                for i in range(6):
+            self.M = np.zeros((self.a_size,self.a_size))
+            for j in range(self.a_size):
+                for i in range(self.a_size):
                     self.M[j][i] = sp.integrate.quad(self.__M_int,0,self.Ldl[1],args=(i,j))[0]
             self.M = self.__diag_mat(self.M,self.Ne,1)
 
@@ -297,14 +308,16 @@ class Flex_beam(object):
                 time_end = time.time_ns()-start_time-1*1e3
                 print("Preparing time: %s s" % (round(time_end*1e-9,3)))
             
-            self.ind_N2 = self.__search_index(self.l_all_optim,self.Ldl[2])
+            self.ind_N2 = self.__search_index(self.l_all_optim,self.Ldl[2])+1
 
             self.psi = self.__get_psi(self.step_optim)
             self.dpsi = self.__get_dpsi(self.step_optim)
             self.ddpsi = self.__get_ddpsi(self.step_optim)
+            self.dddpsi = self.__get_dddpsi(self.step_optim)
             self.psi = self.__diag_mat(self.psi,self.Ne)
             self.dpsi = self.__diag_mat(self.dpsi,self.Ne)
             self.ddpsi = self.__diag_mat(self.ddpsi,self.Ne)
+            self.dddpsi = self.__diag_mat(self.dddpsi,self.Ne)
             self.index = np.array([])
             for i in range(self.Ne-1):
                 self.index = np.append(self.index,(self.steps_per_fe4optim+1)+(self.steps_per_fe4optim+1)*i) 
@@ -312,6 +325,7 @@ class Flex_beam(object):
             self.psi = np.delete(self.psi, self.index,axis=0)
             self.dpsi = np.delete(self.dpsi, self.index,axis=0)
             self.ddpsi = np.delete(self.ddpsi, self.index,axis=0)
+            self.dddpsi = np.delete(self.dddpsi, self.index,axis=0)
 
             # preparing ddFext
             if l_Fext==None:
@@ -353,16 +367,16 @@ class Flex_beam(object):
                     plt.grid()
                     plt.title("dFext - distributed force [N/m^2]")
                     plt.show()
-                    display(Math("\\bm{F}="+self.__bmatrix(self.F[0:6,0:6])))
-                    display(Math("\\bm{M}="+self.__bmatrix(self.M[0:6,0:6])))
+                    display(Math("\\bm{F}="+self.__bmatrix(self.F[0:self.a_size,0:self.a_size])))
+                    display(Math("\\bm{M}="+self.__bmatrix(self.M[0:self.a_size,0:self.a_size])))
                     # display(Math("\\bm{F}_{ext}^{'}="+self.__bmatrix(self.dFext)))
             elif Fext_type=='const':
                 Fext_max = Fext
                 # w_steps_num = int(self.N*1e-2/2) # wisth in steps of the area of application of force
                 w = Fext_max # force at some point
 
-                dw1 = 2*w/(self.step_optim)
-                dw2 = w/(self.step_optim)
+                # dw1 = 2*w/(self.step_optim)
+                # dw2 = w/(self.step_optim)
                 force_appl_point = self.__search_index(self.l_all_optim,l_Fext)
                 Fext = np.zeros((1,self.N_optim))[0] 
                 Fext[0:int(force_appl_point)+1]=w
@@ -402,8 +416,8 @@ class Flex_beam(object):
                     plt.grid()
                     plt.title("dFext - distributed force [N/m^2]")
                     plt.show()
-                    display(Math("\\bm{F}="+self.__bmatrix(self.F[0:6,0:6])))
-                    display(Math("\\bm{M}="+self.__bmatrix(self.M[0:6,0:6])))
+                    display(Math("\\bm{F}="+self.__bmatrix(self.F[0:self.a_size,0:self.a_size])))
+                    display(Math("\\bm{M}="+self.__bmatrix(self.M[0:self.a_size,0:self.a_size])))
                     # display(Math("\\bm{F}_{ext}^{'}="+self.__bmatrix(self.dFext)))
             elif Fext_type=='triangle':
                 Fext_max = Fext
@@ -433,8 +447,8 @@ class Flex_beam(object):
                     plt.plot(self.Ldl,np.zeros((1,self.Ne+1))[0],"og")
                     plt.grid()
                     plt.show()
-                    display(Math("\\bm{F}="+self.__bmatrix(self.F[0:6,0:6])))
-                    display(Math("\\bm{M}="+self.__bmatrix(self.M[0:6,0:6])))
+                    display(Math("\\bm{F}="+self.__bmatrix(self.F[0:self.a_size,0:self.a_size])))
+                    display(Math("\\bm{M}="+self.__bmatrix(self.M[0:self.a_size,0:self.a_size])))
 
         def static(self,disp=True,a0=[1,2],flag_compute_a_anyway=1):
             flag_preparing_already_done = 0
@@ -458,7 +472,10 @@ class Flex_beam(object):
                     Fext_type = npzfile['Fext_type']
                 del npzfile
 
-            if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl) or (not step==self.step) or (not c1==self.c1) or (not c3==self.c3) or (not EI==self.EI) or (not Fext_point==self.Fext_point) or (not l_Fext==self.l_Fext) or (not Fext_type==self.Fext_type) or flag_compute_a_anyway:
+            if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl)\
+                  or (not step==self.step) or (not c1==self.c1) or (not c3==self.c3) or (not EI==self.EI)\
+                     or (not Fext_point==self.Fext_point) or (not l_Fext==self.l_Fext) or\
+                          (not Fext_type==self.Fext_type) or flag_compute_a_anyway:
                 if flag_preparing_already_done:
                     if disp:
                         print("Checking finished. We cannot use this a approx data as some parameters mismatch. Starting optimization:")
@@ -468,7 +485,9 @@ class Flex_beam(object):
 
                 self.iteration_num = 0
                 if np.shape(a0)[0]<3:
-                    a0 = np.ones((1,6+3*(self.Ne-1)-1-2))[0]
+                    self.a_diff = np.ones((1,self.a_size+self.a_halfsize*(self.Ne-1)-1-self.last_zeros))[0]
+                else:
+                    self.a_diff = a0
                 """
                 bound_min = np.zeros((1,len(a0)))[0]
                 bound_max = np.zeros((1,len(a0)))[0]
@@ -493,7 +512,7 @@ class Flex_beam(object):
                     start_time = time.time()
                 # res = sp.optimize.minimize(self.__fun_static_optim, a0,method='Nelder-Mead')
                 tol=1e-3
-                res = sp.optimize.least_squares(self.__fun_static_optim,a0,\
+                res = sp.optimize.least_squares(self.__fun_static_optim,self.a_diff,\
                                                 ftol=tol,gtol=tol,xtol=tol,max_nfev=1e6,method='trf',\
                                                     args=(disp,))
                 if disp:
@@ -504,20 +523,24 @@ class Flex_beam(object):
                     print("time on 1 iter:%s ms" % (round(1e3*end_time/self.iteration_num,0)))  
                     print("iteration number:%s" % (self.iteration_num))
 
-                self.a_diff = np.ones((1,6+3*(self.Ne-1)-1-2))[0]
-                for i in range(6+3*(self.Ne-1)-1-2):
+                for i in range(self.a_size+self.a_halfsize*(self.Ne-1)-1-self.last_zeros):
                     self.a_diff[i] = res.x[i]
 
-                self.a_approx = np.zeros((1,6*self.Ne))[0]
-                self.a_approx[0] = 0
-                self.a_approx[1:6] = self.a_diff[:5]
+                self.a_approx = np.zeros((1,self.a_size*self.Ne))[0]
+                self.a_approx[0] = 0 
+                self.a_approx[1:self.a_size] = self.a_diff[:self.a_size-1]
                 for i in range(self.Ne-1):
                     if i==self.Ne-2:
-                        self.a_approx[6*(i+1):6*(i+1)+3] = self.a_approx[6*(i+1)-3:6*(i+1)]
-                        self.a_approx[6*(i+1)+3:6*(i+2)] = np.concatenate([ self.a_diff[5+3*i:],np.array([0,0])])
+                        self.a_approx[self.a_size*(i+1):self.a_size*(i+1)+self.a_halfsize] =\
+                            self.a_approx[6*(i+1)-3:6*(i+1)]
+                        self.a_approx[self.a_size*(i+1)+self.a_halfsize:self.a_size*(i+2)] =\
+                            np.concatenate([self.a_diff[(self.a_size-1)+self.a_halfsize*i:],\
+                                            np.zeros((1,self.last_zeros))[0] ])
                     else:
-                        self.a_approx[6*(i+1):6*(i+1)+3] = self.a_approx[6*(i+1)-3:6*(i+1)]
-                        self.a_approx[6*(i+1)+3:6*(i+2)] = self.a_diff[5+3*i:8+3*i]
+                        self.a_approx[self.a_size*(i+1):self.a_size*(i+1)+self.a_halfsize] =\
+                            self.a_approx[self.a_size*(i+1)-self.a_halfsize:self.a_size*(i+1)]
+                        self.a_approx[self.a_size*(i+1)+self.a_halfsize:self.a_size*(i+2)] =\
+                            self.a_diff[(self.a_size-1)+self.a_halfsize*i:(self.a_size-1+self.a_halfsize)+3*i]
                 if disp:
                     print("res cost = {}".format(res.cost))  
                 
@@ -940,6 +963,7 @@ class Flex_beam(object):
             else:
                 if disp:
                     print("Found an approximation. Will use it!")
+                self.phi_approx_preparing(disp)
                 self.a = self.a_approx
                 flag_a_approx_is = 1
                 
