@@ -32,7 +32,7 @@ class Flex_beam(object):
         self.w = w * 1e3 * self.mult
         self.rho = rho * 1e-9 / self.mult**3
 
-    def Create_Simulation(self,disp=False):
+    def Create_Simulation(self):
         """
         Creating Child Class Simulation instance and passing parameters to it 
         # Parameters
@@ -40,7 +40,7 @@ class Flex_beam(object):
         disp: bool, optional
             display data
         """
-        self.Simulating = self.Simulating(self.L,self.E,self.h,self.w,self.rho,self.mult,disp) # creating Child class instance and passing parameters to it
+        self.Simulating = self.Simulating(self.L,self.E,self.h,self.w,self.rho,self.mult) # creating Child class instance and passing parameters to it
 
     def FEM(self,Ne=10,disp=False,polynom_deg=3):
         """
@@ -57,14 +57,14 @@ class Flex_beam(object):
         self.dl = self.L/Ne
         self.Ldl = np.linspace(0,self.L,self.Ne+1)
         try:
-            self.Simulating.set_FEM_data(Ne,self.dl,self.Ldl) # inheritance of parameters by a child class
+            self.Simulating.set_FEM_data(Ne,self.dl,self.Ldl,self.polynom_deg,disp) # inheritance of parameters by a child class
         except:
-            raise ValueError("First call Create_Simulation method!") from None
+            raise ValueError("First call Create_Simulation method!") # from None
         if disp:
-            display(Math("\mathcal{N}_{0,\dots,Ne}=\text{"+np.str_(self.Ldl)+" [mm]}"))   
+            display(Math("\\large \mathcal{N}_{0,1,\dots,Ne}=\\text{"+np.str_(self.Ldl)+" [mm]}"))   
             
     class Simulating(object):
-        def __init__(self,L,E,h,w,rho,mult,disp): # inheritance of parameters by a child class
+        def __init__(self,L,E,h,w,rho,mult): # inheritance of parameters by a child class
             self.L = L
             self.E = E
             self.h = h
@@ -74,67 +74,80 @@ class Flex_beam(object):
             self.rho = rho
             self.A = w*h
             self.mult = mult
-            if self.polynom_deg==5:
+            
+        def set_FEM_data(self,Ne,dl,Ldl,polynom_deg,disp):
+            self.Ne = Ne
+            self.dl = dl
+            self.Ldl = Ldl
+            self.a_size = polynom_deg + 1  
+            if self.a_size==6:
                 C_val = np.array([[-6,15,-10,0,0,1],[-3,8,-6,0,1,0],[-0.5,1.5,-1.5,0.5,0,0],
                     [6,-15,10,0,0,0],[-3,7,-4,0,0,0],[0.5,-1,0.5,0,0,0]])
-            if self.polynom_deg==3:
+            elif self.a_size==4:
                 C_val = np.array([[2,-3,0,1],[1,-2,1,0],[-2,3,0,0],[1,-1,0,0]])
             self.p = []
             self.dp = []
             self.ddp = []
             self.dddp = []
-            self.ddddp = []
-            for i in range(6):
-                self.p.append(np.poly1d(C_val[i])) # for psi
-                self.dp.append(np.polyder(self.p[-1], m=1)) # for d^1psi/dlambda^1
-                self.ddp.append(np.polyder(self.p[-1], m=2)) # for d^2psi/dlambda^2
-                self.dddp.append(np.polyder(self.p[-1], m=3)) # for d^3psi/dlambda^3
-                self.ddddp.append(np.polyder(self.p[-1], m=4)) # for d^4psi/dlambda^4
+            if self.a_size==6:
+                for i in range(self.a_size):
+                    self.p.append(np.poly1d(C_val[i])) # for psi
+                    self.dp.append(np.polyder(self.p[-1], m=1)) # for d^1psi/dlambda^1
+                    self.ddp.append(np.polyder(self.p[-1], m=2)) # for d^2psi/dlambda^2
+                    self.dddp.append(np.polyder(self.p[-1], m=3)) # for d^3psi/dlambda^3
+            elif self.a_size==4:
+                for i in range(self.a_size):
+                    self.p.append(np.poly1d(C_val[i])) # for psi
+                    self.dp.append(np.polyder(self.p[-1], m=1)) # for d^1psi/dlambda^1
+                    self.ddp.append(np.polyder(self.p[-1], m=2)) # for d^2psi/dlambda^2
+                    self.dddp.append(np.polyder(self.p[-1], m=3)) # for d^3psi/dlambda^3
             if disp:
-                a = np.ones((1,6))[0]
+                a = np.ones((1,self.a_size))[0]
                 # a = np.array([0,1,12,1,1,13])
                 x = np.arange(0,1+1e-3,1e-3)
-                plt.subplots(1,5,figsize = (20,8))
+                plt.subplots(2,3,figsize = (20,8))
                 plt.subplot(231)
-                for (obj,i) in zip(self.p,np.arange(6)):
+                for (obj,i) in zip(self.p,np.arange(self.a_size)):
                     y = np.polyval(obj,x)*a[i]
                     plt.plot(x,y)
                 plt.grid(True)
-                plt.title("$\psi_i$ - basis functions for 1 FE")
+                plt.title("$\psi_i$ - basis functions for 1 FE",fontsize=22)
                 plt.subplot(232)
-                for (obj,i) in zip(self.dp,np.arange(6)):
+                for (obj,i) in zip(self.dp,np.arange(self.a_size)):
                     y = np.polyval(obj,x)*a[i]
                     plt.plot(x,y)
                 plt.grid(True)
-                plt.title("$\\frac{\partial \psi_i(\lambda)}{\partial \lambda}$ - basis functions for 1 FE")
+                plt.title("$\\frac{\partial \psi_i(\lambda)}{\partial \lambda}$ - basis functions for 1 FE",fontsize=22)
                 plt.subplot(233)
-                for (obj,i) in zip(self.ddp,np.arange(6)):
+                for (obj,i) in zip(self.ddp,np.arange(self.a_size)):
                     y = np.polyval(obj,x)*a[i]
                     plt.plot(x,y)
                 plt.grid(True)
-                plt.title("$\\frac{\partial^2 \psi_i(\lambda)}{\partial \lambda^2}$ - basis functions for 1 FE")
+                plt.title("$\\frac{\partial^2 \psi_i(\lambda)}{\partial \lambda^2}$ - basis functions for 1 FE",fontsize=22)
                 plt.subplot(234)
                 y = np.zeros((1,len(x)))[0]
-                for obj,i in zip(self.p,np.arange(6)):
+                for obj,i in zip(self.p,np.arange(self.a_size)):
                     y = y + np.polyval(obj,x)*a[i]
                 plt.plot(x,y)
                 plt.grid(True)
-                plt.title("$\sum_i\psi_i$ - sum of basis functions for 1 FE")
+                plt.title("$\sum_i\psi_i$ - sum of basis functions for 1 FE",fontsize=22)
                 plt.subplot(235)
                 y = np.zeros((1,len(x)))[0]
-                for obj,i in zip(self.dp,np.arange(6)):
+                for obj,i in zip(self.dp,np.arange(self.a_size)):
                     y = y + np.polyval(obj,x)*a[i]
                 plt.plot(x,y)
                 plt.grid(True)
-                plt.title("$\sum_i \\frac{\partial \psi_i(\lambda)}{\partial \lambda}$ - sum of basis functions for 1 FE")
+                plt.title("$\sum_i \\frac{\partial \psi_i(\lambda)}{\partial \lambda}$ - sum of basis functions for 1 FE",fontsize=22)
                 plt.subplot(236)
                 y = np.zeros((1,len(x)))[0]
-                for obj,i in zip(self.ddp,np.arange(6)):
+                for obj,i in zip(self.ddp,np.arange(self.a_size)):
                     y = y + np.polyval(obj,x)*a[i]
                 plt.plot(x,y)
                 plt.grid(True)
-                plt.title("$\sum_i \\frac{\partial^2 \psi_i(\lambda)}{\partial \lambda^2}$ - sum of basis functions for 1 FE")
+                plt.title("$\sum_i \\frac{\partial^2 \psi_i(\lambda)}{\partial \lambda^2}$ - sum of basis functions for 1 FE",fontsize=22)
+                plt.tight_layout()
                 plt.show()
+
 
         def __bmatrix(self,a):
             """
@@ -525,11 +538,6 @@ class Flex_beam(object):
 
         def __search_index(self,v,x):
             return bisect.bisect(v, x) - 1 
-
-        def set_FEM_data(self,Ne,dl,Ldl):
-            self.Ne = Ne
-            self.dl = dl
-            self.Ldl = Ldl
             
         def Ldivide(self,steps_per_fe=1,steps_per_fe4optim=1,disp=False):
             """
@@ -779,7 +787,7 @@ class Flex_beam(object):
                 display(Math("\\frac{\\partial \\varphi}{\\partial l}=\Large"+sm.latex(dphi)))    
                 display(Math("\\frac{\\partial^2 \\varphi}{\\partial l^2}=\Large"+sm.latex(ddphi))) 
 
-                plt.subplots(1,5,figsize = (20,6))
+                plt.subplots(1,4,figsize = (20,6))
                 plt.subplot(141)
                 plt.plot(self.x_phi_true,self.y_phi_true)
                 plt.axis('equal')
@@ -799,15 +807,16 @@ class Flex_beam(object):
                 plt.plot(self.l_all_true,np.rad2deg(self.dphi_true))
                 plt.title("given beam shape (dphi)",fontsize=15)
                 plt.xlabel("$l$ [mm]",fontsize=15)
-                plt.ylabel("$\\frac{\partial\\varphi(l,t=0)}{\partial l}$ [deg/mm]",fontsize=15)
+                plt.ylabel("$\\varphi^{'}(l,t=0)$ [deg/mm]",fontsize=20)
                 plt.grid(True)
 
                 plt.subplot(144)
                 plt.plot(self.l_all_true,np.rad2deg(self.ddphi_true))
                 plt.title("given beam shape (ddphi)",fontsize=15)
                 plt.xlabel("$l$ [mm]",fontsize=15)
-                plt.ylabel("$\\frac{\partial^2\\varphi(l,t=0)}{\partial l^2}$ [deg/mm^2]",fontsize=15)
+                plt.ylabel("$\\varphi^{''}(l,t=0)$ [deg/mm^2]",fontsize=20)
                 plt.grid(True)
+                plt.tight_layout()
                 plt.show()
 
         def phi_approx_preparing(self):
