@@ -42,7 +42,7 @@ class Flex_beam(object):
         """
         self.Simulating = self.Simulating(self.L,self.E,self.h,self.w,self.rho,self.mult,disp) # creating Child class instance and passing parameters to it
 
-    def FEM(self,Ne=10,disp=False):
+    def FEM(self,Ne=10,disp=False,polynom_deg=3):
         """
         Splitting a beam into finite elements
         # Parameters
@@ -52,6 +52,7 @@ class Flex_beam(object):
         disp: bool, optional
             display data
         """
+        self.polynom_deg = polynom_deg # polynomial degree
         self.Ne = Ne
         self.dl = self.L/Ne
         self.Ldl = np.linspace(0,self.L,self.Ne+1)
@@ -73,8 +74,11 @@ class Flex_beam(object):
             self.rho = rho
             self.A = w*h
             self.mult = mult
-            C_val = np.array([[-6,15,-10,0,0,1],[-3,8,-6,0,1,0],[-0.5,1.5,-1.5,0.5,0,0],
-                  [6,-15,10,0,0,0],[-3,7,-4,0,0,0],[0.5,-1,0.5,0,0,0]])
+            if self.polynom_deg==5:
+                C_val = np.array([[-6,15,-10,0,0,1],[-3,8,-6,0,1,0],[-0.5,1.5,-1.5,0.5,0,0],
+                    [6,-15,10,0,0,0],[-3,7,-4,0,0,0],[0.5,-1,0.5,0,0,0]])
+            if self.polynom_deg==3:
+                C_val = np.array([[2,-3,0,1],[1,-2,1,0],[-2,3,0,0],[1,-1,0,0]])
             self.p = []
             self.dp = []
             self.ddp = []
@@ -352,9 +356,9 @@ class Flex_beam(object):
                 # self.Fext = np.multiply( Fext.reshape(self.N_optim,1),self.psi) 
                 self.Fext = np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
                 dFext = np.zeros((1,self.N_optim))[0]
-                dFext[0]=dw1 
-                dFext[int(force_appl_point)]=-dw2
-                self.dFext = np.sum(np.multiply( dFext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
+                # dFext[0]=dw1 
+                # dFext[int(force_appl_point)]=-dw2
+                # self.dFext = np.sum(np.multiply( dFext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
 
                 # dw1 = 2*w/(self.dl)
                 # dw2 = w/(self.dl)
