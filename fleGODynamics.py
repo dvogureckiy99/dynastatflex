@@ -247,15 +247,17 @@ class Flex_beam(object):
             cosphiappr = np.cos(phi_appr)
             sinphiappr_ddphiappr = np.multiply(sinphiappr,ddphi_appr)
             cosphiappr_ddphiappr = np.multiply(cosphiappr,ddphi_appr)
-            # self.Fextx = -np.sum(np.multiply( sinphiappr.reshape(self.ind_N2,1),self.Fext[:self.ind_N2])*self.step_optim,axis=0) 
-            # self.Fexty = np.sum(np.multiply( cosphiappr.reshape(self.ind_N2,1),self.Fext[:self.ind_N2])*self.step_optim,axis=0) 
+            self.Fextx = np.sum(np.cumsum(np.multiply( -sinphiappr,self.Fext)*\
+                                           self.step_optim,axis=0)*self.step_optim,axis=0)
+            self.Fexty = np.sum(np.cumsum(np.multiply( cosphiappr,self.Fext)*\
+                                           self.step_optim,axis=0)*self.step_optim,axis=0)
 
             cost = np.concatenate([ self.Fext_int-self.EI*(np.matmul(self.F,a)+\
                     (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N_optim,1),self.dpsi)*self.step_optim,axis=0)-\
                 dphi_appr_power3[int(self.N_optim-1)]*self.psi[int(self.N_optim-1)]+dphi_appr_power3[0]*self.psi[0])),\
-                    [(np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
+                    [self.Fextx+self.EI*(np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
                                                     self.step_optim,axis=0)) ],\
-                    [(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
+                    [self.Fexty+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
                                                     self.step_optim,axis=0))]   ])
             # cost = np.sum(np.power(cost,2))
             self.phi_end = np.matmul(self.psi,a)[-1]
@@ -361,10 +363,9 @@ class Flex_beam(object):
                 for p in range(int(self.steps_per_fe4optim*widthofFextindl)-1):
                     Fext[int(force_appl_point)+p+1]=w*(1-(p+1)/self.steps_per_fe4optim/widthofFextindl)
                     Fext[int(force_appl_point)-p-1]=w*(1-(p+1)/self.steps_per_fe4optim/widthofFextindl)
-                # self.Fext = np.multiply( Fext.reshape(self.N_optim,1),self.psi)
+                self.Fext = np.multiply( Fext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])
                 self.Fext_int = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0)
                     # Fext[-1]*self.dpsi[-1]-Fext[0]*self.dpsi[0]  
-                self.Fext = np.multiply( Fext.reshape(self.N_optim,1),self.psi)
                 dFext = np.zeros((1,self.N_optim))[0] 
                 # dFext[int(force_appl_point)]=dw
                 # for p in range(self.steps_per_fe4optim-1):
@@ -403,7 +404,7 @@ class Flex_beam(object):
                 else:
                     Fext[int(force_appl_point)-int(self.steps_per_fe4optim*widthofFextindl):\
                         int(force_appl_point)+int(self.steps_per_fe4optim*widthofFextindl)+1]=w 
-                # self.Fext = np.multiply( Fext.reshape(self.N_optim,1),self.psi)
+                self.Fext = np.multiply( Fext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])
                 self.Fext_int = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0)
                 dFext = np.zeros((1,self.N_optim))[0]
                 # dFext[0]=dw1 
@@ -437,7 +438,8 @@ class Flex_beam(object):
                 for (l,i) in zip(self.l_all_optim,range(self.N_optim)):
                     Fext[i]=w*(l-2*self.__delta1(l-l_Fext)*(l-l_Fext))
                     # dFext[i]=dw-2*self.__delta1(l-l_Fext)*dw
-                self.Fext = np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
+                self.Fext = np.multiply( Fext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])
+                self.Fext_int = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
                 # self.dFext = np.sum(np.multiply( dFext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
 
                 if disp:
