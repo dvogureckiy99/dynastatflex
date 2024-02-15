@@ -400,32 +400,15 @@ class Flex_beam(object):
                 Fext = np.zeros((1,self.N_optim))[0] 
                 if widthofFextindl==-1:
                     Fext[0:int(force_appl_point)+1]=w
-                # else:
-                    
-                # self.Fext = np.multiply( Fext.reshape(self.N_optim,1),self.psi) 
-                self.Fext = np.multiply( Fext.reshape(self.N_optim,1),self.psi)
-                self.Fext_int = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.dpsi)*self.step_optim,axis=0)+\
-                    Fext[-1]*self.dpsi[-1]-Fext[0]*self.dpsi[0]
+                else:
+                    Fext[int(force_appl_point)-int(self.steps_per_fe4optim*widthofFextindl):\
+                        int(force_appl_point)+int(self.steps_per_fe4optim*widthofFextindl)+1]=w 
+                # self.Fext = np.multiply( Fext.reshape(self.N_optim,1),self.psi)
+                self.Fext_int = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0)
                 dFext = np.zeros((1,self.N_optim))[0]
                 # dFext[0]=dw1 
                 # dFext[int(force_appl_point)]=-dw2
                 # self.dFext = np.sum(np.multiply( dFext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
-
-                # dw1 = 2*w/(self.dl)
-                # dw2 = w/(self.dl)
-                # force_appl_point = self.__search_index(self.l_all_optim,l_Fext)
-                # Fext = np.zeros((1,self.N_optim))[0] 
-                # Fext[0:int(force_appl_point)+1]=w
-                # self.Fext = np.multiply( Fext.reshape(self.N_optim,1),self.psi) 
-                # dFext = np.zeros((1,self.N_optim))[0] 
-                # for p in range(self.steps_per_fe4optim-1):
-                #     dFext[0+p+1]=dw1*(1-(p+1)/self.steps_per_fe4optim)
-                # dFext[int(force_appl_point)]=-dw2
-                # for p in range(self.steps_per_fe4optim-1):
-                #     dFext[int(force_appl_point)+p+1]=-dw2*(1-(p+1)/self.steps_per_fe4optim)
-                #     dFext[int(force_appl_point)-p-1]=-dw2*(1-(p+1)/self.steps_per_fe4optim)
-                # self.dFext = np.sum(np.multiply( dFext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
-
                 if disp:
                     # print("distributed integral error =%e"%(np.sum(Fext*self.step_optim*self.steps_per_fe4optim)-Fext_max))
                     plt.figure(figsize = (20,4))
