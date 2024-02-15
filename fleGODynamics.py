@@ -944,7 +944,7 @@ class Flex_beam(object):
                     if disp:
                         print("Checking finished. Using loaded data")
                 
-        def phi_approx(self,disp=True,der_num=0):
+        def phi_approx(self,disp=True,der_num=0,SPACAR=False):
             """
             Phi function approximation. Opportunity to approximate dphi and ddphi functions.
             # Parameters
@@ -977,6 +977,23 @@ class Flex_beam(object):
                 self.a = self.a_approx
                 flag_a_approx_is = 1
                 
+            if SPACAR:
+                flag_SPACAR_done = 0
+                if os.path.isfile('SPACAR.npz'):
+                    flag_SPACAR_done = 1
+
+                if flag_SPACAR_done:
+                    if disp:
+                        print("Found SPACAR zip archive with saved data. We'll use it!")
+                    with np.load('SPACAR.npz') as npzfile: # for closign after using it
+                        x_SPACAR = npzfile['x']
+                        y_SPACAR = npzfile['y']
+                        self.phi_SPACAR_end = npzfile['phi_end']
+                    del npzfile
+                else:
+                    if disp:
+                        print("SPACAR data didn't find.")
+
             if der_num == 2:
                 #evaluation
                 if disp:
@@ -1013,6 +1030,8 @@ class Flex_beam(object):
                     else:
                         print("evaluation time: %s ms" % (round(end_time*1e-6,3)))
                         print("time for 1 step: %s us" % (round(1e-3*end_time/self.N,3)))
+                    print("phi end, fleGODynamics:{} [deg]; SPACAR:{} [deg]".format(round(np.rad2deg(phi_appr[-1]),2),\
+                                                                                   np.round(self.phi_SPACAR_end,2)))
             elif der_num == 1:
                 #evaluation
                 start_time = time.time_ns()
@@ -1079,7 +1098,7 @@ class Flex_beam(object):
                 plt.plot(self.l_all_true,dphi_appr,label=labels[1],color=colours[1])
                 plt.plot(self.Ldl,dphi_appr_dl,"og")
                 if not flag_a_approx_is:
-                    plt.plot(self.l_all_true,self.dphi_true,"--",label=labels[0],color=colours[0])
+                    plt.plot(self.l_all_true,self.dphi_true,"--",label=labels[0],color=colours[0])    
             plt.grid(True)
             plt.xlabel("$l$ [mm]")
             plt.ylabel("$\\varphi_{l}(l,t=0)$",fontsize=15)
@@ -1129,12 +1148,14 @@ class Flex_beam(object):
             plt.axis("off")
 
             plt.subplot(3,2,(4,6))
-            labels = ['$(x,y)^{true}$','$(x,y)^{approx}$']
-            colours = ['b','r']
+            labels = ['$(x,y)^{true}$','$(x,y)^{approx}$','$(x,y)^{SPACAR}$']
+            colours = ['b','r','b']
             plt.plot(x/self.mult,y/self.mult,label=labels[1],color=colours[1])
             plt.plot(x_dl/self.mult,y_dl/self.mult,"og")
             if not flag_a_approx_is:
                 plt.plot(self.x_phi_true/self.mult,self.y_phi_true/self.mult,"--",label=labels[0],color=colours[0])
+            if SPACAR:
+                plt.plot(x_SPACAR*1e3,y_SPACAR*1e3,label=labels[2],color=colours[2])
             plt.grid(True)
             plt.xlabel("$x$ [mm]")
             plt.ylabel("$y$ [mm]")
