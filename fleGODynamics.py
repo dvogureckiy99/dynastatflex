@@ -443,16 +443,16 @@ class Flex_beam(object):
             elif Fext_type=='triangle':
                 Fext_max = Fext
                 w = Fext_max # point force at the center
-                dw = 2*w/self.L
+                # dw = 2*w/self.L
                 # force_appl_point = self.__search_index(self.l_all_optim,l_Fext)
 
                 Fext = np.zeros((1,self.N_optim))[0]
                 dFext = np.zeros((1,self.N_optim))[0] 
                 for (l,i) in zip(self.l_all_optim,range(self.N_optim)):
                     Fext[i]=dw*l-2*self.__delta1(l-l_Fext)*(l-l_Fext)*dw
-                    dFext[i]=dw-2*self.__delta1(l-l_Fext)*dw
+                    # dFext[i]=dw-2*self.__delta1(l-l_Fext)*dw
                 self.Fext = np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
-                self.dFext = np.sum(np.multiply( dFext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
+                # self.dFext = np.sum(np.multiply( dFext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
 
                 if disp:
                     # print("distributed integral integral error =%e"%(np.sum(Fext*self.step)-Fext_max))
