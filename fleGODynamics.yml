@@ -5,10 +5,12 @@ dependencies:
 - ipykernel
 - ipython
 - pip
-- python=3.11
+- python=3.10
 - sympy
 - numpy=1.26
 - scipy
 - matplotlib
 - numba=0.58.1
+- pip:
+  - matlabengine==9.14.3
 
