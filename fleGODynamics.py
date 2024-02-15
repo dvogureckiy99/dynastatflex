@@ -281,7 +281,7 @@ class Flex_beam(object):
             # return e/((l-dl)**2+e**2)/np.pi
             return (1-np.tanh((l-dl)/e)**2)/2/e
 
-        def static_preparing(self,disp=True,Fext=1,l_Fext=None,Fext_type='triangle'):
+        def static_preparing(self,disp=True,Fext=1,l_Fext=None,Fext_type='triangle',widthofFextindl=1):
             try:
                 self.Ne
                 self.dl
@@ -358,9 +358,9 @@ class Flex_beam(object):
                 force_appl_point = self.__search_index(self.l_all_optim,l_Fext)
                 Fext = np.zeros((1,self.N_optim))[0] 
                 Fext[int(force_appl_point)]=w
-                for p in range(self.steps_per_fe4optim-1):
-                    Fext[int(force_appl_point)+p+1]=w*(1-(p+1)/self.steps_per_fe4optim)
-                    Fext[int(force_appl_point)-p-1]=w*(1-(p+1)/self.steps_per_fe4optim)
+                for p in range(self.steps_per_fe4optim*widthofFextindl-1):
+                    Fext[int(force_appl_point)+p+1]=w*(1-(p+1)/self.steps_per_fe4optim/widthofFextindl)
+                    Fext[int(force_appl_point)-p-1]=w*(1-(p+1)/self.steps_per_fe4optim/widthofFextindl)
                 # self.Fext = np.multiply( Fext.reshape(self.N_optim,1),self.psi)
                 self.Fext_int = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0)
                     # Fext[-1]*self.dpsi[-1]-Fext[0]*self.dpsi[0]  
