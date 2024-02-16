@@ -440,8 +440,8 @@ class Flex_beam(object):
                 # w_steps_num = int(self.N*1e-2/2) # wisth in steps of the area of application of force
                 w = Fext_max # force at some point
 
-                # dw1 = 2*w/(self.step_optim)
-                # dw2 = w/(self.step_optim)
+                # dw1 = 4*w/(self.step_optim)
+                # dw2 = 2*w/(self.step_optim)
                 force_appl_point = self.__search_index(self.l_all_optim,l_Fext)
                 Fext = np.zeros((1,self.N_optim))[0] 
                 if widthofFextindl==-1:
@@ -449,12 +449,39 @@ class Flex_beam(object):
                 else:
                     Fext[int(force_appl_point)-int(self.steps_per_fe4optim*widthofFextindl):\
                         int(force_appl_point)+int(self.steps_per_fe4optim*widthofFextindl)+1]=w 
-                self.Fext = np.multiply( Fext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])
-                self.Fext_int = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0)
+                
                 dFext = np.zeros((1,self.N_optim))[0]
-                # dFext[0]=dw1 
-                # dFext[int(force_appl_point)]=-dw2
+                dFext[0]=w
+                dFext[int(force_appl_point)]=-w
+
+                index1 = np.array([])
+                index2 = np.array([])
+                for i in range(self.Ne-1):
+                    index1 = np.append(index1,(self.steps_per_fe4optim+1)+(self.steps_per_fe4optim+1)*i)
+                    index2 = np.append(index2,(self.steps_per_fe4optim)+(self.steps_per_fe4optim)*i)
+                index1 = np.int16(index1)
+                index2 = np.int16(index2)
+                dFext4insert = dFext[index2]
+                dFext = np.insert(dFext,index2,dFext4insert) 
+
+                ret = np.array([]).reshape((0,self.a_size))
+                L = np.arange(0,self.Ldl[1]+self.step_optim/2,self.step_optim)
+                for l in L:
+                    l_line = np.array([])
+                    for i in range(self.a_size):
+                        l_line = np.append(l_line,1)
+                    ret = np.vstack((ret, l_line))
+                psi2 = self.__diag_mat(ret,self.Ne)
+                psi1 = self.__diag_mat(ret,self.Ne)
+                psi1 = np.delete(psi1,index1,axis=0)
+
+                self.Fext = np.multiply( Fext[:self.ind_N2],psi1[:self.ind_N2,self.a_halfsize])
+                self.Fext_int = -np.sum(np.multiply( dFext.reshape(self.N_optim,1),psi2)*self.step_optim,axis=0) 
+                # self.Fext = np.multiply( Fext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])
+                # self.Fext_int = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0)
+                
                 # self.dFext = np.sum(np.multiply( dFext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
+
                 if disp:
                     # print("distributed integral error =%e"%(np.sum(Fext*self.step_optim*self.steps_per_fe4optim)-Fext_max))
                     plt.figure(figsize = (20,4))
@@ -474,14 +501,44 @@ class Flex_beam(object):
                     # display(Math("\\bm{F}_{ext}^{'}="+self.__bmatrix(self.dFext)))
             elif Fext_type=='triangle':
                 dw = 2*self.Fext_in/self.L
-                # force_appl_point = self.__search_index(self.l_all_optim,l_Fext)
+                force_appl_point = self.__search_index(self.l_all_optim,l_Fext)
                 Fext = np.zeros((1,self.N_optim))[0]
                 dFext = np.zeros((1,self.N_optim))[0] 
                 for (l,i) in zip(self.l_all_optim,range(self.N_optim)):
-                    Fext[i]=self.Fext_in*(l-2*self.__delta1(l-l_Fext)*(l-l_Fext))
-                    # dFext[i]=dw*(1-2*self.__delta1(l-l_Fext))
-                self.Fext = np.multiply( Fext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])
-                self.Fext_int = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.dpsi)*self.step_optim,axis=0) 
+                    Fext[i]=dw*(l-2*self.__delta1(l-l_Fext)*(l-l_Fext))
+                    dFext[i]=dw*(1-2*self.__delta1(l-l_Fext))
+
+                # dw2 = 2*dw/self.step_optim
+                # for (l,i) in zip(self.l_all_optim,range(self.N_optim)):
+                #     Fext[i]=dw*l-self.__delta1(l-l_Fext)*(2*self.Fext_in)
+                #     dFext[i]=dw-dw2*( self.__delta1(l-l_Fext+self.step_optim)-self.__delta1(l-l_Fext-self.step_optim) )
+                # dFext[int(force_appl_point)]=-(2*self.Fext_in)
+
+                index1 = np.array([])
+                index2 = np.array([])
+                for i in range(self.Ne-1):
+                    index1 = np.append(index1,(self.steps_per_fe4optim+1)+(self.steps_per_fe4optim+1)*i)
+                    index2 = np.append(index2,(self.steps_per_fe4optim)+(self.steps_per_fe4optim)*i)
+                index1 = np.int16(index1)
+                index2 = np.int16(index2)
+                dFext4insert = dFext[index2]
+                dFext = np.insert(dFext,index2,dFext4insert) 
+
+                ret = np.array([]).reshape((0,self.a_size))
+                L = np.arange(0,self.Ldl[1]+self.step_optim/2,self.step_optim)
+                for l in L:
+                    l_line = np.array([])
+                    for i in range(self.a_size):
+                        l_line = np.append(l_line,1)
+                    ret = np.vstack((ret, l_line))
+                psi2 = self.__diag_mat(ret,self.Ne)
+                psi1 = self.__diag_mat(ret,self.Ne)
+                psi1 = np.delete(psi1,index1,axis=0)
+
+                self.Fext = np.multiply( Fext[:self.ind_N2],psi1[:self.ind_N2,self.a_halfsize])
+                self.Fext_int = -np.sum(np.multiply( dFext.reshape(self.N_optim+self.Ne-1,1),psi2)*self.step_optim,axis=0) 
+                # self.Fext = np.multiply( Fext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])
+                # self.Fext_int = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
                 # self.dFext = np.sum(np.multiply( dFext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
 
                 if disp:
