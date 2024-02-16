@@ -363,9 +363,10 @@ class Flex_beam(object):
                 for p in range(int(self.steps_per_fe4optim*widthofFextindl)-1):
                     Fext[int(force_appl_point)+p+1]=w*(1-(p+1)/self.steps_per_fe4optim/widthofFextindl)
                     Fext[int(force_appl_point)-p-1]=w*(1-(p+1)/self.steps_per_fe4optim/widthofFextindl)
+                
                 self.Fext = np.multiply( Fext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])
                 self.Fext_int = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0)
-                    # Fext[-1]*self.dpsi[-1]-Fext[0]*self.dpsi[0]  
+                
                 dFext = np.zeros((1,self.N_optim))[0] 
                 # dFext[int(force_appl_point)]=dw
                 # for p in range(self.steps_per_fe4optim-1):
@@ -1155,7 +1156,7 @@ class Flex_beam(object):
             if not flag_a_approx_is:
                 plt.plot(self.x_phi_true/self.mult,self.y_phi_true/self.mult,"--",label=labels[0],color=colours[0])
             if SPACAR:
-                plt.plot(x_SPACAR*1e3,y_SPACAR*1e3,label=labels[2],color=colours[2])
+                plt.plot(x_SPACAR*1e3,y_SPACAR*1e3,"--",label=labels[2],color=colours[2])
             plt.grid(True)
             plt.xlabel("$x$ [mm]")
             plt.ylabel("$y$ [mm]")
