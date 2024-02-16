@@ -6,7 +6,7 @@ SPACAR Student  version 05-Mar-2019 (0064/DP/C300/D120/E60/I12/O25).
  Kinematic data
 
  #Dat-file generated with SPACAR Light version 1.29
- #Date: 16-Feb-2024 00:12:38
+ #Date: 16-Feb-2024 20:45:49
  #User: dvogureckiy99
   
   
@@ -429,7 +429,7 @@ SPACAR Student  version 05-Mar-2019 (0064/DP/C300/D120/E60/I12/O25).
   
   
  #FORCES   Nn  Fx   Fy   Fz
- DELXF   25  0.000000 30.000000 0.000000
+ DELXF   25  0.000000 15.000000 0.000000
   
   
   
@@ -780,18 +780,17 @@ SPACAR Student  version 05-Mar-2019 (0064/DP/C300/D120/E60/I12/O25).
  Finding static solution in STATIC:
  Iteration number    1, error:   0.00000000E+00
  Convergence OK (<  0.50E-06).
- Iteration number    1, error:   9.88578220E-01
- Iteration number    2, error:   1.06472534E+00
- Iteration number    3, error:   6.41707202E-02
- Iteration number    4, error:   1.50510338E-02
- Iteration number    5, error:   2.70392364E-04
- Iteration number    6, error:   2.71715682E-07
+ Iteration number    1, error:   9.77414408E-01
+ Iteration number    2, error:   4.37058943E-01
+ Iteration number    3, error:   2.25166646E-02
+ Iteration number    4, error:   5.50504065E-04
+ Iteration number    5, error:   3.47482025E-07
  Convergence OK (<  0.50E-06).
- Iteration number    1, error:   3.00935758E-01
- Iteration number    2, error:   1.11931064E-01
- Iteration number    3, error:   5.26761758E-03
- Iteration number    4, error:   1.19148033E-04
- Iteration number    5, error:   2.30838178E-08
+ Iteration number    1, error:   3.81290319E-01
+ Iteration number    2, error:   1.44400236E-01
+ Iteration number    3, error:   7.27876086E-03
+ Iteration number    4, error:   2.29728514E-04
+ Iteration number    5, error:   8.73678011E-08
  Convergence OK (<  0.50E-06).
 ================================================================================
  Time =       0.00000000  total FE          0  delta fe     0

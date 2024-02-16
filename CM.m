@@ -10,8 +10,8 @@ nprops(1).fix   = true;
 
 if exist('M','var')
     nprops(n).moment = M;
-elseif exist('F','var')
-    nprops(int32((l_Fext/L)*N)).force = [0,F,0];
+elseif exist('Fx','var') && exist('Fy','var')
+    nprops(int32((l_Fext/L)*N)).force = [Fx,Fy,0];
 elseif exist('Stroke','var')
     nprops(n).rot_z = Stroke;
 end

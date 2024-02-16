@@ -382,7 +382,8 @@ class Flex_beam(object):
                                                 self.step_optim,axis=0)*self.step_optim,axis=0)
                     self.Fyext_int = np.sum(np.cumsum( np.multiply( Fyext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize]) *\
                                                   self.step_optim,axis=0)*self.step_optim,axis=0)
-                    self.Fxext = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0)
+                    self.Fxext = -np.sum(np.multiply( Fxext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0)
+                    self.Fyext = -np.sum(np.multiply( Fyext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0)
                 else:
                     Fext = np.zeros((1,self.N_optim))[0]   
                     # dw = w/(self.step_optim*self.steps_per_fe4optim)
