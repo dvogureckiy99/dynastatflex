@@ -209,32 +209,30 @@ class Flex_beam(object):
 
         def __fun_static_optim(self,a_diff,disp):
             # preparing a vector for each FE, cause a_diff contain only unique values 
-            a = np.zeros((1,self.a_size*self.Ne))[0]
-            a[0] = 0 
-            a[1:self.a_size] = a_diff[:self.a_size-1]
-            for i in range(self.Ne-1):
-                if i==self.Ne-2 and self.last_zeros:
-                    a[self.a_size*(i+1):self.a_size*(i+1)+self.a_halfsize] =\
-                        a[self.a_size*(i+1)-self.a_halfsize:self.a_size*(i+1)]
-                    a[self.a_size*(i+1)+self.a_halfsize:self.a_size*(i+2)] =\
-                        np.concatenate([a_diff[(self.a_size-1)+self.a_halfsize*i:],\
-                                        np.zeros((1,self.last_zeros))[0] ])
-                else:
-                    a[self.a_size*(i+1):self.a_size*(i+1)+self.a_halfsize] =\
-                        a[self.a_size*(i+1)-self.a_halfsize:self.a_size*(i+1)]
-                    a[self.a_size*(i+1)+self.a_halfsize:self.a_size*(i+2)] =\
-                        a_diff[(self.a_size-1)+self.a_halfsize*i:\
-                            (self.a_size-1+self.a_halfsize)+self.a_halfsize*i]
-            # a = np.zeros((1,6*self.Ne))[0]
-            # a[0] = 0
-            # a[1:6] = a_diff[:5]
-            # for i in range(self.Ne-1):
-            #     if i==self.Ne-2:
-            #         a[6*(i+1):6*(i+1)+3] = a[6*(i+1)-3:6*(i+1)]
-            #         a[6*(i+1)+3:6*(i+2)] = np.concatenate([a_diff[5+3*i:],np.array([0,0])])
-            #     else:
-            #         a[6*(i+1):6*(i+1)+3] = a[6*(i+1)-3:6*(i+1)]
-            #         a[6*(i+1)+3:6*(i+2)] = a_diff[5+3*i:8+3*i]
+            if self.full_a:
+                a = np.array([])
+                a = np.append(a,a_diff[:self.a_size])
+                for i in range(self.Ne-1):
+                    a = np.append(a,\
+                        a_diff[self.a_size+i*self.a_halfsize:self.a_size+(i+1)*self.a_halfsize])
+            else:
+                a = np.zeros((1,self.a_size*self.Ne))[0]
+                a[0] = 0 
+                a[1:self.a_size] = a_diff[:self.a_size-1]
+                for i in range(self.Ne-1):
+                    if i==self.Ne-2 and self.last_zeros:
+                        a[self.a_size*(i+1):self.a_size*(i+1)+self.a_halfsize] =\
+                            a[self.a_size*(i+1)-self.a_halfsize:self.a_size*(i+1)]
+                        a[self.a_size*(i+1)+self.a_halfsize:self.a_size*(i+2)] =\
+                            np.concatenate([a_diff[(self.a_size-1)+self.a_halfsize*i:],\
+                                            np.zeros((1,self.last_zeros))[0] ])
+                    else:
+                        a[self.a_size*(i+1):self.a_size*(i+1)+self.a_halfsize] =\
+                            a[self.a_size*(i+1)-self.a_halfsize:self.a_size*(i+1)]
+                        a[self.a_size*(i+1)+self.a_halfsize:self.a_size*(i+2)] =\
+                            a_diff[(self.a_size-1)+self.a_halfsize*i:\
+                                (self.a_size-1+self.a_halfsize)+self.a_halfsize*i]
+            
 
 
             self.iteration_num += 1   
@@ -537,8 +535,9 @@ class Flex_beam(object):
                 self.iteration_num = 0
                 if np.shape(a0)[0]<3:
                     if self.full_a:
-                        self.a_diff =     
-                    self.a_diff = np.ones((1,self.a_size+self.a_halfsize*(self.Ne-1)-1-self.last_zeros))[0]
+                        self.a_diff = np.ones((1,self.a_size+self.a_halfsize*(self.Ne-1)))[0]
+                    else:
+                        self.a_diff = np.ones((1,self.a_size+self.a_halfsize*(self.Ne-1)-1-self.last_zeros))[0]
                 else:
                     self.a_diff = a0
                 """
@@ -582,26 +581,36 @@ class Flex_beam(object):
                     print("iteration number:%s" % (self.iteration_num))
                     if self.optim_alg == 'least_squares':
                         print("res cost = {}".format(res.cost))  
+                if self.full_a:
+                    for i in range(self.a_size+self.a_halfsize*(self.Ne-1)):
+                        self.a_diff[i] = res.x[i]
+                else:
+                    for i in range(self.a_size+self.a_halfsize*(self.Ne-1)-1-self.last_zeros):
+                        self.a_diff[i] = res.x[i]
 
-                for i in range(self.a_size+self.a_halfsize*(self.Ne-1)-1-self.last_zeros):
-                    self.a_diff[i] = res.x[i]
-
-                self.a_approx = np.zeros((1,self.a_size*self.Ne))[0]
-                self.a_approx[0] = 0 
-                self.a_approx[1:self.a_size] = self.a_diff[:self.a_size-1]
-                for i in range(self.Ne-1):
-                    if i==self.Ne-2 and self.last_zeros:
-                        self.a_approx[self.a_size*(i+1):self.a_size*(i+1)+self.a_halfsize] =\
-                            self.a_approx[self.a_size*(i+1)-self.a_halfsize:self.a_size*(i+1)]
-                        self.a_approx[self.a_size*(i+1)+self.a_halfsize:self.a_size*(i+2)] =\
-                            np.concatenate([self.a_diff[(self.a_size-1)+self.a_halfsize*i:],\
-                                            np.zeros((1,self.last_zeros))[0] ])
-                    else:
-                        self.a_approx[self.a_size*(i+1):self.a_size*(i+1)+self.a_halfsize] =\
-                            self.a_approx[self.a_size*(i+1)-self.a_halfsize:self.a_size*(i+1)]
-                        self.a_approx[self.a_size*(i+1)+self.a_halfsize:self.a_size*(i+2)] =\
-                            self.a_diff[(self.a_size-1)+self.a_halfsize*i:\
-                                (self.a_size-1+self.a_halfsize)+self.a_halfsize*i]
+                if self.full_a:
+                    self.a_approx = np.array([])
+                    self.a_approx = np.append(self.a_approx,self.a_diff[:self.a_size])
+                    for i in range(self.Ne-1):
+                        self.a_approx = np.append(self.a_approx,\
+                            self.a_diff[self.a_size+i*self.a_halfsize:self.a_size+(i+1)*self.a_halfsize])
+                else:
+                    self.a_approx = np.zeros((1,self.a_size*self.Ne))[0]
+                    self.a_approx[0] = 0 
+                    self.a_approx[1:self.a_size] = self.a_diff[:self.a_size-1]
+                    for i in range(self.Ne-1):
+                        if i==self.Ne-2 and self.last_zeros:
+                            self.a_approx[self.a_size*(i+1):self.a_size*(i+1)+self.a_halfsize] =\
+                                self.a_approx[self.a_size*(i+1)-self.a_halfsize:self.a_size*(i+1)]
+                            self.a_approx[self.a_size*(i+1)+self.a_halfsize:self.a_size*(i+2)] =\
+                                np.concatenate([self.a_diff[(self.a_size-1)+self.a_halfsize*i:],\
+                                                np.zeros((1,self.last_zeros))[0] ])
+                        else:
+                            self.a_approx[self.a_size*(i+1):self.a_size*(i+1)+self.a_halfsize] =\
+                                self.a_approx[self.a_size*(i+1)-self.a_halfsize:self.a_size*(i+1)]
+                            self.a_approx[self.a_size*(i+1)+self.a_halfsize:self.a_size*(i+2)] =\
+                                self.a_diff[(self.a_size-1)+self.a_halfsize*i:\
+                                    (self.a_size-1+self.a_halfsize)+self.a_halfsize*i]
                 
                 """
                 'L-BFGS-B' work long
