@@ -215,6 +215,8 @@ class Flex_beam(object):
                 for i in range(self.Ne-1):
                     a = np.append(a,\
                         a_diff[self.a_size+i*self.a_halfsize:self.a_size+(i+1)*self.a_halfsize])
+                    a = np.append(a,\
+                        a_diff[self.a_size+i*self.a_halfsize:self.a_size+(i+1)*self.a_halfsize])
             else:
                 a = np.zeros((1,self.a_size*self.Ne))[0]
                 a[0] = 0 
@@ -232,7 +234,7 @@ class Flex_beam(object):
                         a[self.a_size*(i+1)+self.a_halfsize:self.a_size*(i+2)] =\
                             a_diff[(self.a_size-1)+self.a_halfsize*i:\
                                 (self.a_size-1+self.a_halfsize)+self.a_halfsize*i]
-            
+            # print(np.shape(a))
 
 
             self.iteration_num += 1   
@@ -296,7 +298,7 @@ class Flex_beam(object):
             return (1-np.tanh((l-dl)/e)**2)/2/e
 
         def static_preparing(self,disp=True,Fext_in=1,l_Fext=None,Fext_type='triangle',widthofFextindl=1):
-            self.full_a = 1
+            self.full_a = 0
             try:
                 self.Ne
                 self.dl
@@ -592,6 +594,8 @@ class Flex_beam(object):
                     self.a_approx = np.array([])
                     self.a_approx = np.append(self.a_approx,self.a_diff[:self.a_size])
                     for i in range(self.Ne-1):
+                        self.a_approx = np.append(self.a_approx,\
+                            self.a_diff[self.a_size+i*self.a_halfsize:self.a_size+(i+1)*self.a_halfsize])
                         self.a_approx = np.append(self.a_approx,\
                             self.a_diff[self.a_size+i*self.a_halfsize:self.a_size+(i+1)*self.a_halfsize])
                 else:
