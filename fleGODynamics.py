@@ -258,17 +258,17 @@ class Flex_beam(object):
                         [self.Fyext_int+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
                                                     self.step_optim,axis=0))]   ])
             else:
-                self.Fextx = np.sum(np.cumsum(np.multiply( sinphiappr,self.Fext)*\
+                Fextx = np.sum(np.cumsum(np.multiply( sinphiappr,self.Fext)*\
                                            self.step_optim,axis=0)*self.step_optim,axis=0)
-                self.Fexty = np.sum(np.cumsum(np.multiply( cosphiappr,self.Fext)*\
+                Fexty = np.sum(np.cumsum(np.multiply( cosphiappr,self.Fext)*\
                                            self.step_optim,axis=0)*self.step_optim,axis=0)
 
                 cost = np.concatenate([ self.Fext_int-self.EI*(np.matmul(self.F,a)+\
                         (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N_optim,1),self.dpsi)*self.step_optim,axis=0)-\
                     dphi_appr_power3[int(self.N_optim-1)]*self.psi[int(self.N_optim-1)]+dphi_appr_power3[0]*self.psi[0])),\
-                        [-self.Fextx-self.EI*(np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
+                        [-Fextx-self.EI*(np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
                                                         self.step_optim,axis=0)) ],\
-                        [self.Fexty+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
+                        [Fexty+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
                                                     self.step_optim,axis=0))]   ])
             # cost = np.sum(np.power(cost,2))
             self.phi_end = np.matmul(self.psi,a)[-1]
@@ -307,7 +307,7 @@ class Flex_beam(object):
                 self.N
             except:
                 raise ValueError("Call Ldivide first!") from None
-            self.Fext_point = Fext
+            self.Fext_in = Fext_in
             self.l_Fext = l_Fext
             self.Fext_type = Fext_type
 
@@ -365,19 +365,19 @@ class Flex_beam(object):
             self.flag_Fextxy = 0
             if Fext_type=='delta':
                 force_appl_point = self.__search_index(self.l_all_optim,l_Fext)
-                if np.shape(Fext_in):
+                if np.shape(self.Fext_in):
                     self.flag_Fextxy = 1
-                    Fx = Fext_in[0]
-                    Fy = Fext_in[1]
+                    Fx = self.Fext_in[0]
+                    Fy = self.Fext_in[1]
                     Fxext = np.zeros((1,self.N_optim))[0]   
                     Fyext = np.zeros((1,self.N_optim))[0]   
                     Fxext[int(force_appl_point)]=Fx
                     Fyext[int(force_appl_point)]=Fy
                     for p in range(int(self.steps_per_fe4optim*widthofFextindl)-1):
-                        Fxext[int(force_appl_point)+p+1]=Fext_in*(1-(p+1)/self.steps_per_fe4optim/widthofFextindl)
-                        Fxext[int(force_appl_point)-p-1]=Fext_in*(1-(p+1)/self.steps_per_fe4optim/widthofFextindl)
-                        Fyext[int(force_appl_point)+p+1]=Fext_in*(1-(p+1)/self.steps_per_fe4optim/widthofFextindl)
-                        Fyext[int(force_appl_point)-p-1]=Fext_in*(1-(p+1)/self.steps_per_fe4optim/widthofFextindl)
+                        Fxext[int(force_appl_point)+p+1]=Fx*(1-(p+1)/self.steps_per_fe4optim/widthofFextindl)
+                        Fxext[int(force_appl_point)-p-1]=Fx*(1-(p+1)/self.steps_per_fe4optim/widthofFextindl)
+                        Fyext[int(force_appl_point)+p+1]=Fy*(1-(p+1)/self.steps_per_fe4optim/widthofFextindl)
+                        Fyext[int(force_appl_point)-p-1]=Fy*(1-(p+1)/self.steps_per_fe4optim/widthofFextindl)
                     self.Fxext_int = np.sum(np.cumsum( np.multiply( Fxext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize]) *\
                                                 self.step_optim,axis=0)*self.step_optim,axis=0)
                     self.Fyext_int = np.sum(np.cumsum( np.multiply( Fyext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize]) *\
@@ -386,10 +386,10 @@ class Flex_beam(object):
                 else:
                     Fext = np.zeros((1,self.N_optim))[0]   
                     # dw = w/(self.step_optim*self.steps_per_fe4optim)
-                    Fext[int(force_appl_point)]=Fext_in
+                    Fext[int(force_appl_point)]=self.Fext_in
                     for p in range(int(self.steps_per_fe4optim*widthofFextindl)-1):
-                        Fext[int(force_appl_point)+p+1]=Fext_in*(1-(p+1)/self.steps_per_fe4optim/widthofFextindl)
-                        Fext[int(force_appl_point)-p-1]=Fext_in*(1-(p+1)/self.steps_per_fe4optim/widthofFextindl)
+                        Fext[int(force_appl_point)+p+1]=self.Fext_in*(1-(p+1)/self.steps_per_fe4optim/widthofFextindl)
+                        Fext[int(force_appl_point)-p-1]=self.Fext_in*(1-(p+1)/self.steps_per_fe4optim/widthofFextindl)
                     
                     self.Fext = np.multiply( Fext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])
                     self.Fext_int = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0)
@@ -523,7 +523,7 @@ class Flex_beam(object):
 
             if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl)\
                   or (not step==self.step) or (not c1==self.c1) or (not c3==self.c3) or (not EI==self.EI)\
-                     or (not Fext_point==self.Fext_point) or (not l_Fext==self.l_Fext) or\
+                     or (not Fext_point==self.Fext_in) or (not l_Fext==self.l_Fext) or\
                           (not Fext_type==self.Fext_type) or flag_compute_a_anyway:
                 if flag_preparing_already_done:
                     if disp:
@@ -607,7 +607,7 @@ class Flex_beam(object):
                 np.savez('a.npz',\
                         c1=self.c1,EI=self.EI,c3=self.c3,\
                         N=self.N,Ne=self.Ne,step=self.step,\
-                        dl=self.dl,a=self.a_approx,Fext_point=self.Fext_point,\
+                        dl=self.dl,a=self.a_approx,Fext_point=self.Fext_in,\
                         l_Fext=self.l_Fext,Fext_type=self.Fext_type)
             else:
                 if flag_preparing_already_done:
