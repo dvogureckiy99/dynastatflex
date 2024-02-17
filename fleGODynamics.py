@@ -197,7 +197,7 @@ class Flex_beam(object):
             size1 = np.shape(A)[0]
             size2 = np.shape(A)[1]
             halfsize = int(size2/2)
-            B = np.array([]).reshape((0,diag_num*size2))
+            B = np.array([]).reshape((0,(diag_num+1)*halfsize))
             for d_e in range(diag_num):
                 row = np.array([]).reshape((size1,0))
                 if not flag_with_int:
@@ -217,7 +217,6 @@ class Flex_beam(object):
                         row = np.hstack(( row, A ))
                         row = np.hstack((row, np.zeros((size1,halfsize*diag_num-(d_e+1)*halfsize)) ))
                         A_last = A
-                row = np.hstack((row, np.zeros((size1,size2))))
                 B = np.vstack((B,row))          
             return B
         # def __get_x_approx(self,l):
@@ -693,7 +692,7 @@ class Flex_beam(object):
             except:
                 raise ValueError("Call set_phi first. You should provide test phi function!") from None  
             self.a = np.array([])
-            for m in range(self.a_halfsize*self.Ne):
+            for m in range(self.a_halfsize*(self.Ne+1)):
                 self.a = np.append(self.a,self.__get_a(m)) 
             if disp:
                 display(Math("a="+self.__bmatrix(self.a))) 
@@ -719,17 +718,17 @@ class Flex_beam(object):
         def __get_a(self,m):
             # there m from 0 to 6*Ne-1
             if self.a_size==6:
-                if m%self.a_size == 0:
-                    return self.fun_phi(self.Ldl[(m)//self.a_size])
-                if m%self.a_size == 1:
-                    return self.fun_dphi(self.Ldl[(m)//self.a_size])
-                if m%self.a_size == 2:
-                    return self.fun_ddphi(self.Ldl[(m)//self.a_size+1])
+                if m%self.a_halfsize == 0:
+                    return self.fun_phi(self.Ldl[(m)//self.a_halfsize])
+                if m%self.a_halfsize == 1:
+                    return self.fun_dphi(self.Ldl[(m)//self.a_halfsize])
+                if m%self.a_halfsize == 2:
+                    return self.fun_ddphi(self.Ldl[(m)//self.a_halfsize+1])
             elif self.a_size==4:
-                if m%self.a_size == 0:
-                    return self.fun_phi(self.Ldl[(m)//self.a_size])
-                if m%self.a_size == 1:
-                    return self.fun_dphi(self.Ldl[(m)//self.a_size])
+                if m%self.a_halfsize == 0:
+                    return self.fun_phi(self.Ldl[(m)//self.a_halfsize])
+                if m%self.a_halfsize == 1:
+                    return self.fun_dphi(self.Ldl[(m)//self.a_halfsize])
 
         def __psi_choser(self,e,l):
             # e from 0 to Ne-1
@@ -965,10 +964,10 @@ class Flex_beam(object):
                 self.dpsi = self.__get_dpsi(self.step)
                 self.ddpsi = self.__get_ddpsi(self.step)
                 self.dddpsi = self.__get_dddpsi(self.step)
-                self.psi = self.__diag_mat(self.psi,self.Ne)
-                self.dpsi = self.__diag_mat(self.dpsi,self.Ne)
-                self.ddpsi = self.__diag_mat(self.ddpsi,self.Ne)
-                self.dddpsi = self.__diag_mat(self.dddpsi,self.Ne)
+                self.psi = self.__diag_shift_mat(self.psi,self.Ne)
+                self.dpsi = self.__diag_shift_mat(self.dpsi,self.Ne)
+                self.ddpsi = self.__diag_shift_mat(self.ddpsi,self.Ne)
+                self.dddpsi = self.__diag_shift_mat(self.dddpsi,self.Ne)
                 self.index = np.array([])
                 for i in range(self.Ne-1):
                     self.index = np.append(self.index,self.steps_per_fe+1+(self.steps_per_fe+1)*i) 
@@ -1086,8 +1085,11 @@ class Flex_beam(object):
                     else:
                         print("evaluation time: %s ms" % (round(end_time*1e-6,3)))
                         print("time for 1 step: %s us" % (round(1e-3*end_time/self.N,3)))
-                    print("phi end, fleGODynamics:{} [deg]; SPACAR:{} [deg]".format(round(np.rad2deg(phi_appr[-1]),2),\
-                                                                                   np.round(self.phi_SPACAR_end,2)))
+                    if SPACAR:
+                        print("phi end, fleGODynamics:{} [deg]; SPACAR:{} [deg]".format(round(np.rad2deg(phi_appr[-1]),2),\
+                                                                                np.round(self.phi_SPACAR_end,2)))
+                    else:
+                        print("phi end, fleGODynamics:{} [deg]".format(round( np.rad2deg(phi_appr[-1]),2) ))
             elif der_num == 1:
                 #evaluation
                 start_time = time.time_ns()
