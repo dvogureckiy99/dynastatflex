@@ -191,8 +191,34 @@ class Flex_beam(object):
                                 A_last = A
                     else:
                         row = np.hstack((row, np.zeros((size1,size2))))
-                B = np.vstack((B,row))
-                    
+                B = np.vstack((B,row))          
+            return B
+        def __diag_shift_mat(self,A,diag_num,flag_with_int=0):
+            size1 = np.shape(A)[0]
+            size2 = np.shape(A)[1]
+            halfsize = int(size2/2)
+            B = np.array([]).reshape((0,diag_num*size2))
+            for d_e in range(diag_num):
+                row = np.array([]).reshape((size1,0))
+                if not flag_with_int:
+                    row = np.hstack(( np.zeros((size1,d_e*halfsize)),row ))
+                    row = np.hstack(( row, A ))
+                    row = np.hstack((row, np.zeros((size1,halfsize*diag_num-(d_e+1)*halfsize)) ))
+                else:
+                    if not d_e:
+                        row = np.hstack(( np.zeros((size1,d_e*halfsize)),row ))
+                        row = np.hstack(( row, A ))
+                        row = np.hstack((row, np.zeros((size1,halfsize*diag_num-(d_e+1)*halfsize)) ))
+                        A_one = A
+                        A_last = A
+                    else:
+                        A = A_last + A_one
+                        row = np.hstack(( np.zeros((size1,d_e*halfsize)),row ))
+                        row = np.hstack(( row, A ))
+                        row = np.hstack((row, np.zeros((size1,halfsize*diag_num-(d_e+1)*halfsize)) ))
+                        A_last = A
+                row = np.hstack((row, np.zeros((size1,size2))))
+                B = np.vstack((B,row))          
             return B
         # def __get_x_approx(self,l):
         #     return self.int_cumsum_x[self.__search_index(self.l_all_true,l)]
