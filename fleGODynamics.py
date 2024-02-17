@@ -481,8 +481,8 @@ class Flex_beam(object):
 
                 Fext = np.zeros((1,self.N_optim))[0]
                 dFext = np.zeros((1,self.N_optim))[0] 
-                for (l,i) in zip(self.l_all_optim,range(self.N_optim)):
-                    Fext[i]=dw*(l-2*self.__delta1(l-l_Fext)*(l-l_Fext))
+                # for (l,i) in zip(self.l_all_optim,range(self.N_optim)):
+                #     Fext[i]=dw*(l-2*self.__delta1(l-l_Fext)*(l-l_Fext))
                     # dFext[i]=dw-2*self.__delta1(l-l_Fext)*dw
                 for (l,i) in zip(self.l_all_optim,range(self.N_optim)):
                     Fext[i]=dw*l-self.__delta1(l-l_Fext)*(2*self.Fext_in)
