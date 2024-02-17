@@ -480,7 +480,7 @@ class Flex_beam(object):
                     Fext[i]=w*(l-2*self.__delta1(l-l_Fext)*(l-l_Fext))
                     # dFext[i]=dw-2*self.__delta1(l-l_Fext)*dw
                 self.Fext = np.multiply( Fext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])
-                self.Fext_int = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
+                self.Fext_int = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.dpsi)*self.step_optim,axis=0) 
                 # self.dFext = np.sum(np.multiply( dFext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
 
                 if disp:
