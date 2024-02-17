@@ -476,16 +476,16 @@ class Flex_beam(object):
                     display(Math("\\bm{M}="+self.__bmatrix(self.M[0:self.a_size,0:self.a_size])))
                     # display(Math("\\bm{F}_{ext}^{'}="+self.__bmatrix(self.dFext)))
             elif Fext_type=='triangle':
-                Fext_max = Fext_in
-                w = Fext_max # point force at the center
-                # dw = 2*w/self.L
+                dw = 2*self.Fext_in/self.L
                 # force_appl_point = self.__search_index(self.l_all_optim,l_Fext)
 
                 Fext = np.zeros((1,self.N_optim))[0]
                 dFext = np.zeros((1,self.N_optim))[0] 
                 for (l,i) in zip(self.l_all_optim,range(self.N_optim)):
-                    Fext[i]=w*(l-2*self.__delta1(l-l_Fext)*(l-l_Fext))
+                    Fext[i]=dw*(l-2*self.__delta1(l-l_Fext)*(l-l_Fext))
                     # dFext[i]=dw-2*self.__delta1(l-l_Fext)*dw
+                for (l,i) in zip(self.l_all_optim,range(self.N_optim)):
+                    Fext[i]=dw*l-self.__delta1(l-l_Fext)*(2*self.Fext_in)
                 self.Fext = np.multiply( Fext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])
                 self.Fext_int = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.dpsi)*self.step_optim,axis=0) 
                 # self.dFext = np.sum(np.multiply( dFext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
@@ -946,6 +946,7 @@ class Flex_beam(object):
                 self.dpsi = np.delete(self.dpsi, self.index,axis=0)
                 self.ddpsi = np.delete(self.ddpsi, self.index,axis=0)
                 self.dddpsi = np.delete(self.dddpsi, self.index,axis=0)
+                self.ddpsi[-1] = np.zeros((1,self.a_halfsize*(self.Ne+1)))[0]
 
                 self.index_dl = np.int16(np.array([]))
                 for l in self.l_all_dl:
@@ -954,6 +955,7 @@ class Flex_beam(object):
                 self.dpsi_dl = self.dpsi[self.index_dl]
                 self.ddpsi_dl = self.ddpsi[self.index_dl]
                 self.dddpsi_dl = self.dddpsi[self.index_dl]
+                self.ddpsi_dl[-1] = np.zeros((1,self.a_halfsize*(self.Ne+1)))[0]
 
                 if disp:
                     time_end = time.time_ns()-start_time-1*1e3
