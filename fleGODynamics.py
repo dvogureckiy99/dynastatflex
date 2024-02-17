@@ -319,21 +319,13 @@ class Flex_beam(object):
                 time.sleep(0.000001) # sleep 1 us
             # preparing for fast computation next
             
-            self.F = np.zeros((self.a_size,self.a_size))
-            for j in range(self.a_size):
-                for i in range(self.a_size):
-                    self.F[j][i] = sp.integrate.quad(self.__F_int,0,self.Ldl[1],args=(i,j))[0] +\
-                        np.polyval(self.dddp[(i)],1)*np.polyval(self.p[(j)],1)-\
-                            np.polyval(self.dddp[(i)],0)*np.polyval(self.p[(j)],0)-\
-                        np.polyval(self.ddp[(i)],1)*np.polyval(self.dp[(j)],1)+\
-                            np.polyval(self.ddp[(i)],0)*np.polyval(self.dp[(j)],0)
-            self.F = self.__diag_shift_mat(self.F,self.Ne,1)
-            print(np.shape(self.F))
+            # self.F = self.__diag_shift_mat(self.F,self.Ne,1)
+            # print(np.shape(self.F))
             self.M = np.zeros((self.a_size,self.a_size))
-            for j in range(self.a_size):
-                for i in range(self.a_size):
-                    self.M[j][i] = sp.integrate.quad(self.__M_int,0,self.Ldl[1],args=(i,j))[0]
-            self.M = self.__diag_shift_mat(self.M,self.Ne,1)
+            # for j in range(self.a_size):
+            #     for i in range(self.a_size):
+            #         self.M[j][i] = sp.integrate.quad(self.__M_int,0,self.Ldl[1],args=(i,j))[0]
+            # self.M = self.__diag_shift_mat(self.M,self.Ne,1)
 
             if disp:
                 time_end = time.time_ns()-start_time-1*1e3
@@ -357,6 +349,13 @@ class Flex_beam(object):
             self.dpsi = np.delete(self.dpsi, self.index,axis=0)
             self.ddpsi = np.delete(self.ddpsi, self.index,axis=0)
             self.dddpsi = np.delete(self.dddpsi, self.index,axis=0)
+
+            self.F = np.zeros((self.a_halfsize*(self.Ne+1),self.a_halfsize*(self.Ne+1)))
+            for j in range(self.a_halfsize*(self.Ne+1)):
+                for i in range(self.a_halfsize*(self.Ne+1)):
+                    self.F[j][i] = np.sum(self.ddpsi[:,i]*self.ddpsi[:,j]*self.step_optim,axis=0) +\
+                        self.dddpsi[-1,i]*self.psi[-1,j]-self.dddpsi[0,i]*self.psi[0,j]-\
+                        self.ddpsi[-1,i]*self.dpsi[-1,j]+self.ddpsi[0,i]*self.dpsi[0,j]
 
             # preparing ddFext
             if l_Fext==None:
