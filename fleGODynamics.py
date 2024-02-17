@@ -693,7 +693,7 @@ class Flex_beam(object):
             except:
                 raise ValueError("Call set_phi first. You should provide test phi function!") from None  
             self.a = np.array([])
-            for m in range(self.a_size*self.Ne):
+            for m in range(self.a_halfsize*self.Ne):
                 self.a = np.append(self.a,self.__get_a(m)) 
             if disp:
                 display(Math("a="+self.__bmatrix(self.a))) 
@@ -724,22 +724,12 @@ class Flex_beam(object):
                 if m%self.a_size == 1:
                     return self.fun_dphi(self.Ldl[(m)//self.a_size])
                 if m%self.a_size == 2:
-                    return self.fun_ddphi(self.Ldl[(m)//self.a_size])
-                if m%self.a_size == 3:
-                    return self.fun_phi(self.Ldl[(m)//self.a_size+1])
-                if m%self.a_size == 4:
-                    return self.fun_dphi(self.Ldl[(m)//self.a_size+1])
-                if m%self.a_size == 5:
                     return self.fun_ddphi(self.Ldl[(m)//self.a_size+1])
             elif self.a_size==4:
                 if m%self.a_size == 0:
                     return self.fun_phi(self.Ldl[(m)//self.a_size])
                 if m%self.a_size == 1:
                     return self.fun_dphi(self.Ldl[(m)//self.a_size])
-                if m%self.a_size == 2:
-                    return self.fun_phi(self.Ldl[(m)//self.a_size+1])
-                if m%self.a_size == 3:
-                    return self.fun_dphi(self.Ldl[(m)//self.a_size+1])
 
         def __psi_choser(self,e,l):
             # e from 0 to Ne-1
