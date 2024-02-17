@@ -242,8 +242,8 @@ class Flex_beam(object):
 
             dphi_appr_power3 =  np.power(np.matmul(self.dpsi,a),3)  # [1,N]
 
-            phi_appr = np.matmul(self.psi[:self.ind_N2],a)  # [1,N]
-            ddphi_appr = np.matmul(self.ddpsi[:self.ind_N2],a)  # [1,N]
+            phi_appr = np.matmul(self.psi[:self.ind_N2,:6],a[:6])  # [1,N]
+            ddphi_appr = np.matmul(self.ddpsi[:self.ind_N2,:6],a[:6])  # [1,N]
             sinphiappr = np.sin(phi_appr)
             cosphiappr = np.cos(phi_appr)
             sinphiappr_ddphiappr = np.multiply(sinphiappr,ddphi_appr)
@@ -446,7 +446,7 @@ class Flex_beam(object):
                     Fext[int(force_appl_point)-int(self.steps_per_fe4optim*widthofFextindl):\
                         int(force_appl_point)+int(self.steps_per_fe4optim*widthofFextindl)+1]=w 
                 self.Fext = np.multiply( Fext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])
-                self.Fext_int = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0)
+                self.Fext_int = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.dpsi)*self.step_optim,axis=0)
                 dFext = np.zeros((1,self.N_optim))[0]
                 # dFext[0]=dw1 
                 # dFext[int(force_appl_point)]=-dw2
