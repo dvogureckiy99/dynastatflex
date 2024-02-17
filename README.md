@@ -2,7 +2,9 @@
 Python library for modeling dynamic of flexible mechanisms. Useful for robotics application.
 
 ## Dependencies
-If you want use MATLAB SPACAR package to compare the results you need MATLAB. Was tested with 2023a version.
+If you want use MATLAB SPACAR package to compare the results you need MATLAB. 
+- - - -
+Was tested with 2023a version.
 
 ## Installation
 First need to setup conda environment:
