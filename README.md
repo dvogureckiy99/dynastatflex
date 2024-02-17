@@ -10,7 +10,7 @@ First need to setup conda environment:
 conda env create --file fleGODynamics.yml -n fleGODynamics
 ```
 If you using VSC, then reload it. Choose fleGODynamics environment.
-----
+- - - - 
 If you want to update conda env with .yml file type in Command Prompt:
 ```
 conda env update --file fleGODynamics.yml --prune
