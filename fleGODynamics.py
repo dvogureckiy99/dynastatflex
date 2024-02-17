@@ -349,6 +349,8 @@ class Flex_beam(object):
             self.dpsi = np.delete(self.dpsi, self.index,axis=0)
             self.ddpsi = np.delete(self.ddpsi, self.index,axis=0)
             self.dddpsi = np.delete(self.dddpsi, self.index,axis=0)
+            # boundary cond
+            self.ddpsi[-1] = np.zeros((1,self.a_halfsize*(self.Ne+1)))[0]
 
             self.F = np.zeros((self.a_halfsize*(self.Ne+1),self.a_halfsize*(self.Ne+1)))
             for j in range(self.a_halfsize*(self.Ne+1)):
@@ -442,6 +444,11 @@ class Flex_beam(object):
                 Fext = np.zeros((1,self.N_optim))[0] 
                 if widthofFextindl==-1:
                     Fext[0:int(force_appl_point)+1]=w
+                elif widthofFextindl==-2:
+                    Fext[int(force_appl_point):]=w
+                elif widthofFextindl==-3:
+                    Fext[0:int(force_appl_point)+1]=w
+                    Fext[int(force_appl_point):]=-w
                 else:
                     Fext[int(force_appl_point)-int(self.steps_per_fe4optim*widthofFextindl):\
                         int(force_appl_point)+int(self.steps_per_fe4optim*widthofFextindl)+1]=w 
