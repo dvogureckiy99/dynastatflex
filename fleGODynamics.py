@@ -242,14 +242,12 @@ class Flex_beam(object):
 
             dphi_appr_power3 =  np.power(np.matmul(self.dpsi,a),3)  # [1,N]
 
-            phi_appr = np.matmul(self.psi[:self.ind_N2,:6],a[:6])  # [1,N]
-            ddphi_appr = np.matmul(self.ddpsi[:self.ind_N2,:6],a[:6])  # [1,N]
-            sinphiappr = np.sin(phi_appr)
-            cosphiappr = np.cos(phi_appr)
-            sinphiappr_ddphiappr = np.multiply(sinphiappr,ddphi_appr)
-            cosphiappr_ddphiappr = np.multiply(cosphiappr,ddphi_appr)
+            
             
             if self.flag_Fextxy:
+
+                
+
                 cost = np.concatenate([ Fext_int-self.EI*(np.matmul(self.F,a)+\
                         (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N_optim,1),self.dpsi)*self.step_optim,axis=0)-\
                     dphi_appr_power3[int(self.N_optim-1)]*self.psi[int(self.N_optim-1)]+dphi_appr_power3[0]*self.psi[0])),\
@@ -258,6 +256,13 @@ class Flex_beam(object):
                         [self.Fyext_Fy+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
                                                     self.step_optim,axis=0))]   ])
             else:
+                phi_appr = np.matmul(self.psi[:self.ind_N2,:6],a[:6])  # [1,N]
+                ddphi_appr = np.matmul(self.ddpsi[:self.ind_N2,:6],a[:6])  # [1,N]
+                sinphiappr = np.sin(phi_appr)
+                cosphiappr = np.cos(phi_appr)
+                sinphiappr_ddphiappr = np.multiply(sinphiappr,ddphi_appr)
+                cosphiappr_ddphiappr = np.multiply(cosphiappr,ddphi_appr)
+
                 Fextx = np.sum(np.multiply( sinphiappr,self.Fext)*\
                                            self.step_optim,axis=0)
                 Fexty = np.sum(np.multiply( cosphiappr,self.Fext)*\
