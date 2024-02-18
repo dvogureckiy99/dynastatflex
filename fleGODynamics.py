@@ -240,8 +240,6 @@ class Flex_beam(object):
             
             self.iteration_num += 1   
 
-            dphi_appr_power3 =  np.power(np.matmul(self.dpsi,a),3)  # [1,N]
-
             if self.flag_Fextxy:
                 phi_appr = np.matmul(self.psi,a)  # [1,N]
                 dphi_appr = np.matmul(self.dpsi,a)  # [1,N]
@@ -251,6 +249,7 @@ class Flex_beam(object):
 
                 ddphi_appr_power2 =  np.power(ddphi_appr,2)  # [1,N]
                 dphi_appr_power2 =  np.power(dphi_appr,2)  # [1,N]
+                dphi_appr_power3 =  np.power(dphi_appr,3)  # [1,N]
 
                 Fext_perp_int = -sinphiappr[-1]*self.Fxpsi[-1]+sinphiappr[0]*self.Fxpsi[0] +\
                         cosphiappr[-1]*self.Fypsi[-1]-cosphiappr[0]*self.Fypsi[0] +\
@@ -261,6 +260,9 @@ class Flex_beam(object):
                         sinphiappr[-1]*self.Fypsi[-1]-sinphiappr[0]*self.Fypsi[0] -\
                         np.sum(np.multiply(cosphiappr.reshape(self.N_optim,1),self.Fxdpsi)*self.step_optim,axis=0) -\
                         np.sum(np.multiply(sinphiappr.reshape(self.N_optim,1),self.Fydpsi)*self.step_optim,axis=0)
+                
+                sinphiappr_ddphiappr = np.multiply(np.sin(phi_appr[:self.ind_N2]),ddphi_appr[:self.ind_N2])
+                cosphiappr_ddphiappr = np.multiply(np.cos(phi_appr[:self.ind_N2]),ddphi_appr[:self.ind_N2])
 
                 cost = np.concatenate([ Fext_para_int+self.EI*\
                     (np.sum(np.multiply(ddphi_appr_power2.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0)+\
@@ -270,11 +272,13 @@ class Flex_beam(object):
                     Fext_perp_int-self.EI*(np.matmul(self.F,a)+\
                         (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N_optim,1),self.dpsi)*self.step_optim,axis=0)-\
                         dphi_appr_power3[int(self.N_optim-1)]*self.psi[int(self.N_optim-1)]+dphi_appr_power3[0]*self.psi[0])),\
-                    [self.Fxext_Fx-self.EI*(np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
+                    [self.Fext_fx-self.EI*(np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
                                                         self.step_optim,axis=0)) ],\
-                    [self.Fyext_Fy+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
+                    [self.Fext_fy+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
                                                     self.step_optim,axis=0))]   ])
             else:
+                dphi_appr_power3 =  np.power(np.matmul(self.dpsi,a),3)  # [1,N]
+
                 phi_appr = np.matmul(self.psi[:self.ind_N2,:6],a[:6])  # [1,N]
                 ddphi_appr = np.matmul(self.ddpsi[:self.ind_N2,:6],a[:6])  # [1,N]
                 sinphiappr = np.sin(phi_appr)
@@ -460,6 +464,7 @@ class Flex_beam(object):
             elif Fext_type=='const':
                 force_appl_point = self.__search_index(self.l_all_optim,l_Fext)
                 if np.shape(self.Fext_in):
+                    print("hellp kitty")
                     self.flag_Fextxy = 1
                     Fxext = np.zeros((1,self.N_optim))[0]   
                     Fyext = np.zeros((1,self.N_optim))[0]   
@@ -475,14 +480,13 @@ class Flex_beam(object):
                             int(force_appl_point)+int(self.steps_per_fe4optim*widthofFextindl)+1]=Fx
                         Fyext[int(force_appl_point)-int(self.steps_per_fe4optim*widthofFextindl):\
                             int(force_appl_point)+int(self.steps_per_fe4optim*widthofFextindl)+1]=Fy
-                    self.Fext_para = np.multiply( Fxext.reshape(self.N_optim,1),self.dpsi)
                     self.Fxpsi = np.multiply( Fxext.reshape(self.N_optim,1),self.psi)
                     self.Fypsi = np.multiply( Fyext.reshape(self.N_optim,1),self.psi)
                     self.Fxdpsi = np.multiply( Fxext.reshape(self.N_optim,1),self.dpsi)
                     self.Fydpsi = np.multiply( Fyext.reshape(self.N_optim,1),self.dpsi)
-                    self.Fxext_fx = np.sum(np.multiply( Fxext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])*\
+                    self.Fext_fx = np.sum(np.multiply( Fxext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])*\
                                                   self.step_optim,axis=0)
-                    self.Fyext_fy = np.sum(np.multiply( Fyext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])*\
+                    self.Fext_fy = np.sum(np.multiply( Fyext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])*\
                                                   self.step_optim,axis=0)
                 else:
                     # dw1 = 2*w/(self.step_optim)
