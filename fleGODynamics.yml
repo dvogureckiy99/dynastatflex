@@ -12,5 +12,5 @@ dependencies:
 - matplotlib
 - numba=0.58.1
 - pip:
-  - matlabengine==9.13.10
+  - matlabengine==9.14.3
 
