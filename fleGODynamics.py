@@ -464,7 +464,6 @@ class Flex_beam(object):
             elif Fext_type=='const':
                 force_appl_point = self.__search_index(self.l_all_optim,l_Fext)
                 if np.shape(self.Fext_in):
-                    print("hellp kitty")
                     self.flag_Fextxy = 1
                     Fxext = np.zeros((1,self.N_optim))[0]   
                     Fyext = np.zeros((1,self.N_optim))[0]   
