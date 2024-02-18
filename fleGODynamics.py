@@ -250,18 +250,18 @@ class Flex_beam(object):
             cosphiappr_ddphiappr = np.multiply(cosphiappr,ddphi_appr)
             
             if self.flag_Fextxy:
-                cost = np.concatenate([ self.Fext-self.EI*(np.matmul(self.F,a)+\
+                cost = np.concatenate([ Fext_int-self.EI*(np.matmul(self.F,a)+\
                         (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N_optim,1),self.dpsi)*self.step_optim,axis=0)-\
                     dphi_appr_power3[int(self.N_optim-1)]*self.psi[int(self.N_optim-1)]+dphi_appr_power3[0]*self.psi[0])),\
-                        [self.Fxext_int-self.EI*(np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
+                        [self.Fxext_Fx-self.EI*(np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
                                                         self.step_optim,axis=0)) ],\
-                        [self.Fyext_int+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
+                        [self.Fyext_Fy+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
                                                     self.step_optim,axis=0))]   ])
             else:
-                Fextx = np.sum(np.cumsum(np.multiply( sinphiappr,self.Fext)*\
-                                           self.step_optim,axis=0)*self.step_optim,axis=0)
-                Fexty = np.sum(np.cumsum(np.multiply( cosphiappr,self.Fext)*\
-                                           self.step_optim,axis=0)*self.step_optim,axis=0)
+                Fextx = np.sum(np.multiply( sinphiappr,self.Fext)*\
+                                           self.step_optim,axis=0)
+                Fexty = np.sum(np.multiply( cosphiappr,self.Fext)*\
+                                           self.step_optim,axis=0)
 
                 cost = np.concatenate([ self.Fext_int-self.EI*(np.matmul(self.F,a)+\
                         (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N_optim,1),self.dpsi)*self.step_optim,axis=0)-\
@@ -436,43 +436,76 @@ class Flex_beam(object):
                     display(Math("\\bm{M}="+self.__bmatrix(self.M[0:self.a_size,0:self.a_size])))
                     # display(Math("\\bm{F}_{ext}^{'}="+self.__bmatrix(self.dFext)))
             elif Fext_type=='const':
-                Fext_max = Fext_in
-                # w_steps_num = int(self.N*1e-2/2) # wisth in steps of the area of application of force
-                w = Fext_max # force at some point
-
-                # dw1 = 2*w/(self.step_optim)
-                # dw2 = w/(self.step_optim)
                 force_appl_point = self.__search_index(self.l_all_optim,l_Fext)
-                Fext = np.zeros((1,self.N_optim))[0] 
-                if widthofFextindl==-1:
-                    Fext[0:int(force_appl_point)+1]=w
-                elif widthofFextindl==-2:
-                    Fext[int(force_appl_point):]=w
-                elif widthofFextindl==-3:
-                    Fext[0:int(force_appl_point)+1]=w
-                    Fext[int(force_appl_point):]=-w
+                if np.shape(self.Fext_in):
+                    self.flag_Fextxy = 1
+                    Fxext = np.zeros((1,self.N_optim))[0]   
+                    Fyext = np.zeros((1,self.N_optim))[0]   
+                    if widthofFextindl==-1:
+                        Fx = self.Fext_in[0]
+                        Fy = self.Fext_in[1]
+                        Fxext[0:int(force_appl_point)+1]=Fx
+                        Fyext[0:int(force_appl_point)+1]=Fy
+                    else:
+                        Fx = self.Fext_in[0]/(widthofFextindl*2*self.Ldl[1])
+                        Fy = self.Fext_in[1]/(widthofFextindl*2*self.Ldl[1])
+                        Fxext[int(force_appl_point)-int(self.steps_per_fe4optim*widthofFextindl):\
+                            int(force_appl_point)+int(self.steps_per_fe4optim*widthofFextindl)+1]=Fx
+                        Fyext[int(force_appl_point)-int(self.steps_per_fe4optim*widthofFextindl):\
+                            int(force_appl_point)+int(self.steps_per_fe4optim*widthofFextindl)+1]=Fy
+                    self.Fext_para = np.multiply( Fxext.reshape(self.N_optim,1),self.dpsi)
+                    self.Fext_perp = np.multiply( Fyext.reshape(self.N_optim,1),self.dpsi)
+                    self.Fxext_fx = np.sum(np.multiply( Fxext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])*\
+                                                  self.step_optim,axis=0)
+                    self.Fyext_fy = np.sum(np.multiply( Fyext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])*\
+                                                  self.step_optim,axis=0)
                 else:
-                    Fext[int(force_appl_point)-int(self.steps_per_fe4optim*widthofFextindl):\
-                        int(force_appl_point)+int(self.steps_per_fe4optim*widthofFextindl)+1]=w 
-                self.Fext = np.multiply( Fext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])
-                self.Fext_int = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.dpsi)*self.step_optim,axis=0)
-                dFext = np.zeros((1,self.N_optim))[0]
-                # dFext[0]=dw1 
-                # dFext[int(force_appl_point)]=-dw2
-                # self.dFext = np.sum(np.multiply( dFext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
+                    # dw1 = 2*w/(self.step_optim)
+                    # dw2 = w/(self.step_optim)
+                    w = Fext_in # force at some point
+                    Fext = np.zeros((1,self.N_optim))[0] 
+                    if widthofFextindl==-1:
+                        Fext[0:int(force_appl_point)+1]=w
+                    elif widthofFextindl==-2:
+                        Fext[int(force_appl_point):]=w
+                    elif widthofFextindl==-3:
+                        Fext[0:int(force_appl_point)+1]=w
+                        Fext[int(force_appl_point):]=-w
+                    else:
+                        Fext[int(force_appl_point)-int(self.steps_per_fe4optim*widthofFextindl):\
+                            int(force_appl_point)+int(self.steps_per_fe4optim*widthofFextindl)+1]=w 
+                    self.Fext = np.multiply( Fext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])
+                    self.Fext_int = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.dpsi)*self.step_optim,axis=0)
+                    dFext = np.zeros((1,self.N_optim))[0]
+                    # dFext[0]=dw1 
+                    # dFext[int(force_appl_point)]=-dw2
+                    # self.dFext = np.sum(np.multiply( dFext.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0) 
+
                 if disp:
                     # print("distributed integral error =%e"%(np.sum(Fext*self.step_optim*self.steps_per_fe4optim)-Fext_max))
                     plt.figure(figsize = (20,4))
                     plt.subplot(1,2,1)
-                    plt.plot(self.l_all_optim,Fext)
+                    if self.flag_Fextxy:
+                        plt.plot(self.l_all_optim,Fxext)
+                    else:
+                        plt.plot(self.l_all_optim,Fext)
                     plt.plot(self.Ldl,np.zeros((1,self.Ne+1))[0],"og")
                     plt.grid()
-                    plt.title("Fext - distributed force derivative [N/m]")
+                    if self.flag_Fextxy:
+                        plt.title("Fxext - distributed force [N/m]")
+                    else:
+                        plt.title("Fext - distributed force [N/m]")
                     plt.subplot(1,2,2)
-                    plt.plot(self.l_all_optim,dFext)
+                    if self.flag_Fextxy:
+                        plt.plot(self.l_all_optim,Fyext)
+                    else:
+                        plt.plot(self.l_all_optim,dFext)
                     plt.plot(self.Ldl,np.zeros((1,self.Ne+1))[0],"og")
                     plt.grid()
-                    plt.title("dFext - distributed force [N/m^2]")
+                    if self.flag_Fextxy:
+                        plt.title("Fyext - distributed force [N/m]")
+                    else:
+                        plt.title("dFext - distributed force der [N/m^2]")
                     plt.show()
                     display(Math("\\bm{F}="+self.__bmatrix(self.F[0:self.a_size,0:self.a_size])))
                     display(Math("\\bm{M}="+self.__bmatrix(self.M[0:self.a_size,0:self.a_size])))
