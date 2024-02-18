@@ -245,8 +245,15 @@ class Flex_beam(object):
             
             
             if self.flag_Fextxy:
+                phi_appr = np.matmul(self.psi,a)  # [1,N]
+                ddphi_appr = np.matmul(self.ddpsi,a)  # [1,N]
+                sinphiappr = np.sin(phi_appr)
+                cosphiappr = np.cos(phi_appr)
 
-                Fext_int = self.Fext_perp_Fxdpsi
+                Fext_int = -sinphiappr[-1]*self.Fext_perp_Fxpsi[-1]+sinphiappr[0]*self.Fext_perp_Fxpsi[0] +\
+                        cosphiappr[-1]*self.Fext_perp_Fypsi[-1]-cosphiappr[0]*self.Fext_perp_Fypsi[0] +\
+                        np.sum(np.multiply(sinphiappr.reshape(self.N_optim,1),self.Fext_perp_Fxdpsi)*self.step_optim,axis=0) -\
+                        np.sum(np.multiply(cosphiappr.reshape(self.N_optim,1),self.Fext_perp_Fydpsi)*self.step_optim,axis=0)
 
                 cost = np.concatenate([ Fext_int-self.EI*(np.matmul(self.F,a)+\
                         (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N_optim,1),self.dpsi)*self.step_optim,axis=0)-\
