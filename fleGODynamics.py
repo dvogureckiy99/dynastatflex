@@ -591,7 +591,7 @@ class Flex_beam(object):
 
             if (not flag_preparing_already_done) or (not N==self.N) or (not Ne==self.Ne) or (not dl==self.dl)\
                   or (not step==self.step) or (not c1==self.c1) or (not c3==self.c3) or (not EI==self.EI)\
-                     or (not Fext_point[1]==self.Fext_in[1]) or (not l_Fext==self.l_Fext) or\
+                      or (not l_Fext==self.l_Fext) or\
                           (not Fext_type==self.Fext_type) or flag_compute_a_anyway:
                 if flag_preparing_already_done:
                     if disp:
