@@ -250,7 +250,6 @@ class Flex_beam(object):
                 ddphi_appr_power2 =  np.power(ddphi_appr,2)  # [1,N]
                 dphi_appr_power2 =  np.power(dphi_appr,2)  # [1,N]
                 dphi_appr_power3 =  np.power(dphi_appr,3)  # [1,N]
-                ddphi_appr_dphi_appr = np.multiply(dphi_appr,ddphi_appr)
 
                 Fext_perp_int = -sinphiappr[-1]*self.Fxpsi[-1]+sinphiappr[0]*self.Fxpsi[0] +\
                         cosphiappr[-1]*self.Fypsi[-1]-cosphiappr[0]*self.Fypsi[0] +\
@@ -262,8 +261,8 @@ class Flex_beam(object):
                         np.sum(np.multiply(cosphiappr.reshape(self.N_optim,1),self.Fxdpsi)*self.step_optim,axis=0) -\
                         np.sum(np.multiply(sinphiappr.reshape(self.N_optim,1),self.Fydpsi)*self.step_optim,axis=0)
                 
-                sinphiappr_ddphiappr = np.multiply(np.sin(phi_appr[:self.ind_N2]),ddphi_appr[:self.ind_N2])
-                cosphiappr_ddphiappr = np.multiply(np.cos(phi_appr[:self.ind_N2]),ddphi_appr[:self.ind_N2])
+                sinphiappr_ddphiappr = np.multiply(sinphiappr[:self.ind_N2],ddphi_appr[:self.ind_N2])
+                cosphiappr_ddphiappr = np.multiply(cosphiappr[:self.ind_N2],ddphi_appr[:self.ind_N2])
 
                 cost = np.concatenate([ Fext_para_int+self.EI*\
                     (2*(ddphi_appr[-1]*dphi_appr[-1]*self.dpsi[-1]-ddphi_appr[0]*dphi_appr[0]*self.dpsi[0])-\
