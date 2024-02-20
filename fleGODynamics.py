@@ -314,7 +314,7 @@ class Flex_beam(object):
                     print("iter={},cost={}".format(self.iteration_num,cost))
             elif self.optim_alg == 'least_squares':
                 if disp:
-                    print("iter={},cost={}".format(self.iteration_num,np.sum(np.power(cost,2))))
+                    print("iter={},cost={}".format(self.iteration_num,np.sum(np.power(cost,2))/2))
             # print("iter={}".format(self.iteration_num))
             return cost
             
@@ -488,10 +488,9 @@ class Flex_beam(object):
                     else:
                         Fx = self.Fext_in[0]/(widthofFextindl*2*self.Ldl[1])
                         Fy = self.Fext_in[1]/(widthofFextindl*2*self.Ldl[1])
-                        Fxext[int(force_appl_point)-int(self.steps_per_fe4optim*widthofFextindl):\
-                            int(force_appl_point)+int(self.steps_per_fe4optim*widthofFextindl)+1]=Fx
-                        Fyext[int(force_appl_point)-int(self.steps_per_fe4optim*widthofFextindl):\
-                            int(force_appl_point)+int(self.steps_per_fe4optim*widthofFextindl)+1]=Fy
+                        point = int((self.steps_per_fe4optim*widthofFextindl)%1+1)
+                        Fxext[int(force_appl_point)-point:int(force_appl_point)+point+1]=Fx
+                        Fyext[int(force_appl_point)-point:int(force_appl_point)+point+1]=Fy
                     self.Fxpsi = np.multiply( Fxext.reshape(self.N_optim,1),self.psi)
                     self.Fypsi = np.multiply( Fyext.reshape(self.N_optim,1),self.psi)
                     self.Fxdpsi = np.multiply( Fxext.reshape(self.N_optim,1),self.dpsi)
