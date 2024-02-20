@@ -253,25 +253,33 @@ class Flex_beam(object):
 
                 Fext_perp_int = -sinphiappr[-1]*self.Fxpsi[-1]+sinphiappr[0]*self.Fxpsi[0] +\
                         cosphiappr[-1]*self.Fypsi[-1]-cosphiappr[0]*self.Fypsi[0] +\
-                        np.sum(np.multiply(sinphiappr.reshape(self.N_optim,1),self.Fxdpsi)*self.step_optim,axis=0) -\
+                        np.sum(np.multiply(cosphiappr.reshape(self.N_optim,1),\
+                            np.multiply(dphi_appr.reshape(self.N_optim,1),self.Fxpsi))*self.step_optim,axis=0) +\
+                        np.sum(np.multiply(sinphiappr.reshape(self.N_optim,1),self.Fxdpsi)*self.step_optim,axis=0) +\
+                        np.sum(np.multiply(sinphiappr.reshape(self.N_optim,1),\
+                            np.multiply(dphi_appr.reshape(self.N_optim,1),self.Fypsi))*self.step_optim,axis=0) -\
                         np.sum(np.multiply(cosphiappr.reshape(self.N_optim,1),self.Fydpsi)*self.step_optim,axis=0)
                 
                 Fext_para_int = cosphiappr[-1]*self.Fxpsi[-1]-cosphiappr[0]*self.Fxpsi[0] +\
-                        sinphiappr[-1]*self.Fypsi[-1]-sinphiappr[0]*self.Fypsi[0] -\
+                        sinphiappr[-1]*self.Fypsi[-1]-sinphiappr[0]*self.Fypsi[0] +\
+                        np.sum(np.multiply(sinphiappr.reshape(self.N_optim,1),\
+                            np.multiply(dphi_appr.reshape(self.N_optim,1),self.Fxpsi))*self.step_optim,axis=0) -\
                         np.sum(np.multiply(cosphiappr.reshape(self.N_optim,1),self.Fxdpsi)*self.step_optim,axis=0) -\
+                        np.sum(np.multiply(cosphiappr.reshape(self.N_optim,1),\
+                            np.multiply(dphi_appr.reshape(self.N_optim,1),self.Fypsi))*self.step_optim,axis=0) -\
                         np.sum(np.multiply(sinphiappr.reshape(self.N_optim,1),self.Fydpsi)*self.step_optim,axis=0)
                 
                 sinphiappr_ddphiappr = np.multiply(sinphiappr[:self.ind_N2],ddphi_appr[:self.ind_N2])
                 cosphiappr_ddphiappr = np.multiply(cosphiappr[:self.ind_N2],ddphi_appr[:self.ind_N2])
 
                 cost = np.concatenate([ Fext_para_int+self.EI*\
-                    (2*(ddphi_appr[-1]*dphi_appr[-1]*self.dpsi[-1]-ddphi_appr[0]*dphi_appr[0]*self.dpsi[0])-\
+                    (2*(ddphi_appr[-1]*dphi_appr[-1]*self.psi[-1]-ddphi_appr[0]*dphi_appr[0]*self.psi[0])-\
                         np.sum(np.multiply(ddphi_appr_power2.reshape(self.N_optim,1),self.psi)*self.step_optim,axis=0)-\
                         dphi_appr[-1]**2*self.dpsi[-1]+dphi_appr[0]**2*self.dpsi[0]+\
                         np.sum(np.multiply(dphi_appr_power2.reshape(self.N_optim,1),self.ddpsi)*self.step_optim,axis=0)),\
                     Fext_perp_int-self.EI*(np.matmul(self.F,a)+\
                         (1/3)*(np.sum(np.multiply(dphi_appr_power3.reshape(self.N_optim,1),self.dpsi)*self.step_optim,axis=0)-\
-                        dphi_appr_power3[int(self.N_optim-1)]*self.psi[int(self.N_optim-1)]+dphi_appr_power3[0]*self.psi[0])),\
+                        dphi_appr_power3[-1]*self.psi[-1]+dphi_appr_power3[0]*self.psi[0])),\
                     [self.Fext_fx-self.EI*(np.sum(np.multiply(sinphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
                                                         self.step_optim,axis=0)) ],\
                     [self.Fext_fy+self.EI*(np.sum(np.multiply(cosphiappr_ddphiappr,self.dpsi[:self.ind_N2,self.a_halfsize])*\
