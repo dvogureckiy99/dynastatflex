@@ -480,6 +480,11 @@ class Flex_beam(object):
                         Fy = self.Fext_in[1]
                         Fxext[0:int(force_appl_point)+1]=Fx
                         Fyext[0:int(force_appl_point)+1]=Fy
+                    if widthofFextindl==-2:
+                        Fx = self.Fext_in[0]
+                        Fy = self.Fext_in[1]
+                        Fxext[int(force_appl_point):]=Fx
+                        Fyext[int(force_appl_point):]=Fy
                     else:
                         Fx = self.Fext_in[0]/(widthofFextindl*2*self.Ldl[1])
                         Fy = self.Fext_in[1]/(widthofFextindl*2*self.Ldl[1])
