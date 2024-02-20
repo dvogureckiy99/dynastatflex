@@ -582,10 +582,14 @@ class Flex_beam(object):
                             Fxext[i]=Fx*l-self.__delta1(l-l_Fext)*(2*Fx)
                         if Fy:
                             Fyext[i]=Fy*l-self.__delta1(l-l_Fext)*(2*Fy)
-                    self.Fxpsi = np.multiply( Fxext.reshape(self.N_optim,1),self.psi)
-                    self.Fypsi = np.multiply( Fyext.reshape(self.N_optim,1),self.psi)
-                    self.Fxdpsi = np.multiply( Fxext.reshape(self.N_optim,1),self.dpsi)
-                    self.Fydpsi = np.multiply( Fyext.reshape(self.N_optim,1),self.dpsi)
+                    self.Fx_int = np.sum(np.multiply( Fxext.reshape(self.N_optim,1),self.psi)*\
+                                                  self.step_optim,axis=0)
+                    self.Fy_int = np.sum(np.multiply( Fyext.reshape(self.N_optim,1),self.psi)*\
+                                                  self.step_optim,axis=0)
+                    # self.Fxpsi = np.multiply( Fxext.reshape(self.N_optim,1),self.psi)
+                    # self.Fypsi = np.multiply( Fyext.reshape(self.N_optim,1),self.psi)
+                    # self.Fxdpsi = np.multiply( Fxext.reshape(self.N_optim,1),self.dpsi)
+                    # self.Fydpsi = np.multiply( Fyext.reshape(self.N_optim,1),self.dpsi)
                     self.Fext_fx = np.sum(np.multiply( Fxext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])*\
                                                   self.step_optim,axis=0)
                     self.Fext_fy = np.sum(np.multiply( Fyext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])*\
