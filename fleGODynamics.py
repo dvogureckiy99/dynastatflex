@@ -1300,8 +1300,8 @@ class Flex_beam(object):
             plt.subplot(3,2,(4,6))
             labels = ['$(x,y)^{true}$','$(x,y)^{approx}$','$(x,y)^{SPACAR}$']
             colours = ['b','r','b']
-            plt.plot(x/self.mult,y/self.mult,label=labels[1],color=colours[1])
             plt.plot(x_dl/self.mult,y_dl/self.mult,"og")
+            plt.plot(x/self.mult,y/self.mult,label=labels[1],color=colours[1])
             if not flag_a_approx_is:
                 plt.plot(self.x_phi_true/self.mult,self.y_phi_true/self.mult,"--",label=labels[0],color=colours[0])
             if SPACAR:
