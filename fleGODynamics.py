@@ -572,7 +572,7 @@ class Flex_beam(object):
                     self.Fext_fy = np.sum(np.multiply( Fyext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])*\
                                                   self.step_optim,axis=0)
                 else:
-                    # force_appl_point = self.__search_index(self.l_all_optim,l_Fext)
+                    
 
                     Fext = np.zeros((1,self.N_optim))[0]
                     dFext = np.zeros((1,self.N_optim))[0] 
@@ -586,6 +586,12 @@ class Flex_beam(object):
                     elif widthofFextindl==-2:
                         for (l,i) in zip(self.l_all_optim,range(self.N_optim)):
                             Fext[i]=self.Fext_in-self.__delta1(l-l_Fext)*(2*self.Fext_in)
+                    else: 
+                        force_appl_point = self.__search_index(self.l_all_optim,l_Fext)
+                        Fext[int(force_appl_point)-int(self.steps_per_fe4optim*widthofFextindl):\
+                            int(force_appl_point)+1]=self.Fext_in 
+                        Fext[int(force_appl_point):\
+                            int(force_appl_point)+int(self.steps_per_fe4optim*widthofFextindl)+1]=-self.Fext_in 
 
                     self.Fext = np.multiply( Fext[:self.ind_N2],self.psi[:self.ind_N2,self.a_halfsize])
                     self.Fext_int = -np.sum(np.multiply( Fext.reshape(self.N_optim,1),self.dpsi)*self.step_optim,axis=0) 
