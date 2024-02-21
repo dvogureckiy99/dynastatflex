@@ -9,8 +9,11 @@ end
 nprops(1).fix   = true; 
 
 if exist('M','var')
-    nprops(n).moment = M;
+    nprops(int32((l_Fext/L)*N)).moment = [0,0,M];
 elseif exist('Fx','var') && exist('Fy','var')
+    % for i=1:int32((l_Fext/L)*N)
+    %     nprops(i).force = [Fx,Fy,0];
+    % end
     nprops(int32((l_Fext/L)*N)).force = [Fx,Fy,0];
 elseif exist('Stroke','var')
     nprops(n).rot_z = Stroke;
