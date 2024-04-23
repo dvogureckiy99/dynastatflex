@@ -17,5 +17,10 @@ If you want to update conda env with .yml file type in Command Prompt:
 ```
 conda env update --file fleGODynamics.yml --prune
 ```
+## Examples
+![alt text](images/momentcenterbeam_SPACARmatch.png)
+- - - -
+![alt text](images/momentcenterbeam_SPACARmatch2.png)
+
 ## Referencies:
 [1] Huber G, Wollherr D and Buss M (2021) A Concise and Geometrically Exact Planar Beam Model for Arbitrarily Large Elastic Deformation Dynamics. Front. Robot. AI 7:609478. doi: 10.3389/frobt.2020.609478. link=[https://www.frontiersin.org/articles/10.3389/frobt.2020.609478/full](https://www.frontiersin.org/articles/10.3389/frobt.2020.609478/full)
