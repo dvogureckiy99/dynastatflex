@@ -1,5 +1,5 @@
-# fleGODynamics
-Python library for modeling dynamic of flexible mechanisms. Useful for robotics application.
+# dynastatflex
+Python library for modeling dynamic (now only static) of flexible mechanisms. Useful for robotics application.
 
 ## Dependencies
 If you want use MATLAB SPACAR package to compare the results you need MATLAB. 
@@ -9,13 +9,13 @@ Was tested with 2023a version.
 ## Installation
 First need to setup conda environment:
 ```
-conda env create --file fleGODynamics.yml -n fleGODynamics
+conda env create --file dynastatflex.yml -n dynastatflex
 ```
-If you using VSC, then reload it. Choose fleGODynamics environment.
+If you using VSC, then reload it. Choose dynastatflex environment.
 - - - - 
 If you want to update conda env with .yml file type in Command Prompt:
 ```
-conda env update --file fleGODynamics.yml --prune
+conda env update --file dynastatflex.yml --prune
 ```
 ## Examples
 ![alt text](images/momentcenterbeam_SPACARmatch.png)

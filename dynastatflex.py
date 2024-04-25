@@ -1179,10 +1179,10 @@ class Flex_beam(object):
                         print("evaluation time: %s ms" % (round(end_time*1e-6,3)))
                         print("time for 1 step: %s us" % (round(1e-3*end_time/self.N,3)))
                     if SPACAR:
-                        print("phi end, fleGODynamics:{} [deg]; SPACAR:{} [deg]".format(round(np.rad2deg(phi_appr[-1]),2),\
+                        print("phi end, dynastatflex:{} [deg]; SPACAR:{} [deg]".format(round(np.rad2deg(phi_appr[-1]),2),\
                                                                                 np.round(self.phi_SPACAR_end,2)))
                     else:
-                        print("phi end, fleGODynamics:{} [deg]".format(round( np.rad2deg(phi_appr[-1]),2) ))
+                        print("phi end, dynastatflex:{} [deg]".format(round( np.rad2deg(phi_appr[-1]),2) ))
             elif der_num == 1:
                 #evaluation
                 start_time = time.time_ns()
