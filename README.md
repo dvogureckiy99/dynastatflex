@@ -1,7 +1,7 @@
 # dynastatflex
 Python library for modeling dynamic (now only static) of flexible mechanisms. Useful for robotics application.
 
-There is pipline for future development and equations derivation: [MODELING_WITH_DAMPING.md](logsec/MODELING_WITH_DAMPING.md)
+There is pipline for future development and equations derivation: [MODELING_WITH_DAMPING.md](logsec/MODELING_WITH_DAMPING.md). To correct view formulas you should use logseq.
 
 ## Dependencies
 If you want use MATLAB SPACAR package to compare the results you need MATLAB. 
